@@ -1,0 +1,50 @@
+:root {
+  --accent: #3b82f6;
+  --accent-fg: #ffffff;
+  color-scheme: light dark;
+}
+
+:root[data-theme='light'] {
+  --canvas-bg: #f6f6f8;
+  --grid-dot: #c9c9d2;
+  --toolbar-bg: rgba(255, 255, 255, 0.85);
+  --toolbar-border: rgba(20, 20, 30, 0.1);
+  --toolbar-shadow: 0 8px 24px rgba(20, 20, 30, 0.12);
+  --tool-fg: #3f3f46;
+  --tool-hover: rgba(20, 20, 30, 0.06);
+  --menu-title: #8b8b93;
+  --node-bg: #ffffff;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --accent: #ffffff;
+  --accent-fg: #000000;
+  --canvas-bg: #000000;
+  --grid-dot: #262626;
+  --toolbar-bg: rgba(16, 16, 16, 0.88);
+  --toolbar-border: rgba(255, 255, 255, 0.12);
+  --toolbar-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  --tool-fg: #ececec;
+  --tool-hover: rgba(255, 255, 255, 0.1);
+  --menu-title: #9a9aa2;
+  --node-bg: #171717;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

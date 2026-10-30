@@ -1,0 +1,1025 @@
+
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-master-00",
+  "projectName": "GRAVITAS GCS",
+  "projectDescription": "Ground Control Station for universal multi-vehicle unmanned systems management",
+  "generationDate": "2025-01-27T00:00:00Z",
+  "schemaDefinition": {
+    "diagramTypes": [
+      "system-context",
+      "master-architecture",
+      "deployment-architecture",
+      "subsystem-architecture",
+      "end-to-end-flow",
+      "entity-relationship"
+    ],
+    "nodeTypes": [
+      "component", "system", "actor", "subsystem", "service", "database",
+      "external-system", "vehicle", "adapter", "event-bus", "queue",
+      "sensor", "payload", "process", "document", "decision", "start", "end", "entity"
+    ],
+    "edgeSemanticTypes": [
+      "data-flow", "control-flow", "dependency", "event", "command",
+      "telemetry", "network-link", "persistence", "association",
+      "auth-flow", "sync-flow"
+    ],
+    "edgeDirections": ["unidirectional", "bidirectional"],
+    "portDirections": ["in", "out", "inout"],
+    "portSides": ["top", "right", "bottom", "left"],
+    "coverageStatuses": ["fully-mapped", "partially-mapped", "unmapped", "cross-cutting"]
+  },
+  "totalFiles": 59,
+  "totalEngines": 152,
+  "totalRequirements": 290,
+  "files": [
+    {
+      "documentId": "doc-master-00",
+      "filename": "00_manifest.json",
+      "title": "GRAVITAS GCS Master Manifest",
+      "diagramType": null,
+      "category": "master",
+      "description": "Master index of all architecture files, engines, requirements, and cross-references",
+      "engineIds": [],
+      "dependsOn": [],
+      "requirementIds": [],
+      "status": "draft",
+      "generationBatch": 1
+    },
+    {
+      "documentId": "doc-master-01",
+      "filename": "01_system_context.json",
+      "title": "System Context Diagram",
+      "diagramType": "system-context",
+      "category": "master",
+      "description": "Level 0 view showing GRAVITAS GCS boundary, external actors, vehicles, and integrated systems",
+      "engineIds": [],
+      "dependsOn": ["doc-master-00"],
+      "requirementIds": ["req-2.1-001", "req-2.2-001", "req-2.12-001", "req-GA-001"],
+      "status": "draft",
+      "generationBatch": 1
+    },
+    {
+      "documentId": "doc-master-02",
+      "filename": "02_master_architecture.json",
+      "title": "Master Architecture — All Subsystems",
+      "diagramType": "master-architecture",
+      "category": "master",
+      "description": "Level 1 view showing all 12 subsystem groups and primary inter-subsystem dependencies",
+      "engineIds": [],
+      "dependsOn": ["doc-master-00", "doc-master-01"],
+      "requirementIds": ["req-GA-001", "req-GA-004", "req-GA-008"],
+      "status": "draft",
+      "generationBatch": 1
+    },
+    {
+      "documentId": "doc-master-03",
+      "filename": "03_deployment_architecture.json",
+      "title": "Deployment Architecture",
+      "diagramType": "deployment-architecture",
+      "category": "master",
+      "description": "Runtime deployment topology showing logical process groups, OS layer, and optional remote sync boundary",
+      "engineIds": [
+        "eng-plat-runtime", "eng-plat-os-compat", "eng-plat-deployment",
+        "eng-plat-config-environment", "eng-plat-update-management"
+      ],
+      "dependsOn": ["doc-master-00", "doc-master-02"],
+      "requirementIds": ["req-2.13-001", "req-2.13-002", "req-GA-011"],
+      "status": "draft",
+      "generationBatch": 1
+    },
+    {
+      "documentId": "doc-core-01",
+      "filename": "core-01-vehicle-registry.json",
+      "title": "Vehicle Registry & Integration Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "core",
+      "description": "Vehicle discovery, registration, identity management, and universal integration framework",
+      "engineIds": ["eng-core-vehicle-registry", "eng-core-universal-integration"],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.1-001", "req-2.1-002", "req-2.1-004", "req-2.1-006"],
+      "status": "planned",
+      "generationBatch": 2
+    },
+    {
+      "documentId": "doc-core-02",
+      "filename": "core-02-protocol-adapters.json",
+      "title": "Protocol Adapter & Capability Discovery Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "core",
+      "description": "Protocol abstraction layer, multi-controller compatibility, and capability discovery",
+      "engineIds": [
+        "eng-core-protocol-adapter", "eng-core-multi-controller",
+        "eng-core-capability-discovery"
+      ],
+      "dependsOn": ["doc-master-02", "doc-core-01"],
+      "requirementIds": ["req-2.1-003", "req-2.1-005", "req-2.1-007", "req-2.1-008", "req-2.1-009"],
+      "status": "planned",
+      "generationBatch": 2
+    },
+    {
+      "documentId": "doc-core-03",
+      "filename": "core-03-telemetry-normalization.json",
+      "title": "Telemetry Ingestion & State Normalization Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "core",
+      "description": "Telemetry processing pipeline and vehicle state normalization into common data model",
+      "engineIds": ["eng-core-telemetry-ingestion", "eng-core-vehicle-state"],
+      "dependsOn": ["doc-master-02", "doc-core-02"],
+      "requirementIds": ["req-2.1-006", "req-2.15-002", "req-2.15-003"],
+      "status": "planned",
+      "generationBatch": 2
+    },
+    {
+      "documentId": "doc-core-04",
+      "filename": "core-04-api-gateway-events.json",
+      "title": "API Gateway & Event Processing Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "core",
+      "description": "Real-time gateway, event bus, schema management, and internal API contracts",
+      "engineIds": [
+        "eng-core-api-gateway", "eng-core-event-processing",
+        "eng-core-schema-management"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-GA-004", "req-GA-005"],
+      "status": "planned",
+      "generationBatch": 2
+    },
+    {
+      "documentId": "doc-core-05",
+      "filename": "core-05-integration-external.json",
+      "title": "Plugin Framework & External Integration Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "core",
+      "description": "Extension SDK, plugin lifecycle, external service integration boundaries",
+      "engineIds": ["eng-core-plugin-extension", "eng-core-external-integration"],
+      "dependsOn": ["doc-master-02", "doc-core-04"],
+      "requirementIds": ["req-2.18-001", "req-2.18-002", "req-2.18-003", "req-GA-002", "req-GA-012"],
+      "status": "planned",
+      "generationBatch": 2
+    },
+    {
+      "documentId": "doc-comm-01",
+      "filename": "comm-01-transport-connectivity.json",
+      "title": "Transport & Connectivity Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "comm",
+      "description": "Universal transport layer, session management, and remote connectivity",
+      "engineIds": ["eng-comm-transport", "eng-comm-remote-session"],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.2-001", "req-2.2-003"],
+      "status": "planned",
+      "generationBatch": 3
+    },
+    {
+      "documentId": "doc-comm-02",
+      "filename": "comm-02-multi-network.json",
+      "title": "Multi-Network & Routing Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "comm",
+      "description": "Multi-network communication, routing, and path management",
+      "engineIds": ["eng-comm-multi-network", "eng-comm-routing"],
+      "dependsOn": ["doc-master-02", "doc-comm-01"],
+      "requirementIds": ["req-2.2-002", "req-2.2-008", "req-2.2-009"],
+      "status": "planned",
+      "generationBatch": 3
+    },
+    {
+      "documentId": "doc-comm-03",
+      "filename": "comm-03-link-monitoring.json",
+      "title": "Link Monitoring & Network Diagnostics Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "comm",
+      "description": "Network diagnostics, link quality analysis, bandwidth monitoring, and topology visualization",
+      "engineIds": [
+        "eng-comm-network-diagnostics", "eng-comm-link-quality",
+        "eng-comm-bandwidth-analysis", "eng-comm-network-topology"
+      ],
+      "dependsOn": ["doc-master-02", "doc-comm-01"],
+      "requirementIds": ["req-2.2-004", "req-2.2-005", "req-2.2-006", "req-2.2-007", "req-2.2-015"],
+      "status": "planned",
+      "generationBatch": 3
+    },
+    {
+      "documentId": "doc-comm-04",
+      "filename": "comm-04-secure-comms.json",
+      "title": "Secure Communications Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "comm",
+      "description": "Encryption, certificate management, and secure transport configuration",
+      "engineIds": ["eng-comm-secure-comms"],
+      "dependsOn": ["doc-master-02", "doc-comm-01"],
+      "requirementIds": ["req-2.2-014", "req-2.12-006", "req-2.12-007"],
+      "status": "planned",
+      "generationBatch": 3
+    },
+    {
+      "documentId": "doc-comm-05",
+      "filename": "comm-05-offline-sync.json",
+      "title": "Offline Operation & Synchronization Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "comm",
+      "description": "Offline capabilities, data queuing, reconnection sync, and conflict resolution",
+      "engineIds": ["eng-comm-offline-sync", "eng-comm-connection-recovery"],
+      "dependsOn": ["doc-master-02", "doc-comm-01"],
+      "requirementIds": ["req-2.14-001", "req-2.14-002", "req-2.14-006", "req-2.14-007", "req-GA-010"],
+      "status": "planned",
+      "generationBatch": 3
+    },
+    {
+      "documentId": "doc-cop-01",
+      "filename": "cop-01-operational-picture.json",
+      "title": "Common Operational Picture Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "cop",
+      "description": "COP engine, operational data fusion, and unified visualization",
+      "engineIds": ["eng-cop-core", "eng-cop-data-fusion-viz", "eng-cop-vehicle-tracks"],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.3-001", "req-2.3-002", "req-2.3-003", "req-2.3-008"],
+      "status": "planned",
+      "generationBatch": 4
+    },
+    {
+      "documentId": "doc-cop-02",
+      "filename": "cop-02-map-layers.json",
+      "title": "Map Layers & Visualization Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "cop",
+      "description": "Geospatial visualization, multi-layer map management, and configurable overlays",
+      "engineIds": ["eng-cop-geospatial-viz", "eng-cop-map-layers", "eng-cop-configurable-overlays"],
+      "dependsOn": ["doc-master-02", "doc-cop-01"],
+      "requirementIds": ["req-2.3-010", "req-2.3-011", "req-2.3-012"],
+      "status": "planned",
+      "generationBatch": 4
+    },
+    {
+      "documentId": "doc-cop-03",
+      "filename": "cop-03-geospatial-terrain.json",
+      "title": "Geospatial Data & Terrain Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "cop",
+      "description": "Terrain, elevation, environmental mapping, geospatial data integration, and offline maps",
+      "engineIds": ["eng-cop-terrain", "eng-cop-geospatial-data", "eng-cop-offline-maps"],
+      "dependsOn": ["doc-master-02", "doc-cop-01"],
+      "requirementIds": ["req-2.3-006", "req-2.3-016"],
+      "status": "planned",
+      "generationBatch": 4
+    },
+    {
+      "documentId": "doc-cop-04",
+      "filename": "cop-04-geofence-replay.json",
+      "title": "Geofence, Obstacles & Historical Replay Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "cop",
+      "description": "Geofence management, dynamic obstacles, and historical playback timeline",
+      "engineIds": ["eng-cop-geofence", "eng-cop-dynamic-obstacles", "eng-cop-historical-playback"],
+      "dependsOn": ["doc-master-02", "doc-cop-01"],
+      "requirementIds": ["req-2.3-004", "req-2.3-015"],
+      "status": "planned",
+      "generationBatch": 4
+    },
+    {
+      "documentId": "doc-plan-01",
+      "filename": "plan-01-centralized.json",
+      "title": "Centralized Path Planning Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "plan",
+      "description": "Centralized fleet-level route generation, global planning, and cost functions",
+      "engineIds": ["eng-plan-centralized", "eng-plan-global-route", "eng-plan-cost-function"],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.4-001", "req-2.4-009"],
+      "status": "planned",
+      "generationBatch": 4
+    },
+    {
+      "documentId": "doc-plan-02",
+      "filename": "plan-02-decentralized.json",
+      "title": "Decentralized Path Planning Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "plan",
+      "description": "Decentralized local planning, replanning, and reactive obstacle avoidance",
+      "engineIds": ["eng-plan-decentralized", "eng-plan-local-replan", "eng-plan-reactive-avoidance"],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.4-002", "req-2.4-005", "req-2.4-013"],
+      "status": "planned",
+      "generationBatch": 4
+    },
+    {
+      "documentId": "doc-plan-03",
+      "filename": "plan-03-hybrid-planning.json",
+      "title": "Hybrid Planning & Validation Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "plan",
+      "description": "Hybrid global-local planning, feasibility validation, terrain traversability, and energy-aware routing",
+      "engineIds": [
+        "eng-plan-hybrid", "eng-plan-feasibility",
+        "eng-plan-terrain-traversability", "eng-plan-energy-aware"
+      ],
+      "dependsOn": ["doc-master-02", "doc-plan-01", "doc-plan-02"],
+      "requirementIds": ["req-2.4-003", "req-2.4-004", "req-2.4-012"],
+      "status": "planned",
+      "generationBatch": 4
+    },
+    {
+      "documentId": "doc-plan-04",
+      "filename": "plan-04-motion-models.json",
+      "title": "Vehicle Motion Models & Navigation Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "plan",
+      "description": "Vehicle-specific motion/navigation models, constraints, and planner algorithm selection",
+      "engineIds": [
+        "eng-plan-motion-model", "eng-plan-nav-constraints",
+        "eng-plan-plugin-algorithm", "eng-plan-trajectory-analysis"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.5-001", "req-2.5-003", "req-2.5-012", "req-2.5-013"],
+      "status": "planned",
+      "generationBatch": 4
+    },
+    {
+      "documentId": "doc-plan-05",
+      "filename": "plan-05-deconfliction-coordination.json",
+      "title": "Multi-Vehicle Coordination & Deconfliction Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "plan",
+      "description": "Multi-vehicle path coordination, deconfliction, and fleet optimization",
+      "engineIds": [
+        "eng-plan-multi-vehicle-coord", "eng-plan-deconfliction",
+        "eng-plan-fleet-optimization"
+      ],
+      "dependsOn": ["doc-master-02", "doc-plan-01"],
+      "requirementIds": ["req-2.4-014", "req-2.4-015", "req-2.4-016"],
+      "status": "planned",
+      "generationBatch": 4
+    },
+    {
+      "documentId": "doc-ops-01",
+      "filename": "ops-01-vehicle-operations.json",
+      "title": "Vehicle Operations & Command Control Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "ops",
+      "description": "Unified vehicle operations, command & control, and manual control",
+      "engineIds": [
+        "eng-ops-unified", "eng-ops-command-control",
+        "eng-ops-manual-control"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.8-001", "req-2.8-002", "req-2.8-013"],
+      "status": "planned",
+      "generationBatch": 5
+    },
+    {
+      "documentId": "doc-ops-02",
+      "filename": "ops-02-mission-planning.json",
+      "title": "Mission Planning & Execution Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "ops",
+      "description": "Mission planning, validation, execution lifecycle, versioning, and monitoring",
+      "engineIds": [
+        "eng-ops-mission-planning", "eng-ops-mission-validation",
+        "eng-ops-mission-execution", "eng-ops-mission-versioning",
+        "eng-ops-mission-monitoring"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.7-001", "req-2.7-006", "req-2.7-010"],
+      "status": "planned",
+      "generationBatch": 5
+    },
+    {
+      "documentId": "doc-ops-03",
+      "filename": "ops-03-preflight-config.json",
+      "title": "Vehicle Configuration & Preflight Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "ops",
+      "description": "Vehicle parameters, configuration management, and preflight readiness checks",
+      "engineIds": [
+        "eng-ops-vehicle-config", "eng-ops-preflight",
+        "eng-ops-health-assessment"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.10-001", "req-2.10-010", "req-2.10-017"],
+      "status": "planned",
+      "generationBatch": 5
+    },
+    {
+      "documentId": "doc-ops-04",
+      "filename": "ops-04-fleet-management.json",
+      "title": "Fleet Management & Task Coordination Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "ops",
+      "description": "Multi-vehicle fleet management, task coordination, and mission allocation",
+      "engineIds": [
+        "eng-ops-fleet-management", "eng-ops-task-coordination",
+        "eng-ops-nav-geospatial"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.9-001", "req-2.9-006", "req-2.9-009"],
+      "status": "planned",
+      "generationBatch": 5
+    },
+    {
+      "documentId": "doc-ops-05",
+      "filename": "ops-05-recovery-reconciliation.json",
+      "title": "Vehicle Recovery & State Reconciliation Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "ops",
+      "description": "Vehicle recovery, command acknowledgement/tracking, and state reconciliation",
+      "engineIds": [
+        "eng-ops-vehicle-recovery", "eng-ops-command-validation",
+        "eng-ops-command-tracking"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.8-006", "req-2.8-008", "req-2.17-005"],
+      "status": "planned",
+      "generationBatch": 5
+    },
+    {
+      "documentId": "doc-sensor-01",
+      "filename": "sensor-01-integration-fov.json",
+      "title": "Sensor Integration & FOV Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "sensor",
+      "description": "Sensor discovery, registration, FOV computation, and pose/calibration management",
+      "engineIds": [
+        "eng-sensor-integration", "eng-sensor-fov",
+        "eng-sensor-pose-calibration"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.6-001", "req-2.6-005", "req-2.6-004"],
+      "status": "planned",
+      "generationBatch": 5
+    },
+    {
+      "documentId": "doc-sensor-02",
+      "filename": "sensor-02-coverage-analysis.json",
+      "title": "Sensor Coverage & Visibility Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "sensor",
+      "description": "Coverage analysis, visibility, blind-spot detection, and camera frustum computation",
+      "engineIds": [
+        "eng-sensor-coverage", "eng-sensor-camera-frustum",
+        "eng-sensor-blind-spot"
+      ],
+      "dependsOn": ["doc-master-02", "doc-sensor-01"],
+      "requirementIds": ["req-2.6-009", "req-2.6-010", "req-2.6-011"],
+      "status": "planned",
+      "generationBatch": 5
+    },
+    {
+      "documentId": "doc-sensor-03",
+      "filename": "sensor-03-fusion-observations.json",
+      "title": "Sensor Fusion & Observation Management Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "sensor",
+      "description": "Multi-sensor fusion, observation management, data quality, and coverage-oriented planning",
+      "engineIds": [
+        "eng-sensor-fusion", "eng-sensor-observations",
+        "eng-sensor-data-quality", "eng-sensor-coverage-planning"
+      ],
+      "dependsOn": ["doc-master-02", "doc-sensor-01"],
+      "requirementIds": ["req-2.6-012", "req-2.6-013", "req-2.6-015"],
+      "status": "planned",
+      "generationBatch": 5
+    },
+    {
+      "documentId": "doc-payload-01",
+      "filename": "payload-01-camera-video-media.json",
+      "title": "Payload, Camera, Video & Media Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "payload",
+      "description": "Payload management, camera/gimbal control, video streaming, recording, and media storage",
+      "engineIds": [
+        "eng-payload-management", "eng-payload-camera",
+        "eng-payload-gimbal", "eng-payload-video-streaming",
+        "eng-payload-recording", "eng-payload-media-storage",
+        "eng-payload-telemetry", "eng-payload-media-metadata",
+        "eng-payload-review"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.11-001", "req-2.11-005", "req-2.11-008"],
+      "status": "planned",
+      "generationBatch": 5
+    },
+    {
+      "documentId": "doc-sec-01",
+      "filename": "sec-01-auth-access.json",
+      "title": "Authentication & Access Control Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "sec",
+      "description": "Identity, authentication, RBAC, authorization, and credential management",
+      "engineIds": [
+        "eng-sec-authentication", "eng-sec-rbac",
+        "eng-sec-authorization", "eng-sec-credentials"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.12-001", "req-2.12-002", "req-2.12-003"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-sec-02",
+      "filename": "sec-02-safety-interlocks.json",
+      "title": "Safety Policy & Interlocks Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "sec",
+      "description": "Safety policies, interlocks, operational risk enforcement, and command validation safety gates",
+      "engineIds": [
+        "eng-sec-safety-policy", "eng-sec-operational-risk"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.8-004", "req-GA-007"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-sec-03",
+      "filename": "sec-03-fault-recovery.json",
+      "title": "Fault Detection & Recovery Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "sec",
+      "description": "Fault detection/isolation, retry/timeout/recovery, watchdog, and command uncertainty",
+      "engineIds": [
+        "eng-sec-fault-detection", "eng-sec-retry-recovery",
+        "eng-sec-watchdog", "eng-sec-command-uncertainty"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.17-001", "req-2.17-003", "req-2.17-008"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-sec-04",
+      "filename": "sec-04-audit-incident.json",
+      "title": "Audit & Incident Management Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "sec",
+      "description": "Audit trails, accountability, error classification, incident management, and data integrity",
+      "engineIds": [
+        "eng-sec-audit", "eng-sec-error-classification",
+        "eng-sec-data-integrity", "eng-sec-config-security"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.12-010", "req-2.12-014", "req-GA-014"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-data-01",
+      "filename": "data-01-persistence.json",
+      "title": "Persistence & Database Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "data",
+      "description": "Database management, synchronization, conflict resolution, and data retention",
+      "engineIds": [
+        "eng-data-persistence", "eng-data-sync-resolution",
+        "eng-data-retention"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.15-001", "req-2.15-015"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-data-02",
+      "filename": "data-02-telemetry-history.json",
+      "title": "Telemetry History & Time-Series Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "data",
+      "description": "Telemetry history storage, time-series analysis, and data provenance",
+      "engineIds": [
+        "eng-data-telemetry-history", "eng-data-provenance"
+      ],
+      "dependsOn": ["doc-master-02", "doc-data-01"],
+      "requirementIds": ["req-2.15-002", "req-2.15-004"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-data-03",
+      "filename": "data-03-logging-events.json",
+      "title": "Logging & Event History Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "data",
+      "description": "Structured logging, event history, operational replay, and timeline management",
+      "engineIds": [
+        "eng-data-logging", "eng-data-replay"
+      ],
+      "dependsOn": ["doc-master-02", "doc-data-01"],
+      "requirementIds": ["req-2.15-005", "req-2.15-007"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-data-04",
+      "filename": "data-04-health-alerts.json",
+      "title": "System Health, Alerts & Diagnostics Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "data",
+      "description": "System health dashboard, alerts, diagnostics, incident evidence, and backup/restore",
+      "engineIds": [
+        "eng-data-health-dashboard", "eng-data-alerts",
+        "eng-data-diagnostics", "eng-data-incident-evidence",
+        "eng-data-backup"
+      ],
+      "dependsOn": ["doc-master-02", "doc-data-01"],
+      "requirementIds": ["req-2.16-001", "req-2.16-006", "req-2.16-013"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-cust-01",
+      "filename": "cust-01-plugins-sdk.json",
+      "title": "Plugin Framework & SDK Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "cust",
+      "description": "Plugin lifecycle, permissions, integration SDK, and developer extension interfaces",
+      "engineIds": [
+        "eng-cust-plugin-lifecycle", "eng-cust-sdk",
+        "eng-cust-operator-preferences"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.18-001", "req-2.18-003", "req-2.18-012"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-cust-02",
+      "filename": "cust-02-automation-rules.json",
+      "title": "Workflow Automation & Rules Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "cust",
+      "description": "Workflow automation, rules engine, scripting, scenarios, and mission templates",
+      "engineIds": [
+        "eng-cust-workflow-automation", "eng-cust-rules-engine",
+        "eng-cust-scripting", "eng-cust-scenarios",
+        "eng-cust-mission-templates", "eng-cust-task-execution",
+        "eng-cust-dashboards", "eng-cust-alert-config"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.19-001", "req-2.19-002", "req-2.19-003"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-cust-03",
+      "filename": "cust-03-ai-diagnostics.json",
+      "title": "AI Diagnostics & Intelligence Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "cust",
+      "description": "AI-assisted diagnostics, anomaly detection, predictive health, and geospatial intelligence",
+      "engineIds": [
+        "eng-cust-ai-diagnostics", "eng-cust-anomaly-detection",
+        "eng-cust-geospatial-analysis"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.19-005", "req-2.19-007", "req-2.19-010"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-test-01",
+      "filename": "test-01-simulation.json",
+      "title": "Simulation & HIL Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "test",
+      "description": "SITL integration, HIL testing, and protocol conformance testing",
+      "engineIds": [
+        "eng-test-sitl", "eng-test-hil",
+        "eng-test-protocol-conformance"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.20-001", "req-2.20-002", "req-2.20-006"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-test-02",
+      "filename": "test-02-automated-testing.json",
+      "title": "Automated Testing & Fault Injection Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "test",
+      "description": "Automated testing, regression, fault injection, and resilience testing",
+      "engineIds": [
+        "eng-test-automated", "eng-test-fault-injection"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.20-017", "req-2.20-010"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-test-03",
+      "filename": "test-03-platform-deployment.json",
+      "title": "Platform, Performance & Release Architecture",
+      "diagramType": "subsystem-architecture",
+      "category": "test",
+      "description": "Cross-platform testing, performance profiling, release validation, and compatibility matrix",
+      "engineIds": [
+        "eng-test-cross-platform", "eng-test-performance",
+        "eng-test-latency", "eng-test-route-benchmark",
+        "eng-test-sensor-validation", "eng-test-fleet-scenarios",
+        "eng-test-release-validation", "eng-test-config-migration",
+        "eng-test-compat-matrix"
+      ],
+      "dependsOn": ["doc-master-02"],
+      "requirementIds": ["req-2.20-016", "req-2.20-019", "req-2.20-020"],
+      "status": "planned",
+      "generationBatch": 6
+    },
+    {
+      "documentId": "doc-flow-01",
+      "filename": "flow-01-vehicle-discovery.json",
+      "title": "Vehicle Discovery & Connection Flow",
+      "diagramType": "end-to-end-flow",
+      "category": "flow",
+      "description": "End-to-end flow: vehicle discovery, identification, protocol detection, registration, and connection",
+      "engineIds": [
+        "eng-core-vehicle-registry", "eng-core-protocol-adapter",
+        "eng-core-capability-discovery", "eng-comm-transport"
+      ],
+      "dependsOn": ["doc-core-01", "doc-core-02", "doc-comm-01"],
+      "requirementIds": ["req-2.1-001", "req-2.1-005", "req-2.1-010"],
+      "status": "planned",
+      "generationBatch": 7
+    },
+    {
+      "documentId": "doc-flow-02",
+      "filename": "flow-02-telemetry-ingestion.json",
+      "title": "Telemetry Ingestion & Visualization Flow",
+      "diagramType": "end-to-end-flow",
+      "category": "flow",
+      "description": "End-to-end flow: raw telemetry reception through normalization, event processing, persistence, and COP display",
+      "engineIds": [
+        "eng-core-telemetry-ingestion", "eng-core-vehicle-state",
+        "eng-core-event-processing", "eng-cop-core",
+        "eng-data-telemetry-history"
+      ],
+      "dependsOn": ["doc-core-03", "doc-core-04", "doc-cop-01", "doc-data-02"],
+      "requirementIds": ["req-2.1-006", "req-2.3-002", "req-2.15-002"],
+      "status": "planned",
+      "generationBatch": 7
+    },
+    {
+      "documentId": "doc-flow-03",
+      "filename": "flow-03-command-dispatch.json",
+      "title": "Command Dispatch & Outcome Verification Flow",
+      "diagramType": "end-to-end-flow",
+      "category": "flow",
+      "description": "End-to-end flow: operator command through validation, safety checks, dispatch, acknowledgement, and outcome verification",
+      "engineIds": [
+        "eng-ops-command-control", "eng-ops-command-validation",
+        "eng-ops-command-tracking", "eng-sec-safety-policy",
+        "eng-sec-authorization", "eng-sec-command-uncertainty"
+      ],
+      "dependsOn": ["doc-ops-01", "doc-ops-05", "doc-sec-02"],
+      "requirementIds": ["req-2.8-003", "req-2.8-006", "req-2.8-008", "req-GA-007", "req-GA-020"],
+      "status": "planned",
+      "generationBatch": 7
+    },
+    {
+      "documentId": "doc-flow-04",
+      "filename": "flow-04-mission-lifecycle.json",
+      "title": "Mission Creation to Execution Flow",
+      "diagramType": "end-to-end-flow",
+      "category": "flow",
+      "description": "End-to-end flow: mission creation, validation, approval, dispatch, execution monitoring, completion/failure",
+      "engineIds": [
+        "eng-ops-mission-planning", "eng-ops-mission-validation",
+        "eng-ops-mission-execution", "eng-ops-mission-monitoring",
+        "eng-ops-mission-versioning"
+      ],
+      "dependsOn": ["doc-ops-02"],
+      "requirementIds": ["req-2.7-001", "req-2.7-006", "req-2.7-010", "req-2.7-014"],
+      "status": "planned",
+      "generationBatch": 7
+    },
+    {
+      "documentId": "doc-flow-05",
+      "filename": "flow-05-path-planning.json",
+      "title": "Path Planning Flow (Centralized, Decentralized, Hybrid)",
+      "diagramType": "end-to-end-flow",
+      "category": "flow",
+      "description": "End-to-end flow: planning request through algorithm selection, route generation, validation, approval, and dispatch",
+      "engineIds": [
+        "eng-plan-centralized", "eng-plan-decentralized",
+        "eng-plan-hybrid", "eng-plan-feasibility",
+        "eng-plan-plugin-algorithm"
+      ],
+      "dependsOn": ["doc-plan-01", "doc-plan-02", "doc-plan-03"],
+      "requirementIds": ["req-2.4-001", "req-2.4-002", "req-2.4-003", "req-2.4-008", "req-2.4-020"],
+      "status": "planned",
+      "generationBatch": 7
+    },
+    {
+      "documentId": "doc-flow-06",
+      "filename": "flow-06-multi-vehicle-coord.json",
+      "title": "Multi-Vehicle Task Allocation & Coordination Flow",
+      "diagramType": "end-to-end-flow",
+      "category": "flow",
+      "description": "End-to-end flow: task allocation, fleet optimization, route deconfliction, and coordinated execution",
+      "engineIds": [
+        "eng-ops-fleet-management", "eng-ops-task-coordination",
+        "eng-plan-fleet-optimization", "eng-plan-deconfliction",
+        "eng-plan-multi-vehicle-coord"
+      ],
+      "dependsOn": ["doc-ops-04", "doc-plan-05"],
+      "requirementIds": ["req-2.9-006", "req-2.9-009", "req-2.4-016"],
+      "status": "planned",
+      "generationBatch": 7
+    },
+    {
+      "documentId": "doc-flow-07",
+      "filename": "flow-07-sensor-fusion.json",
+      "title": "Sensor Ingestion & Fusion Flow",
+      "diagramType": "end-to-end-flow",
+      "category": "flow",
+      "description": "End-to-end flow: sensor data ingestion, timestamp alignment, FOV calculation, fusion, and observation registration",
+      "engineIds": [
+        "eng-sensor-integration", "eng-sensor-fov",
+        "eng-sensor-fusion", "eng-sensor-observations",
+        "eng-sensor-data-quality"
+      ],
+      "dependsOn": ["doc-sensor-01", "doc-sensor-03"],
+      "requirementIds": ["req-2.6-001", "req-2.6-012", "req-2.6-013"],
+      "status": "planned",
+      "generationBatch": 7
+    },
+    {
+      "documentId": "doc-flow-08",
+      "filename": "flow-08-fault-recovery.json",
+      "title": "Fault Detection, Isolation & Recovery Flow",
+      "diagramType": "end-to-end-flow",
+      "category": "flow",
+      "description": "End-to-end flow: fault detection, classification, isolation, retry/recovery, state reconciliation, and incident record",
+      "engineIds": [
+        "eng-sec-fault-detection", "eng-sec-retry-recovery",
+        "eng-sec-watchdog", "eng-sec-error-classification",
+        "eng-sec-command-uncertainty", "eng-ops-vehicle-recovery"
+      ],
+      "dependsOn": ["doc-sec-03", "doc-ops-05"],
+      "requirementIds": ["req-2.17-001", "req-2.17-004", "req-2.17-008", "req-2.17-013"],
+      "status": "planned",
+      "generationBatch": 7
+    },
+    {
+      "documentId": "doc-flow-09",
+      "filename": "flow-09-offline-reconnect.json",
+      "title": "Offline Operation & Reconnection Flow",
+      "diagramType": "end-to-end-flow",
+      "category": "flow",
+      "description": "End-to-end flow: connectivity loss detection, offline operation, queue management, reconnection, sync, and conflict resolution",
+      "engineIds": [
+        "eng-comm-offline-sync", "eng-comm-connection-recovery",
+        "eng-data-sync-resolution"
+      ],
+      "dependsOn": ["doc-comm-05", "doc-data-01"],
+      "requirementIds": ["req-2.14-001", "req-2.14-007", "req-2.14-008"],
+      "status": "planned",
+      "generationBatch": 7
+    },
+{
+      "documentId": "doc-flow-10",
+      "filename": "flow-10-auth-config.json",
+      "title": "Authentication & Configuration Change Flow",
+      "diagramType": "end-to-end-flow",
+      "category": "flow",
+      "description": "End-to-end flow: operator authentication, session establishment, configuration change request, validation, and verification",
+      "engineIds": [
+        "eng-sec-authentication", "eng-sec-rbac",
+        "eng-sec-authorization", "eng-sec-config-security",
+        "eng-ops-vehicle-config"
+      ],
+      "dependsOn": ["doc-sec-01", "doc-ops-03"],
+      "requirementIds": ["req-2.12-001", "req-2.12-003", "req-2.12-015"],
+      "status": "planned",
+      "generationBatch": 7
+    },
+    {
+      "documentId": "doc-er-01",
+      "filename": "er-01-vehicle-mission.json",
+      "title": "Vehicle & Mission Entity-Relationship Diagram",
+      "diagramType": "entity-relationship",
+      "category": "er",
+      "description": "Logical ER model for vehicles, controllers, missions, waypoints, tasks, commands, and execution records",
+      "engineIds": [],
+      "dependsOn": ["doc-core-01", "doc-ops-02"],
+      "requirementIds": ["req-2.1-001", "req-2.7-001", "req-2.8-010"],
+      "status": "planned",
+      "generationBatch": 8
+    },
+    {
+      "documentId": "doc-er-02",
+      "filename": "er-02-telemetry-sensor.json",
+      "title": "Telemetry & Sensor Entity-Relationship Diagram",
+      "diagramType": "entity-relationship",
+      "category": "er",
+      "description": "Logical ER model for telemetry records, sensors, payloads, video streams, media assets, and observations",
+      "engineIds": [],
+      "dependsOn": ["doc-core-03", "doc-sensor-01", "doc-payload-01"],
+      "requirementIds": ["req-2.6-001", "req-2.11-001", "req-2.15-002"],
+      "status": "planned",
+      "generationBatch": 8
+    },
+    {
+      "documentId": "doc-er-03",
+      "filename": "er-03-security-audit.json",
+      "title": "Security & Audit Entity-Relationship Diagram",
+      "diagramType": "entity-relationship",
+      "category": "er",
+      "description": "Logical ER model for operators, roles, permissions, events, incidents, audit records, and configuration profiles",
+      "engineIds": [],
+      "dependsOn": ["doc-sec-01", "doc-sec-04"],
+      "requirementIds": ["req-2.12-001", "req-2.12-010", "req-2.15-006"],
+      "status": "planned",
+      "generationBatch": 8
+    }
+  ],
+  "canonicalEngineIndex": {},
+  "requirementIndex": {},
+  "unresolvedDecisions": [
+    {
+      "id": "UD-001",
+      "description": "No specific communication protocols (MAVLink, STANAG 4586, etc.) are named in requirements. Adapters modeled as abstract.",
+      "impact": "Protocol adapter nodes will reference configurable protocol interfaces, not specific protocols.",
+      "resolution": "Pending requirements clarification"
+    },
+    {
+      "id": "UD-002",
+      "description": "No specific database technology prescribed.",
+      "impact": "Persistence modeled as logical data stores (relational, time-series, object). No vendor binding.",
+      "resolution": "Architecture decision record needed"
+    },
+    {
+      "id": "UD-003",
+      "description": "Deployment topology (monolith vs microservices vs hybrid) not mandated.",
+      "impact": "Deployment diagram shows logical process groups. Service boundaries are architectural, not deployment-prescriptive.",
+      "resolution": "Architecture decision record needed"
+    },
+    {
+      "id": "UD-004",
+      "description": "Vehicle categories beyond UAV/UGV mentioned but not enumerated.",
+      "impact": "Vehicle type registry modeled as extensible. Only UAV and UGV are confirmed categories.",
+      "resolution": "Pending requirements clarification"
+    },
+    {
+      "id": "UD-005",
+      "description": "AI/ML model specifics absent. No training, inference, or model management requirements.",
+      "impact": "AI engines modeled as abstract service interfaces with mandatory human-in-the-loop safety boundary.",
+      "resolution": "Pending requirements clarification"
+    },
+    {
+      "id": "UD-006",
+      "description": "Cloud vs on-premise vs edge deployment not specified.",
+      "impact": "Architecture modeled as local-first with optional remote sync boundary.",
+      "resolution": "Architecture decision record needed"
+    },
+    {
+      "id": "UD-007",
+      "description": "Video codec and streaming protocol details absent.",
+      "impact": "Video streaming modeled with abstract stream lifecycle. Protocol fields null.",
+      "resolution": "Pending requirements clarification"
+    },
+    {
+      "id": "UD-008",
+      "description": "Specific coordinate reference systems not named (WGS84 implied).",
+      "impact": "CRS transformation capability modeled. No specific CRS hard-coded.",
+      "resolution": "Architecture decision record needed"
+    },
+    {
+      "id": "UD-009",
+      "description": "Scale targets (max vehicles, telemetry rate, concurrent streams) not quantified.",
+      "impact": "Performance monitoring references configurable thresholds without specific numbers.",
+      "resolution": "Performance requirements needed"
+    },
+    {
+      "id": "UD-010",
+      "description": "Multi-operator concurrency model not detailed.",
+      "impact": "Conflict detection/resolution modeled as abstract capability. No specific algorithm prescribed.",
+      "resolution": "Architecture decision record needed"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-001",
+      "description": "The GCS is primarily a local-first application. Cloud/remote connectivity is optional and additive.",
+      "justification": "Requirements mandate offline operation and local command authority."
+    },
+    {
+      "id": "AS-002",
+      "description": "All engines are logical components. Deployment as separate processes is not assumed unless requirements specify it.",
+      "justification": "Requirements state clear service boundaries but do not mandate microservice deployment."
+    },
+    {
+      "id": "AS-003",
+      "description": "Vehicle types are extensible through the adapter and capability framework. The architecture does not hard-code vehicle categories.",
+      "justification": "Requirements specify support for additional unmanned-system categories through validated integrations."
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 1,
+    "generatedBy": "GRAVITAS Architecture Generator",
+    "validationStatus": "pending"
+  }
+}

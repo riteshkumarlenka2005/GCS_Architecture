@@ -1,0 +1,2536 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-master-03",
+  "title": "GRAVITAS GCS Deployment Architecture",
+  "diagramType": "deployment-architecture",
+  "description": "Runtime deployment topology showing the GRAVITAS GCS as a local-first application with logical process groups, platform abstraction layer, physical interfaces, local data stores, and optional remote synchronization boundary. Does not prescribe specific deployment technologies or mandate separate OS processes for each engine.",
+  "category": "master",
+  "coordinateSystem": {
+    "unit": "canvas-unit",
+    "origin": "top-left",
+    "yAxis": "down"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.55
+  },
+  "groups": [
+    {
+      "id": "grp-deploy-gcs",
+      "label": "GRAVITAS GCS — Local Deployment Boundary",
+      "description": "Primary deployment boundary. The GCS operates as a local-first application. All critical functionality is available without mandatory cloud connectivity.",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#1e293b",
+        "borderColor": "#475569",
+        "borderWidth": 3,
+        "borderStyle": "solid",
+        "opacity": 0.12,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 18,
+        "textColor": "#94a3b8"
+      },
+      "bounds": {
+        "x": 250,
+        "y": 30,
+        "width": 1200,
+        "height": 750
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [],
+        "notes": "Local-first per req-2.14 and AS-001. Process boundaries within are logical, not deployment-prescriptive (AS-002, UD-003)."
+      }
+    },
+    {
+      "id": "grp-deploy-app",
+      "label": "Application Services",
+      "description": "Logical process groups for application-layer services. May be deployed as a single process or multiple processes depending on platform and scale requirements.",
+      "parentGroupId": "grp-deploy-gcs",
+      "style": {
+        "backgroundColor": "#334155",
+        "borderColor": "#64748b",
+        "borderWidth": 1,
+        "borderStyle": "dashed",
+        "opacity": 0.1,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#94a3b8"
+      },
+      "bounds": {
+        "x": 290,
+        "y": 80,
+        "width": 1120,
+        "height": 330
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-vehicle-registry",
+          "eng-core-protocol-adapter",
+          "eng-core-telemetry-ingestion",
+          "eng-core-event-processing",
+          "eng-core-api-gateway",
+          "eng-cop-core",
+          "eng-ops-command-control",
+          "eng-ops-mission-execution",
+          "eng-plan-centralized",
+          "eng-comm-transport",
+          "eng-cust-workflow-automation",
+          "eng-cust-ai-diagnostics"
+        ],
+        "notes": "Internal grouping is logical. Deployment as separate processes is a platform decision (UD-003)."
+      }
+    },
+    {
+      "id": "grp-deploy-platform",
+      "label": "Platform Abstraction Layer",
+      "description": "Cross-platform runtime, OS compatibility, device interface abstraction, dependency management, and performance monitoring. Isolates domain logic from OS-specific code.",
+      "parentGroupId": "grp-deploy-gcs",
+      "style": {
+        "backgroundColor": "#475569",
+        "borderColor": "#64748b",
+        "borderWidth": 1,
+        "borderStyle": "solid",
+        "opacity": 0.1,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#cbd5e1"
+      },
+      "bounds": {
+        "x": 290,
+        "y": 460,
+        "width": 1120,
+        "height": 160
+      },
+      "metadata": {
+        "category": "test",
+        "engineIds": [
+          "eng-plat-runtime",
+          "eng-plat-os-compat",
+          "eng-plat-os-diagnostics",
+          "eng-plat-dependency-detection",
+          "eng-plat-device-interface",
+          "eng-plat-app-performance",
+          "eng-plat-resource-monitoring",
+          "eng-plat-config-environment",
+          "eng-plat-update-management",
+          "eng-plat-deployment"
+        ],
+        "notes": "All 10 cross-platform engines (Category C) reside here. Enables req-GA-011."
+      }
+    },
+    {
+      "id": "grp-deploy-hw",
+      "label": "Physical Interfaces",
+      "description": "Hardware and network interfaces through which the GCS communicates with vehicles and external systems. Managed by the platform abstraction layer.",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#1e293b",
+        "borderColor": "#334155",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.1,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#64748b"
+      },
+      "bounds": {
+        "x": 250,
+        "y": 870,
+        "width": 700,
+        "height": 160
+      },
+      "metadata": {
+        "category": "comm",
+        "engineIds": [],
+        "notes": "Physical layer. Interface types from req-2.2-001: serial, USB, TCP, UDP, radio, IP-based."
+      }
+    },
+    {
+      "id": "grp-deploy-storage",
+      "label": "Local Data Stores",
+      "description": "Local persistence for application data, telemetry history, media assets, and configuration. Technology-agnostic per UD-002.",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#0d9488",
+        "borderColor": "#0f766e",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.08,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#5eead4"
+      },
+      "bounds": {
+        "x": 1550,
+        "y": 30,
+        "width": 400,
+        "height": 380
+      },
+      "metadata": {
+        "category": "data",
+        "engineIds": [
+          "eng-data-persistence",
+          "eng-data-telemetry-history",
+          "eng-data-logging",
+          "eng-payload-media-storage"
+        ],
+        "notes": "Local-first storage. No specific database technology prescribed (UD-002)."
+      }
+    },
+    {
+      "id": "grp-deploy-remote",
+      "label": "Optional Remote Services",
+      "description": "Remote synchronization targets and external services. Not required for core GCS operation. Connectivity is optional per req-2.14.",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#a855f7",
+        "borderColor": "#9333ea",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.06,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#d8b4fe"
+      },
+      "bounds": {
+        "x": 1550,
+        "y": 480,
+        "width": 400,
+        "height": 260
+      },
+      "metadata": {
+        "category": "comm",
+        "engineIds": [
+          "eng-comm-offline-sync",
+          "eng-data-sync-resolution"
+        ],
+        "notes": "Dashed boundary indicates optional. GCS must function fully without remote connectivity (AS-001, req-2.14-001)."
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-deploy-operator",
+      "type": "actor",
+      "label": "Operator",
+      "description": "Human operator interacting with the GCS through the local UI. May have role-based access restrictions.",
+      "groupId": null,
+      "position": {
+        "x": 30,
+        "y": 180
+      },
+      "size": {
+        "width": 160,
+        "height": 80
+      },
+      "style": {
+        "shape": "rectangle",
+        "category": "actor",
+        "color": "#f8fafc",
+        "borderColor": "#94a3b8",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#1e293b"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-operator-out-ui",
+          "direction": "out",
+          "side": "right",
+          "label": "UI Interaction",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.12-001",
+          "req-2.8-002"
+        ],
+        "responsibilities": [
+          "Operate vehicles",
+          "Plan missions",
+          "Monitor fleet",
+          "Respond to alerts"
+        ],
+        "inputs": [],
+        "outputs": [
+          "Commands",
+          "Mission plans",
+          "Configuration changes"
+        ],
+        "constraints": [
+          "Subject to RBAC and authorization"
+        ],
+        "failureModes": [],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Multiple concurrent operators supported per req-2.9-011"
+      }
+    },
+    {
+      "id": "node-deploy-vehicles",
+      "type": "vehicle",
+      "label": "Connected Vehicles",
+      "description": "UAVs, UGVs, and other unmanned systems connected through physical communication links. Vehicle types are extensible.",
+      "groupId": null,
+      "position": {
+        "x": 30,
+        "y": 600
+      },
+      "size": {
+        "width": 160,
+        "height": 100
+      },
+      "style": {
+        "shape": "hexagon",
+        "category": "vehicle",
+        "color": "#22d3ee",
+        "borderColor": "#06b6d4",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-vehicles-out-telemetry",
+          "direction": "out",
+          "side": "right",
+          "label": "Telemetry & State",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-deploy-vehicles-in-commands",
+          "direction": "in",
+          "side": "right",
+          "label": "Commands & Missions",
+          "dataType": "command",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.1-001",
+          "req-2.1-002",
+          "req-2.1-004"
+        ],
+        "responsibilities": [
+          "Execute missions",
+          "Report telemetry",
+          "Acknowledge commands"
+        ],
+        "inputs": [
+          "Commands and mission uploads from GCS"
+        ],
+        "outputs": [
+          "Telemetry, status, acknowledgements"
+        ],
+        "constraints": [
+          "Vehicle categories extensible (UD-004)"
+        ],
+        "failureModes": [
+          "Link loss",
+          "Vehicle failure",
+          "Incompatible firmware"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-003"
+        ],
+        "unresolvedDecisions": [
+          "UD-004"
+        ],
+        "notes": "External systems. Not part of GCS deployment."
+      }
+    },
+    {
+      "id": "node-deploy-core-svc",
+      "type": "process",
+      "label": "Core Services",
+      "description": "Vehicle registry, protocol adapters, telemetry ingestion, event processing, API gateway, schema management, plugin framework",
+      "groupId": "grp-deploy-app",
+      "position": {
+        "x": 330,
+        "y": 130
+      },
+      "size": {
+        "width": 300,
+        "height": 90
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-core-in-comm",
+          "direction": "in",
+          "side": "left",
+          "label": "Transport Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-deploy-core-out-ui",
+          "direction": "out",
+          "side": "right",
+          "label": "State & Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-deploy-core-out-ops",
+          "direction": "out",
+          "side": "right",
+          "label": "Vehicle API",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-deploy-core-out-data",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Telemetry & Events",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-deploy-core-in-platform",
+          "direction": "in",
+          "side": "bottom",
+          "label": "Runtime Services",
+          "dataType": "data",
+          "position": {
+            "offset": 0.8
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-GA-001",
+          "req-GA-003",
+          "req-GA-004",
+          "req-GA-005"
+        ],
+        "responsibilities": [
+          "Vehicle discovery, registration, and identity",
+          "Protocol abstraction and adapter lifecycle",
+          "Telemetry ingestion and normalization",
+          "Real-time event processing and distribution",
+          "Internal API gateway and schema validation"
+        ],
+        "inputs": [
+          "Raw transport data",
+          "Platform runtime services"
+        ],
+        "outputs": [
+          "Normalized state to UI",
+          "Vehicle API to ops",
+          "Telemetry to storage"
+        ],
+        "constraints": [
+          "Protocol logic isolated (req-GA-003)",
+          "Adapter failure isolated (req-GA-008)"
+        ],
+        "failureModes": [
+          "Adapter crash (contained)",
+          "Event bus backpressure"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-002"
+        ],
+        "unresolvedDecisions": [
+          "UD-001",
+          "UD-003"
+        ],
+        "notes": "Maps to subsystem A (doc-core-01 through doc-core-05)"
+      }
+    },
+    {
+      "id": "node-deploy-ui-svc",
+      "type": "process",
+      "label": "UI & COP Rendering",
+      "description": "Common Operational Picture, map visualization, sensor overlays, dashboards, operator interaction surfaces",
+      "groupId": "grp-deploy-app",
+      "position": {
+        "x": 700,
+        "y": 130
+      },
+      "size": {
+        "width": 280,
+        "height": 90
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "cop",
+        "color": "#10b981",
+        "borderColor": "#059669",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-ui-in-core",
+          "direction": "in",
+          "side": "left",
+          "label": "State & Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-deploy-ui-in-ops",
+          "direction": "in",
+          "side": "left",
+          "label": "Mission Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-deploy-ui-in-operator",
+          "direction": "in",
+          "side": "left",
+          "label": "User Input",
+          "dataType": "data",
+          "position": {
+            "offset": 0.1
+          }
+        },
+        {
+          "id": "port-deploy-ui-out-media",
+          "direction": "out",
+          "side": "right",
+          "label": "Media Access",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.3-001",
+          "req-2.3-010",
+          "req-2.3-011",
+          "req-2.3-014"
+        ],
+        "responsibilities": [
+          "Render the common operational picture",
+          "Display vehicle positions, tracks, and status",
+          "Manage map layers, overlays, and symbols",
+          "Present sensor FOV and coverage overlays",
+          "Support custom dashboards and workspaces"
+        ],
+        "inputs": [
+          "Normalized state from core",
+          "Mission data from ops",
+          "Operator input"
+        ],
+        "outputs": [
+          "Media access requests to storage"
+        ],
+        "constraints": [
+          "Must distinguish live vs stale vs estimated data (req-2.3-014)"
+        ],
+        "failureModes": [
+          "Rendering performance degradation",
+          "Map tile unavailability"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-008"
+        ],
+        "notes": "Maps to subsystems D (COP) and parts of K (dashboards)"
+      }
+    },
+    {
+      "id": "node-deploy-comm-svc",
+      "type": "process",
+      "label": "Communication Services",
+      "description": "Transport management, multi-network routing, link monitoring, encryption, failover, offline queue management",
+      "groupId": "grp-deploy-app",
+      "position": {
+        "x": 330,
+        "y": 280
+      },
+      "size": {
+        "width": 300,
+        "height": 90
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#06b6d4",
+        "borderColor": "#0891b2",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-comm-out-core",
+          "direction": "out",
+          "side": "top",
+          "label": "Transport Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-deploy-comm-out-hw",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Link I/O",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-deploy-comm-in-hw",
+          "direction": "in",
+          "side": "bottom",
+          "label": "Raw Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-deploy-comm-out-remote",
+          "direction": "out",
+          "side": "right",
+          "label": "Sync Data",
+          "dataType": "sync",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.2-001",
+          "req-2.2-003",
+          "req-2.2-004",
+          "req-2.2-014",
+          "req-GA-009",
+          "req-GA-010"
+        ],
+        "responsibilities": [
+          "Manage serial, USB, TCP, UDP, radio, IP transports",
+          "Monitor link quality, latency, bandwidth, packet loss",
+          "Handle connection recovery and failover",
+          "Encrypt communications and validate certificates",
+          "Queue data during offline operation"
+        ],
+        "inputs": [
+          "Raw data from physical interfaces"
+        ],
+        "outputs": [
+          "Transport data to core",
+          "Sync data to remote (when available)"
+        ],
+        "constraints": [
+          "Must define failure behavior for every critical path (req-GA-009)"
+        ],
+        "failureModes": [
+          "Total link loss",
+          "Partial connectivity",
+          "Stale connection"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-001"
+        ],
+        "notes": "Maps to subsystem B (doc-comm-01 through doc-comm-05)"
+      }
+    },
+    {
+      "id": "node-deploy-ops-svc",
+      "type": "process",
+      "label": "Operations & Planning",
+      "description": "Command & control, mission lifecycle, fleet management, path planning, vehicle configuration, preflight, recovery",
+      "groupId": "grp-deploy-app",
+      "position": {
+        "x": 700,
+        "y": 280
+      },
+      "size": {
+        "width": 280,
+        "height": 90
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "ops",
+        "color": "#8b5cf6",
+        "borderColor": "#7c3aed",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-ops-in-core",
+          "direction": "in",
+          "side": "left",
+          "label": "Vehicle API",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-deploy-ops-out-ui",
+          "direction": "out",
+          "side": "top",
+          "label": "Mission Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-deploy-ops-out-data",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Records",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-deploy-ops-out-comm",
+          "direction": "out",
+          "side": "left",
+          "label": "Commands",
+          "dataType": "command",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-GA-007",
+          "req-GA-020",
+          "req-2.7-001",
+          "req-2.8-001"
+        ],
+        "responsibilities": [
+          "Command validation, dispatch, and outcome tracking",
+          "Mission planning, validation, execution, and monitoring",
+          "Fleet management and multi-vehicle coordination",
+          "Path planning (centralized, decentralized, hybrid)",
+          "Vehicle configuration and preflight readiness"
+        ],
+        "inputs": [
+          "Vehicle API from core",
+          "Operator intent from UI"
+        ],
+        "outputs": [
+          "Commands to comm layer",
+          "Mission data to UI",
+          "Records to storage"
+        ],
+        "constraints": [
+          "Every command through auth and safety (req-GA-007)",
+          "Command ≠ execution (req-GA-020)"
+        ],
+        "failureModes": [
+          "Command timeout",
+          "Mission rejection",
+          "Planning infeasibility"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Maps to subsystems E (planning) and F (operations)"
+      }
+    },
+    {
+      "id": "node-deploy-bg-svc",
+      "type": "process",
+      "label": "Background Services",
+      "description": "Workflow automation, rules engine, AI diagnostics, anomaly detection, data synchronization, scheduled tasks",
+      "groupId": "grp-deploy-app",
+      "position": {
+        "x": 1050,
+        "y": 200
+      },
+      "size": {
+        "width": 280,
+        "height": 90
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "cust",
+        "color": "#a855f7",
+        "borderColor": "#9333ea",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-bg-in-core",
+          "direction": "in",
+          "side": "left",
+          "label": "Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-deploy-bg-out-ops",
+          "direction": "out",
+          "side": "left",
+          "label": "Automated Actions",
+          "dataType": "command",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-deploy-bg-out-remote",
+          "direction": "out",
+          "side": "right",
+          "label": "Sync Requests",
+          "dataType": "sync",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.19-001",
+          "req-2.19-005",
+          "req-2.19-011",
+          "req-2.19-012"
+        ],
+        "responsibilities": [
+          "Execute workflow automation and rules",
+          "Run AI-assisted diagnostics and anomaly detection",
+          "Manage background data synchronization",
+          "Execute scheduled and event-driven tasks"
+        ],
+        "inputs": [
+          "System events from core",
+          "Operational data from storage"
+        ],
+        "outputs": [
+          "Automated actions to ops (through standard command pathway)"
+        ],
+        "constraints": [
+          "Cannot bypass authorization or safety (req-2.19-011)",
+          "AI ≠ verified measurement (req-2.19-010)"
+        ],
+        "failureModes": [
+          "Plugin crash (isolated)",
+          "AI false positive"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-005"
+        ],
+        "notes": "Maps to subsystem K (customization) and parts of J (sync)"
+      }
+    },
+    {
+      "id": "node-deploy-runtime",
+      "type": "process",
+      "label": "Cross-Platform Runtime",
+      "description": "Runtime abstraction, OS compatibility, dependency detection, device interface management, configuration environment, update management",
+      "groupId": "grp-deploy-platform",
+      "position": {
+        "x": 330,
+        "y": 500
+      },
+      "size": {
+        "width": 520,
+        "height": 80
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "test",
+        "color": "#64748b",
+        "borderColor": "#475569",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-runtime-out-app",
+          "direction": "out",
+          "side": "top",
+          "label": "Platform Services",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-deploy-runtime-in-os",
+          "direction": "in",
+          "side": "bottom",
+          "label": "OS Interfaces",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-deploy-runtime-in-devices",
+          "direction": "in",
+          "side": "bottom",
+          "label": "Device APIs",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-GA-011",
+          "req-2.13-001",
+          "req-2.13-002",
+          "req-2.13-003",
+          "req-2.13-005"
+        ],
+        "responsibilities": [
+          "Abstract OS-specific interfaces from domain logic",
+          "Detect OS version, runtime dependencies, environment",
+          "Manage device interfaces and driver compatibility",
+          "Handle application configuration across environments",
+          "Manage application updates and version migration"
+        ],
+        "inputs": [
+          "OS interfaces",
+          "Device APIs"
+        ],
+        "outputs": [
+          "Platform services to all application services above"
+        ],
+        "constraints": [
+          "Domain logic must be OS-independent (req-GA-011)"
+        ],
+        "failureModes": [
+          "Missing dependency",
+          "Incompatible runtime",
+          "Failed update"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "All 10 Category C engines. Detailed in doc-master-03 and doc-test-03."
+      }
+    },
+    {
+      "id": "node-deploy-monitor",
+      "type": "process",
+      "label": "Performance & Resource Monitor",
+      "description": "Application performance monitoring, resource utilization, process health, watchdog services",
+      "groupId": "grp-deploy-platform",
+      "position": {
+        "x": 900,
+        "y": 500
+      },
+      "size": {
+        "width": 460,
+        "height": 80
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "data",
+        "color": "#14b8a6",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-monitor-in-app",
+          "direction": "in",
+          "side": "top",
+          "label": "Metrics",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-deploy-monitor-out-data",
+          "direction": "out",
+          "side": "right",
+          "label": "Health Data",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.13-006",
+          "req-2.13-007",
+          "req-2.21-001",
+          "req-2.21-004"
+        ],
+        "responsibilities": [
+          "Monitor CPU, memory, storage, network utilization",
+          "Detect crashes, service failures, resource exhaustion",
+          "Measure end-to-end latency and throughput",
+          "Provide watchdog and service health checks"
+        ],
+        "inputs": [
+          "Performance metrics from all application services"
+        ],
+        "outputs": [
+          "Health data to storage and alerting"
+        ],
+        "constraints": [
+          "Monitoring must not degrade application performance"
+        ],
+        "failureModes": [
+          "Monitor overhead",
+          "False positive alerts"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-009"
+        ],
+        "notes": "eng-plat-app-performance, eng-plat-resource-monitoring, eng-sec-watchdog"
+      }
+    },
+    {
+      "id": "node-deploy-host-os",
+      "type": "system",
+      "label": "Host Operating System",
+      "description": "The validated target operating system providing kernel services, file system, networking stack, and device driver framework. Specific OS not prescribed.",
+      "groupId": null,
+      "position": {
+        "x": 400,
+        "y": 700
+      },
+      "size": {
+        "width": 600,
+        "height": 60
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#334155",
+        "borderColor": "#1e293b",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#cbd5e1"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-os-out-runtime",
+          "direction": "out",
+          "side": "top",
+          "label": "OS Services",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-deploy-os-out-hw",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Hardware Access",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.13-001",
+          "req-2.13-002",
+          "req-2.13-014"
+        ],
+        "responsibilities": [
+          "Provide kernel and system services",
+          "Manage file system and storage access",
+          "Provide networking stack",
+          "Load device drivers"
+        ],
+        "inputs": [],
+        "outputs": [
+          "OS services to platform layer",
+          "Hardware access to physical interfaces"
+        ],
+        "constraints": [
+          "Only explicitly validated OS versions supported (req-2.13-014)"
+        ],
+        "failureModes": [
+          "OS crash",
+          "Driver failure",
+          "Resource exhaustion"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "External to GCS. Compatibility tested per req-2.13 and doc-test-03."
+      }
+    },
+    {
+      "id": "node-deploy-net-if",
+      "type": "adapter",
+      "label": "Network Interfaces",
+      "description": "TCP, UDP, and IP-based network interfaces for vehicle communication, remote connectivity, and local networking",
+      "groupId": "grp-deploy-hw",
+      "position": {
+        "x": 300,
+        "y": 910
+      },
+      "size": {
+        "width": 280,
+        "height": 70
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#0891b2",
+        "borderColor": "#0e7490",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-net-in-comm",
+          "direction": "in",
+          "side": "top",
+          "label": "Link I/O",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-deploy-net-out-vehicles",
+          "direction": "out",
+          "side": "left",
+          "label": "Network Traffic",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.2-001"
+        ],
+        "responsibilities": [
+          "Provide TCP, UDP, IP-based transport interfaces"
+        ],
+        "inputs": [
+          "Link I/O from communication services"
+        ],
+        "outputs": [
+          "Network traffic to/from vehicles and remote services"
+        ],
+        "constraints": [],
+        "failureModes": [
+          "Network interface down",
+          "IP conflict"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Managed by platform device interface layer"
+      }
+    },
+    {
+      "id": "node-deploy-device-if",
+      "type": "adapter",
+      "label": "Serial / USB / Radio Interfaces",
+      "description": "Serial port, USB, and radio communication interfaces for direct vehicle and controller connections",
+      "groupId": "grp-deploy-hw",
+      "position": {
+        "x": 620,
+        "y": 910
+      },
+      "size": {
+        "width": 280,
+        "height": 70
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#0891b2",
+        "borderColor": "#0e7490",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-device-in-comm",
+          "direction": "in",
+          "side": "top",
+          "label": "Link I/O",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-deploy-device-out-vehicles",
+          "direction": "out",
+          "side": "left",
+          "label": "Device Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.2-001",
+          "req-2.13-005"
+        ],
+        "responsibilities": [
+          "Provide serial and USB transport interfaces",
+          "Provide radio communication interfaces",
+          "Handle device enumeration and driver binding"
+        ],
+        "inputs": [
+          "Link I/O from communication services"
+        ],
+        "outputs": [
+          "Device data to/from vehicles and controllers"
+        ],
+        "constraints": [
+          "Driver availability depends on host OS (req-2.13-005)"
+        ],
+        "failureModes": [
+          "Device not found",
+          "Driver missing",
+          "Port busy"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Managed by eng-plat-device-interface"
+      }
+    },
+    {
+      "id": "node-deploy-local-db",
+      "type": "database",
+      "label": "Application Data Store",
+      "description": "Local persistence for vehicle records, missions, configuration, telemetry history, logs, events, and audit records. Technology-agnostic.",
+      "groupId": "grp-deploy-storage",
+      "position": {
+        "x": 1590,
+        "y": 90
+      },
+      "size": {
+        "width": 320,
+        "height": 90
+      },
+      "style": {
+        "shape": "cylinder",
+        "category": "storage",
+        "color": "#0d9488",
+        "borderColor": "#0f766e",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-db-in-core",
+          "direction": "in",
+          "side": "left",
+          "label": "Telemetry & Events",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-deploy-db-in-ops",
+          "direction": "in",
+          "side": "left",
+          "label": "Mission & Command Records",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-deploy-db-out-sync",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Sync Data",
+          "dataType": "sync",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.15-001",
+          "req-2.15-002",
+          "req-2.15-003",
+          "req-2.15-013",
+          "req-2.15-015"
+        ],
+        "responsibilities": [
+          "Persist vehicle records, missions, configuration",
+          "Store structured telemetry and time-series data",
+          "Maintain logs, events, and audit records",
+          "Support backup and restoration",
+          "Apply data retention policies"
+        ],
+        "inputs": [
+          "Telemetry and events from core",
+          "Records from operations"
+        ],
+        "outputs": [
+          "Sync data to remote (when available)"
+        ],
+        "constraints": [
+          "Must preserve provenance and timestamps (req-GA-013)",
+          "Technology not prescribed (UD-002)"
+        ],
+        "failureModes": [
+          "Storage exhaustion",
+          "Data corruption",
+          "Write failure"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-002"
+        ],
+        "notes": "Logical data store. Physical implementation is a deployment decision."
+      }
+    },
+    {
+      "id": "node-deploy-local-media",
+      "type": "database",
+      "label": "Media & Object Store",
+      "description": "Local storage for video recordings, images, sensor captures, and associated metadata. Separate from structured data.",
+      "groupId": "grp-deploy-storage",
+      "position": {
+        "x": 1590,
+        "y": 250
+      },
+      "size": {
+        "width": 320,
+        "height": 90
+      },
+      "style": {
+        "shape": "cylinder",
+        "category": "storage",
+        "color": "#0d9488",
+        "borderColor": "#0f766e",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-media-in-payload",
+          "direction": "in",
+          "side": "left",
+          "label": "Media Files",
+          "dataType": "stream",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.11-008",
+          "req-2.11-010",
+          "req-2.11-011",
+          "req-2.15-016"
+        ],
+        "responsibilities": [
+          "Store video recordings, snapshots, and captures",
+          "Associate media with vehicles, missions, timestamps",
+          "Manage media lifecycle and retention",
+          "Handle expired media and stale references"
+        ],
+        "inputs": [
+          "Media files from payload services"
+        ],
+        "outputs": [],
+        "constraints": [
+          "Media tracked separately from references (req-2.11-011)"
+        ],
+        "failureModes": [
+          "Storage exhaustion",
+          "File corruption",
+          "Orphaned references"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "eng-payload-media-storage. Separate from structured data store."
+      }
+    },
+    {
+      "id": "node-deploy-remote-sync",
+      "type": "external-system",
+      "label": "Remote Sync Endpoint",
+      "description": "Optional remote service for data synchronization, backup, and multi-site coordination. Not required for local GCS operation.",
+      "groupId": "grp-deploy-remote",
+      "position": {
+        "x": 1600,
+        "y": 540
+      },
+      "size": {
+        "width": 300,
+        "height": 80
+      },
+      "style": {
+        "shape": "cloud",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#334155",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#cbd5e1"
+      },
+      "ports": [
+        {
+          "id": "port-deploy-remote-in-sync",
+          "direction": "in",
+          "side": "left",
+          "label": "Sync Data",
+          "dataType": "sync",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.14-001",
+          "req-2.14-006",
+          "req-2.14-007",
+          "req-2.14-012"
+        ],
+        "responsibilities": [
+          "Receive synchronized operational data",
+          "Provide remote backup and restore",
+          "Support multi-site data coordination"
+        ],
+        "inputs": [
+          "Sync data from local GCS when connectivity available"
+        ],
+        "outputs": [],
+        "constraints": [
+          "Not required for core operation (req-2.14-001)",
+          "Conflict resolution required (req-2.14-008)"
+        ],
+        "failureModes": [
+          "Connectivity unavailable (expected)",
+          "Sync conflict"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-001",
+          "AS-006"
+        ],
+        "unresolvedDecisions": [
+          "UD-006",
+          "UD-010"
+        ],
+        "notes": "Optional. GCS operates fully offline. Dashed group boundary indicates optionality."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-deploy-operator-to-ui",
+      "source": "node-deploy-operator",
+      "target": "node-deploy-ui-svc",
+      "sourcePort": "port-deploy-operator-out-ui",
+      "targetPort": "port-deploy-ui-in-operator",
+      "semantic": {
+        "type": "control-flow",
+        "direction": "unidirectional",
+        "label": "Operator Interaction",
+        "protocol": null,
+        "dataType": "User input: commands, mission edits, configuration changes, map interactions",
+        "trigger": "User action",
+        "synchronous": true,
+        "description": "Operator interacts with the GCS through the local UI. All actions subject to authentication and authorization.",
+        "requirementIds": [
+          "req-2.8-002",
+          "req-2.12-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#94a3b8",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-vehicles-to-comm",
+      "source": "node-deploy-vehicles",
+      "target": "node-deploy-comm-svc",
+      "sourcePort": "port-deploy-vehicles-out-telemetry",
+      "targetPort": "port-deploy-comm-in-hw",
+      "semantic": {
+        "type": "telemetry",
+        "direction": "unidirectional",
+        "label": "Vehicle Telemetry (via physical links)",
+        "protocol": null,
+        "dataType": "Raw telemetry, status, acknowledgements from vehicles through serial, USB, radio, or network",
+        "trigger": "Continuous and event-driven",
+        "synchronous": false,
+        "description": "Vehicles transmit telemetry through physical communication links. Data arrives at the GCS through hardware interfaces and is delivered to communication services.",
+        "requirementIds": [
+          "req-2.2-001",
+          "req-2.1-006"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [
+          {
+            "x": 190,
+            "y": 630
+          },
+          {
+            "x": 190,
+            "y": 945
+          },
+          {
+            "x": 480,
+            "y": 945
+          },
+          {
+            "x": 480,
+            "y": 370
+          }
+        ],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-comm-to-vehicles",
+      "source": "node-deploy-comm-svc",
+      "target": "node-deploy-vehicles",
+      "sourcePort": "port-deploy-comm-out-hw",
+      "targetPort": "port-deploy-vehicles-in-commands",
+      "semantic": {
+        "type": "command",
+        "direction": "unidirectional",
+        "label": "Commands to Vehicles (via physical links)",
+        "protocol": null,
+        "dataType": "Commands, mission uploads, configuration changes to vehicles",
+        "trigger": "Operator command or automated action",
+        "synchronous": null,
+        "description": "Commands are dispatched through communication services to physical interfaces and transmitted to vehicles. Acknowledgement tracking is separate.",
+        "requirementIds": [
+          "req-2.8-006",
+          "req-2.2-017"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [
+          {
+            "x": 420,
+            "y": 370
+          },
+          {
+            "x": 420,
+            "y": 960
+          },
+          {
+            "x": 190,
+            "y": 960
+          },
+          {
+            "x": 190,
+            "y": 660
+          }
+        ],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-comm-to-core",
+      "source": "node-deploy-comm-svc",
+      "target": "node-deploy-core-svc",
+      "sourcePort": "port-deploy-comm-out-core",
+      "targetPort": "port-deploy-core-in-comm",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Transport Data → Core",
+        "protocol": null,
+        "dataType": "Raw vehicle data received through communication transports for protocol decoding",
+        "trigger": "Continuous",
+        "synchronous": false,
+        "description": "Communication services deliver raw transport data to core services for protocol-specific decoding and normalization.",
+        "requirementIds": [
+          "req-GA-003",
+          "req-GA-009"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-core-to-ui",
+      "source": "node-deploy-core-svc",
+      "target": "node-deploy-ui-svc",
+      "sourcePort": "port-deploy-core-out-ui",
+      "targetPort": "port-deploy-ui-in-core",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "State & Events → UI",
+        "protocol": null,
+        "dataType": "Normalized vehicle state, position updates, status changes, system events",
+        "trigger": "State change events",
+        "synchronous": false,
+        "description": "Core services push normalized state and events to the UI for real-time COP rendering.",
+        "requirementIds": [
+          "req-2.3-001",
+          "req-2.3-002",
+          "req-2.21-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-core-to-ops",
+      "source": "node-deploy-core-svc",
+      "target": "node-deploy-ops-svc",
+      "sourcePort": "port-deploy-core-out-ops",
+      "targetPort": "port-deploy-ops-in-core",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Vehicle API → Operations",
+        "protocol": null,
+        "dataType": "Vehicle registry, adapter interfaces, capability profiles, command APIs",
+        "trigger": "Service discovery and on-demand",
+        "synchronous": null,
+        "description": "Core provides vehicle services API to operations for command dispatch and mission management.",
+        "requirementIds": [
+          "req-GA-001",
+          "req-GA-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-core-to-storage",
+      "source": "node-deploy-core-svc",
+      "target": "node-deploy-local-db",
+      "sourcePort": "port-deploy-core-out-data",
+      "targetPort": "port-deploy-db-in-core",
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Telemetry & Events → Storage",
+        "protocol": null,
+        "dataType": "Normalized telemetry records, system events, vehicle state history",
+        "trigger": "Telemetry ingestion and event processing",
+        "synchronous": false,
+        "description": "Core services persist telemetry and events to local data store for history, replay, and analysis.",
+        "requirementIds": [
+          "req-2.15-001",
+          "req-2.15-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [
+          {
+            "x": 480,
+            "y": 220
+          },
+          {
+            "x": 1520,
+            "y": 220
+          },
+          {
+            "x": 1520,
+            "y": 120
+          }
+        ],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-ops-to-storage",
+      "source": "node-deploy-ops-svc",
+      "target": "node-deploy-local-db",
+      "sourcePort": "port-deploy-ops-out-data",
+      "targetPort": "port-deploy-db-in-ops",
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Records → Storage",
+        "protocol": null,
+        "dataType": "Mission records, command history, execution outcomes, preflight results, planning records",
+        "trigger": "Mission lifecycle and command completion events",
+        "synchronous": false,
+        "description": "Operations persists mission, command, and planning records to local data store.",
+        "requirementIds": [
+          "req-2.15-001",
+          "req-2.8-010",
+          "req-2.7-012"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [
+          {
+            "x": 840,
+            "y": 370
+          },
+          {
+            "x": 1520,
+            "y": 370
+          },
+          {
+            "x": 1520,
+            "y": 150
+          }
+        ],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-ui-to-media",
+      "source": "node-deploy-ui-svc",
+      "target": "node-deploy-local-media",
+      "sourcePort": "port-deploy-ui-out-media",
+      "targetPort": "port-deploy-media-in-payload",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "bidirectional",
+        "label": "Media Access",
+        "protocol": null,
+        "dataType": "Video streams, recordings, snapshots, media metadata",
+        "trigger": "Live view request, recording, playback",
+        "synchronous": null,
+        "description": "UI accesses media storage for live video display, recording playback, and image review.",
+        "requirementIds": [
+          "req-2.11-005",
+          "req-2.11-012"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [
+          {
+            "x": 980,
+            "y": 175
+          },
+          {
+            "x": 1520,
+            "y": 175
+          },
+          {
+            "x": 1520,
+            "y": 295
+          }
+        ],
+        "cornerRadius": 8,
+        "stroke": "#f43f5e",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-app-to-platform",
+      "source": "node-deploy-core-svc",
+      "target": "node-deploy-runtime",
+      "sourcePort": "port-deploy-core-in-platform",
+      "targetPort": "port-deploy-runtime-out-app",
+      "semantic": {
+        "type": "dependency",
+        "direction": "unidirectional",
+        "label": "Platform Services",
+        "protocol": null,
+        "dataType": "OS abstraction, runtime services, device interfaces, environment configuration",
+        "trigger": "Application startup and runtime",
+        "synchronous": null,
+        "description": "All application services depend on the platform abstraction layer for OS-independent runtime services. Representative edge from core; applies to all app services.",
+        "requirementIds": [
+          "req-GA-011",
+          "req-2.13-001"
+        ],
+        "assumptions": [
+          "Single representative edge. All app services consume platform services."
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#475569",
+        "strokeWidth": 1,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 0
+      }
+    },
+    {
+      "id": "edge-deploy-platform-to-os",
+      "source": "node-deploy-runtime",
+      "target": "node-deploy-host-os",
+      "sourcePort": "port-deploy-runtime-in-os",
+      "targetPort": "port-deploy-os-out-runtime",
+      "semantic": {
+        "type": "dependency",
+        "direction": "unidirectional",
+        "label": "OS Interfaces",
+        "protocol": null,
+        "dataType": "System calls, file I/O, network sockets, device enumeration",
+        "trigger": "Runtime operation",
+        "synchronous": null,
+        "description": "Platform abstraction layer consumes OS-specific interfaces and presents them as OS-independent services to the application.",
+        "requirementIds": [
+          "req-GA-011",
+          "req-2.13-001",
+          "req-2.13-003"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#475569",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-os-to-hw",
+      "source": "node-deploy-host-os",
+      "target": "node-deploy-net-if",
+      "sourcePort": "port-deploy-os-out-hw",
+      "targetPort": null,
+      "semantic": {
+        "type": "dependency",
+        "direction": "unidirectional",
+        "label": "Hardware Access",
+        "protocol": null,
+        "dataType": "Device driver interfaces, network stack, serial port access",
+        "trigger": "Device initialization and I/O",
+        "synchronous": null,
+        "description": "Host OS provides hardware access to physical interfaces through device drivers. Representative edge to network; also applies to serial/USB/radio.",
+        "requirementIds": [
+          "req-2.13-005",
+          "req-2.2-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#334155",
+        "strokeWidth": 1,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 0
+      }
+    },
+    {
+      "id": "edge-deploy-bg-to-remote",
+      "source": "node-deploy-bg-svc",
+      "target": "node-deploy-remote-sync",
+      "sourcePort": "port-deploy-bg-out-remote",
+      "targetPort": "port-deploy-remote-in-sync",
+      "semantic": {
+        "type": "sync-flow",
+        "direction": "bidirectional",
+        "label": "Data Synchronization (optional)",
+        "protocol": null,
+        "dataType": "Queued operational data, conflict resolution messages, sync state",
+        "trigger": "Connectivity restoration and periodic sync",
+        "synchronous": null,
+        "description": "Background services synchronize local data with remote endpoint when connectivity is available. Offline queue is maintained during disconnection.",
+        "requirementIds": [
+          "req-2.14-006",
+          "req-2.14-007",
+          "req-2.14-008"
+        ],
+        "assumptions": [
+          "AS-001"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [
+          {
+            "x": 1330,
+            "y": 245
+          },
+          {
+            "x": 1480,
+            "y": 245
+          },
+          {
+            "x": 1480,
+            "y": 580
+          }
+        ],
+        "cornerRadius": 8,
+        "stroke": "#a855f7",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-deploy-monitor-to-storage",
+      "source": "node-deploy-monitor",
+      "target": "node-deploy-local-db",
+      "sourcePort": "port-deploy-monitor-out-data",
+      "targetPort": null,
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Health Metrics → Storage",
+        "protocol": null,
+        "dataType": "Performance metrics, resource utilization, watchdog events, health status",
+        "trigger": "Periodic measurement and threshold events",
+        "synchronous": false,
+        "description": "Performance and resource monitor persists health metrics to local storage for diagnostics and alerting.",
+        "requirementIds": [
+          "req-2.21-004",
+          "req-2.16-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [
+          {
+            "x": 1360,
+            "y": 540
+          },
+          {
+            "x": 1480,
+            "y": 540
+          },
+          {
+            "x": 1480,
+            "y": 135
+          }
+        ],
+        "cornerRadius": 8,
+        "stroke": "#14b8a6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    }
+  ],
+  "externalReferences": [],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-plat-runtime",
+      "localNodeId": "node-deploy-runtime",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-test-03",
+          "nodeId": "node-test03-runtime"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plat-os-compat",
+      "localNodeId": "node-deploy-runtime",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-test-03",
+          "nodeId": "node-test03-os-compat"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-data-persistence",
+      "localNodeId": "node-deploy-local-db",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-data-01",
+          "nodeId": "node-data01-persistence"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-comm-offline-sync",
+      "localNodeId": "node-deploy-remote-sync",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-comm-05",
+          "nodeId": "node-comm05-offline-sync"
+        },
+        {
+          "documentId": "doc-flow-09",
+          "nodeId": "node-flow09-offline-sync"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-telemetry-ingestion",
+      "localNodeId": "node-deploy-core-svc",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-core-03",
+          "nodeId": "node-core03-telemetry"
+        },
+        {
+          "documentId": "doc-flow-02",
+          "nodeId": "node-flow02-telemetry"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-command-control",
+      "localNodeId": "node-deploy-ops-svc",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-ops-01",
+          "nodeId": "node-ops01-command-control"
+        },
+        {
+          "documentId": "doc-flow-03",
+          "nodeId": "node-flow03-command-control"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-cop-core",
+      "localNodeId": "node-deploy-ui-svc",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-cop-01",
+          "nodeId": "node-cop01-core"
+        },
+        {
+          "documentId": "doc-flow-02",
+          "nodeId": "node-flow02-cop"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-comm-transport",
+      "localNodeId": "node-deploy-comm-svc",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-comm-01",
+          "nodeId": "node-comm01-transport"
+        },
+        {
+          "documentId": "doc-flow-01",
+          "nodeId": "node-flow01-transport"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-payload-media-storage",
+      "localNodeId": "node-deploy-local-media",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-payload-01",
+          "nodeId": "node-payload01-media-storage"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plat-app-performance",
+      "localNodeId": "node-deploy-monitor",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-test-03",
+          "nodeId": "node-test03-performance"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-sec-watchdog",
+      "localNodeId": "node-deploy-monitor",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-sec-03",
+          "nodeId": "node-sec03-watchdog"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-cust-workflow-automation",
+      "localNodeId": "node-deploy-bg-svc",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-cust-02",
+          "nodeId": "node-cust02-workflow"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-data-sync-resolution",
+      "localNodeId": "node-deploy-remote-sync",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-data-01",
+          "nodeId": "node-data01-sync-resolution"
+        },
+        {
+          "documentId": "doc-flow-09",
+          "nodeId": "node-flow09-sync-resolution"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-GA-011",
+      "description": "Cross-platform separation: domain logic independent of OS-specific interfaces",
+      "coveredByNodes": [
+        "node-deploy-runtime",
+        "node-deploy-host-os"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-app-to-platform",
+        "edge-deploy-platform-to-os"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "inspection",
+      "notes": "Platform abstraction layer isolates all application services from OS-specific code."
+    },
+    {
+      "requirementId": "req-2.13-001",
+      "description": "Separate core domain logic from OS-specific functionality",
+      "coveredByNodes": [
+        "node-deploy-runtime",
+        "node-deploy-core-svc"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-app-to-platform"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "inspection",
+      "notes": "Core services consume platform services through abstraction layer."
+    },
+    {
+      "requirementId": "req-2.13-002",
+      "description": "Support the explicitly validated target operating systems",
+      "coveredByNodes": [
+        "node-deploy-host-os",
+        "node-deploy-runtime"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-platform-to-os"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Specific OS targets not named in requirements. Compatibility matrix in doc-test-03."
+    },
+    {
+      "requirementId": "req-2.13-005",
+      "description": "Detect available interfaces, drivers and permissions",
+      "coveredByNodes": [
+        "node-deploy-runtime",
+        "node-deploy-net-if",
+        "node-deploy-device-if"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-os-to-hw"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Platform device interface engine handles driver detection and binding."
+    },
+    {
+      "requirementId": "req-2.13-014",
+      "description": "Avoid advertising compatibility with untested operating systems or environments",
+      "coveredByNodes": [
+        "node-deploy-host-os"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "inspection",
+      "notes": "Host OS node explicitly constrained to validated versions only."
+    },
+    {
+      "requirementId": "req-2.2-001",
+      "description": "Support configured serial, USB, TCP, UDP, radio and IP-based transports",
+      "coveredByNodes": [
+        "node-deploy-comm-svc",
+        "node-deploy-net-if",
+        "node-deploy-device-if"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-comm-to-vehicles",
+        "edge-deploy-vehicles-to-comm"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Physical interfaces split into network (TCP/UDP/IP) and device (serial/USB/radio) groups."
+    },
+    {
+      "requirementId": "req-2.14-001",
+      "description": "Support local GCS operation without mandatory cloud connectivity",
+      "coveredByNodes": [
+        "node-deploy-remote-sync"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-bg-to-remote"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Remote sync group has dashed boundary indicating optionality. All critical services are local."
+    },
+    {
+      "requirementId": "req-2.14-006",
+      "description": "Queue eligible records for later synchronization",
+      "coveredByNodes": [
+        "node-deploy-bg-svc",
+        "node-deploy-comm-svc"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-bg-to-remote"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Background services manage offline queue; sync occurs when connectivity returns."
+    },
+    {
+      "requirementId": "req-2.15-001",
+      "description": "Persist vehicle records, missions, settings, configuration and operational history",
+      "coveredByNodes": [
+        "node-deploy-local-db"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-core-to-storage",
+        "edge-deploy-ops-to-storage"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Local application data store receives data from core and operations."
+    },
+    {
+      "requirementId": "req-2.11-011",
+      "description": "Track stored media separately from references to media",
+      "coveredByNodes": [
+        "node-deploy-local-media",
+        "node-deploy-local-db"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "inspection",
+      "notes": "Media store is a separate node from the structured data store, reflecting physical separation."
+    },
+    {
+      "requirementId": "req-2.21-001",
+      "description": "Define measurable latency targets for telemetry, commands, events and UI updates",
+      "coveredByNodes": [
+        "node-deploy-monitor"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-monitor-to-storage"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Performance monitor measures latency. Specific targets not defined in requirements (UD-009)."
+    },
+    {
+      "requirementId": "req-2.21-004",
+      "description": "Measure CPU, memory, storage and network utilization",
+      "coveredByNodes": [
+        "node-deploy-monitor"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-monitor-to-storage"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Resource monitoring engine in platform layer."
+    },
+    {
+      "requirementId": "req-GA-009",
+      "description": "Network resilience: every critical communication path must define failure and recovery behavior",
+      "coveredByNodes": [
+        "node-deploy-comm-svc"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-vehicles-to-comm",
+        "edge-deploy-comm-to-vehicles"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Communication services node encompasses failover and recovery. Detailed in doc-comm-05."
+    },
+    {
+      "requirementId": "req-GA-010",
+      "description": "Offline resilience: locally available functionality and synchronization behavior explicitly defined",
+      "coveredByNodes": [
+        "node-deploy-bg-svc",
+        "node-deploy-remote-sync"
+      ],
+      "coveredByEdges": [
+        "edge-deploy-bg-to-remote"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Deployment topology explicitly shows local-first with optional remote sync."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-001",
+      "description": "The GCS is primarily a local-first application. Cloud/remote connectivity is optional and additive.",
+      "justification": "Requirements mandate offline operation (req-2.14) and local command authority."
+    },
+    {
+      "id": "AS-002",
+      "description": "All engines are logical components. Deployment as separate processes is not assumed unless requirements specify it.",
+      "justification": "Requirements state clear service boundaries but do not mandate microservice deployment."
+    },
+    {
+      "id": "AS-006",
+      "description": "Remote synchronization endpoint is optional. The GCS must function fully without it.",
+      "justification": "Requirements explicitly state local operation without mandatory cloud connectivity (req-2.14-001)."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-001",
+      "description": "No specific communication protocols named in requirements.",
+      "impact": "Physical interface nodes show abstract transport types (serial, USB, TCP, UDP, radio, IP) without protocol binding.",
+      "resolution": "Pending requirements clarification"
+    },
+    {
+      "id": "UD-002",
+      "description": "No specific database technology prescribed.",
+      "impact": "Data stores shown as logical cylinders without vendor or technology labels.",
+      "resolution": "Architecture decision record needed"
+    },
+    {
+      "id": "UD-003",
+      "description": "Deployment topology (monolith vs microservices vs hybrid) not mandated.",
+      "impact": "Application services group uses dashed internal boundary. Process grouping is logical, not prescriptive.",
+      "resolution": "Architecture decision record needed"
+    },
+    {
+      "id": "UD-004",
+      "description": "Vehicle categories beyond UAV/UGV mentioned but not enumerated.",
+      "impact": "Vehicle node labeled generically as 'Connected Vehicles' with extensibility note.",
+      "resolution": "Pending requirements clarification"
+    },
+    {
+      "id": "UD-005",
+      "description": "AI/ML model specifics absent.",
+      "impact": "Background services node includes AI diagnostics as an abstract capability.",
+      "resolution": "Pending requirements clarification"
+    },
+    {
+      "id": "UD-006",
+      "description": "Cloud vs on-premise vs edge deployment not specified.",
+      "impact": "Remote sync endpoint shown as optional cloud icon. No specific infrastructure prescribed.",
+      "resolution": "Architecture decision record needed"
+    },
+    {
+      "id": "UD-009",
+      "description": "Scale targets not quantified.",
+      "impact": "Performance monitor node references configurable thresholds without specific numbers.",
+      "resolution": "Performance requirements needed"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 1,
+    "createdDate": "2025-01-27T00:00:00Z",
+    "lastModified": "2025-01-27T00:00:00Z"
+  }
+}

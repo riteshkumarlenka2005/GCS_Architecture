@@ -1,0 +1,991 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-core-01",
+  "title": "Vehicle Registry & Integration Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Detailed view of the vehicle discovery, registration, identity management, and universal integration framework. Covers how vehicles are identified, registered, associated with controllers, and exposed to the rest of the GCS through a normalized vehicle model.",
+  "category": "core",
+  "coordinateSystem": {
+    "unit": "canvas-unit",
+    "origin": "top-left",
+    "yAxis": "down"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.8
+  },
+  "groups": [
+    {
+      "id": "grp-core01-registry",
+      "label": "Vehicle Registry",
+      "description": "Vehicle identity, type catalog, instance management, and lifecycle tracking",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.1,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#93c5fd"
+      },
+      "bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 600,
+        "height": 400
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-vehicle-registry"
+        ],
+        "notes": "Primary registry for all vehicle identities and types."
+      }
+    },
+    {
+      "id": "grp-core01-integration",
+      "label": "Universal Vehicle Integration",
+      "description": "Integration framework that binds vehicles to controllers, adapters, and capabilities",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.08,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#93c5fd"
+      },
+      "bounds": {
+        "x": 720,
+        "y": 50,
+        "width": 500,
+        "height": 400
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-universal-integration"
+        ],
+        "notes": "Bridges vehicle identity to protocol and capability layers."
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-core01-vehicle-registry",
+      "type": "component",
+      "label": "Vehicle Registry & Discovery",
+      "description": "Discovers, identifies, registers, connects and disconnects vehicles. Maintains the authoritative vehicle identity store.",
+      "groupId": "grp-core01-registry",
+      "position": {
+        "x": 100,
+        "y": 120
+      },
+      "size": {
+        "width": 260,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core01-reg-in-discovery",
+          "direction": "in",
+          "side": "left",
+          "label": "Discovery Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core01-reg-in-adapter",
+          "direction": "in",
+          "side": "bottom",
+          "label": "Adapter Registration",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core01-reg-out-integration",
+          "direction": "out",
+          "side": "right",
+          "label": "Vehicle Identity",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core01-reg-out-events",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Registry Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core01-reg-out-query",
+          "direction": "out",
+          "side": "right",
+          "label": "Vehicle Query API",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-vehicle-registry",
+        "requirementIds": [
+          "req-2.1-001",
+          "req-2.1-002",
+          "req-2.1-004",
+          "req-2.1-006"
+        ],
+        "responsibilities": [
+          "Discover vehicles on available communication links",
+          "Register and deregister vehicle identities",
+          "Maintain vehicle type, serial, firmware, and controller associations",
+          "Support concurrent multi-vehicle registration",
+          "Expose vehicle query API to all consumers"
+        ],
+        "inputs": [
+          "Discovery events from adapters",
+          "Adapter registration notifications"
+        ],
+        "outputs": [
+          "Vehicle identity records",
+          "Registry change events",
+          "Query API responses"
+        ],
+        "constraints": [
+          "Must support UAV, UGV, and extensible categories",
+          "Concurrent registration subject to validated capacity"
+        ],
+        "failureModes": [
+          "Duplicate registration",
+          "Stale vehicle entry",
+          "Discovery timeout"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-003"
+        ],
+        "unresolvedDecisions": [
+          "UD-004"
+        ],
+        "notes": "Canonical engine: eng-core-vehicle-registry"
+      }
+    },
+    {
+      "id": "node-core01-vehicle-catalog",
+      "type": "component",
+      "label": "Vehicle Type Catalog",
+      "description": "Maintains the catalog of known vehicle types, classes, and their default capability profiles. Extensible for new vehicle categories.",
+      "groupId": "grp-core01-registry",
+      "position": {
+        "x": 100,
+        "y": 300
+      },
+      "size": {
+        "width": 260,
+        "height": 90
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#2563eb",
+        "borderColor": "#1d4ed8",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core01-cat-out-reg",
+          "direction": "out",
+          "side": "top",
+          "label": "Type Definitions",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core01-cat-in-config",
+          "direction": "in",
+          "side": "left",
+          "label": "Type Configuration",
+          "dataType": "config",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-vehicle-registry",
+        "requirementIds": [
+          "req-2.1-002",
+          "req-2.1-013"
+        ],
+        "responsibilities": [
+          "Store vehicle type definitions (UAV, UGV, other)",
+          "Provide default capability profiles per type",
+          "Support vehicle-specific configuration profiles"
+        ],
+        "inputs": [
+          "Type configuration from operators or plugins"
+        ],
+        "outputs": [
+          "Type definitions to registry"
+        ],
+        "constraints": [
+          "Extensible without core redesign"
+        ],
+        "failureModes": [
+          "Unknown vehicle type"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-003"
+        ],
+        "unresolvedDecisions": [
+          "UD-004"
+        ],
+        "notes": "Part of eng-core-vehicle-registry. Separated for clarity."
+      }
+    },
+    {
+      "id": "node-core01-instance-mgr",
+      "type": "component",
+      "label": "Vehicle Instance Manager",
+      "description": "Manages individual vehicle instances, their connection state, session lifecycle, and concurrent multi-vehicle tracking.",
+      "groupId": "grp-core01-registry",
+      "position": {
+        "x": 400,
+        "y": 200
+      },
+      "size": {
+        "width": 220,
+        "height": 100
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core01-inst-in-reg",
+          "direction": "in",
+          "side": "left",
+          "label": "Registration",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core01-inst-out-state",
+          "direction": "out",
+          "side": "right",
+          "label": "Instance State",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core01-inst-in-conn",
+          "direction": "in",
+          "side": "bottom",
+          "label": "Connection Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core01-inst-out-integration",
+          "direction": "out",
+          "side": "right",
+          "label": "Active Instances",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-vehicle-registry",
+        "requirementIds": [
+          "req-2.1-004",
+          "req-2.9-001",
+          "req-2.9-005"
+        ],
+        "responsibilities": [
+          "Track active vehicle instances and connection state",
+          "Manage session lifecycle (connect, disconnect, reconnect)",
+          "Enforce concurrent vehicle capacity limits",
+          "Isolate per-vehicle state"
+        ],
+        "inputs": [
+          "Registration from registry",
+          "Connection events from adapters"
+        ],
+        "outputs": [
+          "Instance state to integration layer",
+          "Active instance list"
+        ],
+        "constraints": [
+          "Per-vehicle isolation mandatory (req-2.9-005)"
+        ],
+        "failureModes": [
+          "Instance leak",
+          "Stale session"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Part of eng-core-vehicle-registry."
+      }
+    },
+    {
+      "id": "node-core01-universal-integration",
+      "type": "component",
+      "label": "Universal Vehicle Integration",
+      "description": "Binds vehicle identities to protocol adapters, controllers, and capability profiles. Provides the integration framework that allows new vehicles without core redesign.",
+      "groupId": "grp-core01-integration",
+      "position": {
+        "x": 770,
+        "y": 120
+      },
+      "size": {
+        "width": 280,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#1d4ed8",
+        "borderColor": "#1e40af",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core01-int-in-identity",
+          "direction": "in",
+          "side": "left",
+          "label": "Vehicle Identity",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core01-int-in-instances",
+          "direction": "in",
+          "side": "left",
+          "label": "Active Instances",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core01-int-out-adapter",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Adapter Binding",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core01-int-out-capability",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Capability Request",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core01-int-out-services",
+          "direction": "out",
+          "side": "right",
+          "label": "Vehicle Services API",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-universal-integration",
+        "requirementIds": [
+          "req-2.1-008",
+          "req-2.1-013",
+          "req-GA-001",
+          "req-GA-002"
+        ],
+        "responsibilities": [
+          "Bind vehicles to appropriate protocol adapters",
+          "Associate controllers and firmware versions",
+          "Provide unified vehicle services API to operations",
+          "Enable new vehicle integration without core redesign",
+          "Maintain vehicle-specific configuration profiles"
+        ],
+        "inputs": [
+          "Vehicle identity from registry",
+          "Active instances from instance manager"
+        ],
+        "outputs": [
+          "Adapter bindings",
+          "Capability requests",
+          "Vehicle services API"
+        ],
+        "constraints": [
+          "Protocol logic must remain outside this component (req-GA-003)"
+        ],
+        "failureModes": [
+          "Binding failure",
+          "Incompatible adapter"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-002"
+        ],
+        "unresolvedDecisions": [
+          "UD-001"
+        ],
+        "notes": "Canonical engine: eng-core-universal-integration"
+      }
+    },
+    {
+      "id": "node-core01-compat-matrix",
+      "type": "component",
+      "label": "Compatibility Matrix",
+      "description": "Maintains the compatibility matrix for vehicle, controller, firmware, protocol, and feature combinations. Distinguishes supported, partial, unsupported, and unverified.",
+      "groupId": "grp-core01-integration",
+      "position": {
+        "x": 770,
+        "y": 300
+      },
+      "size": {
+        "width": 280,
+        "height": 90
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#2563eb",
+        "borderColor": "#1d4ed8",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core01-compat-in-query",
+          "direction": "in",
+          "side": "top",
+          "label": "Compatibility Query",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core01-compat-out-result",
+          "direction": "out",
+          "side": "right",
+          "label": "Compatibility Result",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-universal-integration",
+        "requirementIds": [
+          "req-2.1-009",
+          "req-2.1-010",
+          "req-GA-015"
+        ],
+        "responsibilities": [
+          "Store compatibility data for all known combinations",
+          "Distinguish supported, partially supported, unsupported, unverified",
+          "Provide compatibility queries to integration and operations",
+          "Prevent advertising unverified capabilities"
+        ],
+        "inputs": [
+          "Compatibility queries from integration"
+        ],
+        "outputs": [
+          "Compatibility results"
+        ],
+        "constraints": [
+          "Evidence-based only (req-GA-015)"
+        ],
+        "failureModes": [
+          "Missing compatibility data"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Part of eng-core-universal-integration. Feeds test-compat-matrix."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-core01-catalog-to-registry",
+      "source": "node-core01-vehicle-catalog",
+      "target": "node-core01-vehicle-registry",
+      "sourcePort": "port-core01-cat-out-reg",
+      "targetPort": "port-core01-reg-in-discovery",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Type Definitions → Registry",
+        "protocol": null,
+        "dataType": "Vehicle type definitions and default capability profiles",
+        "trigger": "Vehicle discovery and registration",
+        "synchronous": true,
+        "description": "Catalog provides type definitions used during vehicle registration to classify and configure new vehicles.",
+        "requirementIds": [
+          "req-2.1-002",
+          "req-2.1-013"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core01-registry-to-instance",
+      "source": "node-core01-vehicle-registry",
+      "target": "node-core01-instance-mgr",
+      "sourcePort": "port-core01-reg-out-integration",
+      "targetPort": "port-core01-inst-in-reg",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Vehicle Identity → Instance Manager",
+        "protocol": null,
+        "dataType": "Registered vehicle identity and type information",
+        "trigger": "Vehicle registration event",
+        "synchronous": true,
+        "description": "Registry passes new vehicle identities to the instance manager for session tracking.",
+        "requirementIds": [
+          "req-2.1-001",
+          "req-2.1-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core01-registry-to-integration",
+      "source": "node-core01-vehicle-registry",
+      "target": "node-core01-universal-integration",
+      "sourcePort": "port-core01-reg-out-query",
+      "targetPort": "port-core01-int-in-identity",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Vehicle Identity → Integration",
+        "protocol": null,
+        "dataType": "Vehicle identity, type, controller association",
+        "trigger": "Registration and query",
+        "synchronous": null,
+        "description": "Registry provides vehicle identity data to the integration framework for adapter binding.",
+        "requirementIds": [
+          "req-2.1-006",
+          "req-GA-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#3b82f6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core01-instance-to-integration",
+      "source": "node-core01-instance-mgr",
+      "target": "node-core01-universal-integration",
+      "sourcePort": "port-core01-inst-out-integration",
+      "targetPort": "port-core01-int-in-instances",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Active Instances → Integration",
+        "protocol": null,
+        "dataType": "Active vehicle instances with connection state",
+        "trigger": "Connection state changes",
+        "synchronous": false,
+        "description": "Instance manager provides active vehicle sessions to integration for adapter binding and service routing.",
+        "requirementIds": [
+          "req-2.1-004",
+          "req-2.9-005"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#3b82f6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core01-integration-to-compat",
+      "source": "node-core01-universal-integration",
+      "target": "node-core01-compat-matrix",
+      "sourcePort": "port-core01-int-out-capability",
+      "targetPort": "port-core01-compat-in-query",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "bidirectional",
+        "label": "Compatibility Query ↔ Result",
+        "protocol": null,
+        "dataType": "Vehicle-controller-firmware-protocol compatibility queries and results",
+        "trigger": "Adapter binding and capability discovery",
+        "synchronous": true,
+        "description": "Integration queries the compatibility matrix before binding a vehicle to an adapter.",
+        "requirementIds": [
+          "req-2.1-009",
+          "req-2.1-010",
+          "req-GA-015"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#2563eb",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core01-integration-to-adapter-ext",
+      "source": "node-core01-universal-integration",
+      "target": "node-core01-ext-protocol-adapter",
+      "sourcePort": "port-core01-int-out-adapter",
+      "targetPort": null,
+      "semantic": {
+        "type": "dependency",
+        "direction": "unidirectional",
+        "label": "Adapter Binding → Protocol Adapters",
+        "protocol": null,
+        "dataType": "Vehicle-to-adapter binding instructions",
+        "trigger": "Vehicle registration and adapter selection",
+        "synchronous": null,
+        "description": "Integration binds vehicles to protocol adapters defined in core-02.",
+        "requirementIds": [
+          "req-2.1-008",
+          "req-GA-003"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#475569",
+        "strokeWidth": 1,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core01-registry-to-events-ext",
+      "source": "node-core01-vehicle-registry",
+      "target": "node-core01-ext-event-bus",
+      "sourcePort": "port-core01-reg-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Registry Events → Event Bus",
+        "protocol": null,
+        "dataType": "Vehicle registered, deregistered, connected, disconnected events",
+        "trigger": "Vehicle lifecycle changes",
+        "synchronous": false,
+        "description": "Registry publishes vehicle lifecycle events to the event bus for consumption by all subsystems.",
+        "requirementIds": [
+          "req-2.1-001",
+          "req-GA-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-core01-ext-protocol-adapter",
+      "sourceDocumentId": "doc-core-02",
+      "engineId": "eng-core-protocol-adapter",
+      "label": "Protocol Adapter Engine",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core01-ext-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Event Processing Engine",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "ellipse",
+        "category": "external",
+        "color": "#475569",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-core-vehicle-registry",
+      "localNodeId": "node-core01-vehicle-registry",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-flow-01",
+          "nodeId": "node-flow01-vehicle-registry"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-universal-integration",
+      "localNodeId": "node-core01-universal-integration",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.1-001",
+      "description": "Discover, identify, register, connect to and disconnect from supported vehicles",
+      "coveredByNodes": [
+        "node-core01-vehicle-registry",
+        "node-core01-instance-mgr"
+      ],
+      "coveredByEdges": [
+        "edge-core01-registry-to-instance"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.1-002",
+      "description": "Support UAVs, UGVs and additional unmanned-system categories through validated integrations",
+      "coveredByNodes": [
+        "node-core01-vehicle-catalog"
+      ],
+      "coveredByEdges": [
+        "edge-core01-catalog-to-registry"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Extensible catalog supports additional categories."
+    },
+    {
+      "requirementId": "req-2.1-004",
+      "description": "Support multiple vehicles concurrently, subject to validated capacity",
+      "coveredByNodes": [
+        "node-core01-instance-mgr"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Instance manager enforces capacity limits."
+    },
+    {
+      "requirementId": "req-2.1-006",
+      "description": "Normalize vehicle identity, status, telemetry and operational state into a common data model",
+      "coveredByNodes": [
+        "node-core01-universal-integration"
+      ],
+      "coveredByEdges": [
+        "edge-core01-registry-to-integration"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Identity normalization here; telemetry normalization in core-03."
+    },
+    {
+      "requirementId": "req-2.1-008",
+      "description": "Permit new adapters, controllers, vehicles and protocols without redesigning the core application",
+      "coveredByNodes": [
+        "node-core01-universal-integration"
+      ],
+      "coveredByEdges": [
+        "edge-core01-integration-to-adapter-ext"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "inspection",
+      "notes": "Integration framework enables plug-and-play vehicle addition."
+    },
+    {
+      "requirementId": "req-2.1-009",
+      "description": "Maintain a compatibility matrix for vehicle, controller, firmware, protocol and feature combinations",
+      "coveredByNodes": [
+        "node-core01-compat-matrix"
+      ],
+      "coveredByEdges": [
+        "edge-core01-integration-to-compat"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "inspection",
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.1-010",
+      "description": "Distinguish supported, partially supported, unsupported and unverified capabilities",
+      "coveredByNodes": [
+        "node-core01-compat-matrix"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-015",
+      "description": "Evidence-based compatibility: capability must not be advertised without verification",
+      "coveredByNodes": [
+        "node-core01-compat-matrix"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "inspection",
+      "notes": ""
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-003",
+      "description": "Vehicle types are extensible through the adapter and capability framework.",
+      "justification": "Requirements specify support for additional unmanned-system categories through validated integrations."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-004",
+      "description": "Vehicle categories beyond UAV/UGV mentioned but not enumerated.",
+      "impact": "Vehicle type catalog modeled with extensible type registry.",
+      "resolution": "Pending requirements clarification"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 1,
+    "createdDate": "2025-01-27T00:00:00Z",
+    "lastModified": "2025-01-27T00:00:00Z"
+  }
+}

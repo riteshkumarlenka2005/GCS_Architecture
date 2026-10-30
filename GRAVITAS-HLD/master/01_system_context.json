@@ -1,0 +1,1753 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-master-01",
+  "title": "GRAVITAS GCS System Context Diagram",
+  "diagramType": "system-context",
+  "description": "Level 0 view showing GRAVITAS GCS as a central system, with all external actors, vehicles, controllers, simulators, and integrated systems that interact with it",
+  "category": "master",
+  "coordinateSystem": {
+    "unit": "canvas-unit",
+    "origin": "top-left",
+    "yAxis": "down"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.85
+  },
+  "groups": [
+    {
+      "id": "grp-ctx-actors",
+      "label": "Human Actors",
+      "description": "Human operators and administrators who interact with the GCS",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#f8fafc",
+        "borderColor": "#94a3b8",
+        "borderWidth": 1,
+        "borderStyle": "dashed",
+        "opacity": 0.08,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#94a3b8"
+      },
+      "bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 500,
+        "height": 300
+      },
+      "metadata": {
+        "category": "actor",
+        "engineIds": [],
+        "notes": "External human users of the GCS"
+      }
+    },
+    {
+      "id": "grp-ctx-vehicles",
+      "label": "Vehicles & Controllers",
+      "description": "Unmanned vehicles, their controllers, and firmware systems",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#22d3ee",
+        "borderColor": "#06b6d4",
+        "borderWidth": 1,
+        "borderStyle": "dashed",
+        "opacity": 0.08,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#06b6d4"
+      },
+      "bounds": {
+        "x": 1500,
+        "y": 50,
+        "width": 600,
+        "height": 500
+      },
+      "metadata": {
+        "category": "vehicle",
+        "engineIds": [],
+        "notes": "Physical vehicles and controllers connected via communication links"
+      }
+    },
+    {
+      "id": "grp-ctx-external",
+      "label": "External Systems & Services",
+      "description": "External data sources, map providers, remote services, and third-party integrations",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#475569",
+        "borderColor": "#334155",
+        "borderWidth": 1,
+        "borderStyle": "dashed",
+        "opacity": 0.08,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#475569"
+      },
+      "bounds": {
+        "x": 50,
+        "y": 650,
+        "width": 500,
+        "height": 550
+      },
+      "metadata": {
+        "category": "external",
+        "engineIds": [],
+        "notes": "Systems outside the GCS boundary"
+      }
+    },
+    {
+      "id": "grp-ctx-test",
+      "label": "Testing & Simulation",
+      "description": "SITL simulators, HIL environments, and test infrastructure",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#64748b",
+        "borderColor": "#475569",
+        "borderWidth": 1,
+        "borderStyle": "dashed",
+        "opacity": 0.08,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#64748b"
+      },
+      "bounds": {
+        "x": 1500,
+        "y": 700,
+        "width": 600,
+        "height": 300
+      },
+      "metadata": {
+        "category": "test",
+        "engineIds": [],
+        "notes": "Simulation and test systems interacting with GCS"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-ctx-operator",
+      "type": "actor",
+      "label": "Operator",
+      "description": "Human operator who controls vehicles, manages missions, monitors telemetry, and operates payloads",
+      "groupId": "grp-ctx-actors",
+      "position": {
+        "x": 100,
+        "y": 120
+      },
+      "size": {
+        "width": 200,
+        "height": 80
+      },
+      "style": {
+        "shape": "rectangle",
+        "category": "actor",
+        "color": "#f8fafc",
+        "borderColor": "#94a3b8",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#1e293b"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-operator-out-commands",
+          "direction": "out",
+          "side": "right",
+          "label": "Commands & Input",
+          "dataType": "command",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-ctx-operator-in-feedback",
+          "direction": "in",
+          "side": "right",
+          "label": "Feedback & Display",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.8-002",
+          "req-2.8-013",
+          "req-2.3-001"
+        ],
+        "responsibilities": [
+          "Issue commands to vehicles",
+          "Monitor telemetry and vehicle status",
+          "Plan and manage missions",
+          "Control payloads and cameras",
+          "Review operational data"
+        ],
+        "inputs": [
+          "COP display",
+          "Telemetry",
+          "Alerts",
+          "Video streams"
+        ],
+        "outputs": [
+          "Commands",
+          "Mission definitions",
+          "Configuration changes"
+        ],
+        "constraints": [
+          "Must be authenticated",
+          "Actions governed by RBAC"
+        ],
+        "failureModes": [],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": ""
+      }
+    },
+    {
+      "id": "node-ctx-administrator",
+      "type": "actor",
+      "label": "Administrator",
+      "description": "System administrator responsible for configuration, user management, plugin management, and system maintenance",
+      "groupId": "grp-ctx-actors",
+      "position": {
+        "x": 100,
+        "y": 240
+      },
+      "size": {
+        "width": 200,
+        "height": 80
+      },
+      "style": {
+        "shape": "rectangle",
+        "category": "actor",
+        "color": "#f8fafc",
+        "borderColor": "#94a3b8",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#1e293b"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-admin-out-config",
+          "direction": "out",
+          "side": "right",
+          "label": "Admin Operations",
+          "dataType": "config",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-ctx-admin-in-status",
+          "direction": "in",
+          "side": "right",
+          "label": "System Status",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.12-003",
+          "req-2.12-015",
+          "req-2.18-012"
+        ],
+        "responsibilities": [
+          "Manage users, roles, and permissions",
+          "Configure system settings",
+          "Install and manage plugins",
+          "Monitor system health",
+          "Perform backups and recovery"
+        ],
+        "inputs": [
+          "System health",
+          "Audit logs",
+          "Diagnostics"
+        ],
+        "outputs": [
+          "Configuration changes",
+          "User management",
+          "Plugin management"
+        ],
+        "constraints": [
+          "Must hold administrator role"
+        ],
+        "failureModes": [],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": ""
+      }
+    },
+    {
+      "id": "node-ctx-gravitas",
+      "type": "system",
+      "label": "GRAVITAS GCS",
+      "description": "Ground Control Station for universal multi-vehicle unmanned systems management. Central system boundary encompassing all engines and subsystems.",
+      "groupId": null,
+      "position": {
+        "x": 650,
+        "y": 100
+      },
+      "size": {
+        "width": 700,
+        "height": 900
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#1e293b",
+        "borderColor": "#3b82f6",
+        "borderWidth": 3,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 20,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-gravitas-in-operator",
+          "direction": "in",
+          "side": "left",
+          "label": "Operator Input",
+          "dataType": "command",
+          "position": {
+            "offset": 0.15
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-out-operator",
+          "direction": "out",
+          "side": "left",
+          "label": "Operator Display",
+          "dataType": "data",
+          "position": {
+            "offset": 0.25
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-in-admin",
+          "direction": "in",
+          "side": "left",
+          "label": "Admin Input",
+          "dataType": "config",
+          "position": {
+            "offset": 0.4
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-out-admin",
+          "direction": "out",
+          "side": "left",
+          "label": "Admin Status",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-out-vehicle-cmd",
+          "direction": "out",
+          "side": "right",
+          "label": "Vehicle Commands",
+          "dataType": "command",
+          "position": {
+            "offset": 0.15
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-in-vehicle-tlm",
+          "direction": "in",
+          "side": "right",
+          "label": "Vehicle Telemetry",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.25
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-in-vehicle-stream",
+          "direction": "in",
+          "side": "right",
+          "label": "Video Streams",
+          "dataType": "stream",
+          "position": {
+            "offset": 0.35
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-inout-vehicle-mission",
+          "direction": "inout",
+          "side": "right",
+          "label": "Mission Upload/Download",
+          "dataType": "data",
+          "position": {
+            "offset": 0.45
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-in-external-maps",
+          "direction": "in",
+          "side": "left",
+          "label": "Map & Geospatial Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.65
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-in-external-services",
+          "direction": "in",
+          "side": "left",
+          "label": "External Service Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.75
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-inout-remote-sync",
+          "direction": "inout",
+          "side": "left",
+          "label": "Remote Sync",
+          "dataType": "data",
+          "position": {
+            "offset": 0.85
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-inout-sim",
+          "direction": "inout",
+          "side": "right",
+          "label": "Simulation Interface",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-inout-hil",
+          "direction": "inout",
+          "side": "right",
+          "label": "HIL Interface",
+          "dataType": "data",
+          "position": {
+            "offset": 0.8
+          }
+        },
+        {
+          "id": "port-ctx-gravitas-out-exports",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Logs & Exports",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-GA-001",
+          "req-GA-002",
+          "req-GA-003",
+          "req-GA-004"
+        ],
+        "responsibilities": [
+          "Universal multi-vehicle ground control",
+          "Mission planning and execution",
+          "Telemetry processing and visualization",
+          "Command and control",
+          "Sensor and payload management",
+          "Path planning and navigation",
+          "Fleet management and coordination",
+          "Security and safety enforcement",
+          "Data management and observability",
+          "Customization and extensibility"
+        ],
+        "inputs": [
+          "Operator commands",
+          "Administrator configuration",
+          "Vehicle telemetry",
+          "Video streams",
+          "Sensor data",
+          "Map data",
+          "External service data",
+          "Simulation data"
+        ],
+        "outputs": [
+          "Vehicle commands",
+          "Mission uploads",
+          "COP display",
+          "Alerts and notifications",
+          "Logs and exports",
+          "Audit records"
+        ],
+        "constraints": [
+          "Must operate in offline mode for time-critical operations",
+          "Must isolate protocol-specific logic from domain layer",
+          "Must enforce authorization on all consequential operations"
+        ],
+        "failureModes": [
+          "Connectivity loss to vehicles",
+          "Connectivity loss to remote services",
+          "Application crash with state recovery",
+          "Adapter failure with fault isolation"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-001",
+          "AS-002",
+          "AS-003"
+        ],
+        "unresolvedDecisions": [
+          "UD-003",
+          "UD-006"
+        ],
+        "notes": "This node represents the entire system boundary. Internal structure is detailed in doc-master-02."
+      }
+    },
+    {
+      "id": "node-ctx-uav",
+      "type": "vehicle",
+      "label": "UAV Fleet",
+      "description": "Unmanned Aerial Vehicles with their controllers, firmware, sensors, and payloads",
+      "groupId": "grp-ctx-vehicles",
+      "position": {
+        "x": 1570,
+        "y": 120
+      },
+      "size": {
+        "width": 220,
+        "height": 90
+      },
+      "style": {
+        "shape": "hexagon",
+        "category": "vehicle",
+        "color": "#22d3ee",
+        "borderColor": "#06b6d4",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-uav-in-cmd",
+          "direction": "in",
+          "side": "left",
+          "label": "Commands",
+          "dataType": "command",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-ctx-uav-out-tlm",
+          "direction": "out",
+          "side": "left",
+          "label": "Telemetry",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-ctx-uav-out-stream",
+          "direction": "out",
+          "side": "left",
+          "label": "Video Stream",
+          "dataType": "stream",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.1-002"
+        ],
+        "responsibilities": [
+          "Execute missions",
+          "Report telemetry",
+          "Stream video",
+          "Execute commands"
+        ],
+        "inputs": [
+          "Commands",
+          "Mission uploads",
+          "Configuration"
+        ],
+        "outputs": [
+          "Telemetry",
+          "Acknowledgements",
+          "Video streams",
+          "Sensor data"
+        ],
+        "constraints": [
+          "Protocol-dependent capabilities",
+          "Firmware-dependent features"
+        ],
+        "failureModes": [
+          "Communication loss",
+          "Hardware failure",
+          "Low battery",
+          "GPS loss"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-001"
+        ],
+        "notes": "Represents one or more UAVs. Exact protocols and capabilities depend on controller and firmware."
+      }
+    },
+    {
+      "id": "node-ctx-ugv",
+      "type": "vehicle",
+      "label": "UGV Fleet",
+      "description": "Unmanned Ground Vehicles with their controllers, firmware, sensors, and payloads",
+      "groupId": "grp-ctx-vehicles",
+      "position": {
+        "x": 1570,
+        "y": 260
+      },
+      "size": {
+        "width": 220,
+        "height": 90
+      },
+      "style": {
+        "shape": "hexagon",
+        "category": "vehicle",
+        "color": "#22d3ee",
+        "borderColor": "#06b6d4",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-ugv-in-cmd",
+          "direction": "in",
+          "side": "left",
+          "label": "Commands",
+          "dataType": "command",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-ctx-ugv-out-tlm",
+          "direction": "out",
+          "side": "left",
+          "label": "Telemetry",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-ctx-ugv-out-stream",
+          "direction": "out",
+          "side": "left",
+          "label": "Video Stream",
+          "dataType": "stream",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.1-002"
+        ],
+        "responsibilities": [
+          "Execute missions",
+          "Report telemetry",
+          "Stream video",
+          "Execute commands"
+        ],
+        "inputs": [
+          "Commands",
+          "Mission uploads",
+          "Configuration"
+        ],
+        "outputs": [
+          "Telemetry",
+          "Acknowledgements",
+          "Video streams",
+          "Sensor data"
+        ],
+        "constraints": [
+          "Different motion model from UAV",
+          "Terrain-dependent"
+        ],
+        "failureModes": [
+          "Communication loss",
+          "Mechanical failure",
+          "Terrain obstruction"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-001",
+          "UD-004"
+        ],
+        "notes": "Represents one or more UGVs. Different kinematic constraints from aerial vehicles."
+      }
+    },
+    {
+      "id": "node-ctx-controller",
+      "type": "external-system",
+      "label": "Vehicle Controllers",
+      "description": "Hardware and firmware controllers (autopilots) that interface between the GCS and the vehicle hardware",
+      "groupId": "grp-ctx-vehicles",
+      "position": {
+        "x": 1570,
+        "y": 400
+      },
+      "size": {
+        "width": 220,
+        "height": 90
+      },
+      "style": {
+        "shape": "cloud",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#334155",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#cbd5e1"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-controller-inout-protocol",
+          "direction": "inout",
+          "side": "left",
+          "label": "Protocol Interface",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.1-003",
+          "req-2.1-005"
+        ],
+        "responsibilities": [
+          "Execute low-level vehicle control",
+          "Provide telemetry",
+          "Accept and report on commands"
+        ],
+        "inputs": [
+          "Commands via protocol"
+        ],
+        "outputs": [
+          "Telemetry",
+          "Status",
+          "Acknowledgements"
+        ],
+        "constraints": [
+          "Controller-specific protocols",
+          "Firmware version dependencies"
+        ],
+        "failureModes": [
+          "Firmware incompatibility",
+          "Communication failure"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-001"
+        ],
+        "notes": "Multiple controller manufacturers and firmware versions. GCS must adapt to each through capability discovery."
+      }
+    },
+    {
+      "id": "node-ctx-map-provider",
+      "type": "external-system",
+      "label": "Map & Geospatial\nData Providers",
+      "description": "External map tile services, terrain data providers, and geospatial datasets",
+      "groupId": "grp-ctx-external",
+      "position": {
+        "x": 100,
+        "y": 720
+      },
+      "size": {
+        "width": 200,
+        "height": 80
+      },
+      "style": {
+        "shape": "cloud",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#334155",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#cbd5e1"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-map-out-data",
+          "direction": "out",
+          "side": "right",
+          "label": "Map Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.3-016",
+          "req-2.3-006"
+        ],
+        "responsibilities": [
+          "Provide map tiles",
+          "Provide terrain and elevation data"
+        ],
+        "inputs": [],
+        "outputs": [
+          "Map tiles",
+          "Terrain data",
+          "Elevation data"
+        ],
+        "constraints": [
+          "May be unavailable offline"
+        ],
+        "failureModes": [
+          "Network unavailability"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "GCS must support offline maps when these providers are unavailable."
+      }
+    },
+    {
+      "id": "node-ctx-remote-service",
+      "type": "external-system",
+      "label": "Remote Sync\nService",
+      "description": "Optional remote service for data synchronization, backup, and multi-GCS coordination",
+      "groupId": "grp-ctx-external",
+      "position": {
+        "x": 100,
+        "y": 840
+      },
+      "size": {
+        "width": 200,
+        "height": 80
+      },
+      "style": {
+        "shape": "cloud",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#334155",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#cbd5e1"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-remote-inout-sync",
+          "direction": "inout",
+          "side": "right",
+          "label": "Sync Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.14-007",
+          "req-GA-010"
+        ],
+        "responsibilities": [
+          "Receive synchronized data",
+          "Provide remote state",
+          "Handle conflict resolution"
+        ],
+        "inputs": [
+          "Queued sync data from GCS"
+        ],
+        "outputs": [
+          "Remote state",
+          "Conflict resolution directives"
+        ],
+        "constraints": [
+          "Optional — GCS must operate without it"
+        ],
+        "failureModes": [
+          "Unavailability",
+          "Sync conflicts"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-001"
+        ],
+        "unresolvedDecisions": [
+          "UD-006"
+        ],
+        "notes": "GCS is local-first. Remote sync is additive, not mandatory."
+      }
+    },
+    {
+      "id": "node-ctx-external-integration",
+      "type": "external-system",
+      "label": "External\nIntegration Services",
+      "description": "Third-party services, APIs, and data sources that integrate with the GCS through defined interfaces",
+      "groupId": "grp-ctx-external",
+      "position": {
+        "x": 100,
+        "y": 960
+      },
+      "size": {
+        "width": 200,
+        "height": 80
+      },
+      "style": {
+        "shape": "cloud",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#334155",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#cbd5e1"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-extint-inout-api",
+          "direction": "inout",
+          "side": "right",
+          "label": "Integration API",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.18-002"
+        ],
+        "responsibilities": [
+          "Provide or consume data through integration interfaces"
+        ],
+        "inputs": [
+          "Varies by integration"
+        ],
+        "outputs": [
+          "Varies by integration"
+        ],
+        "constraints": [
+          "Must use defined SDK/API contracts",
+          "Subject to plugin permissions"
+        ],
+        "failureModes": [
+          "API unavailability",
+          "Contract violation"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": ""
+      }
+    },
+    {
+      "id": "node-ctx-input-devices",
+      "type": "external-system",
+      "label": "Input Devices",
+      "description": "Joysticks, gamepads, and other manual-control input devices connected to the GCS",
+      "groupId": "grp-ctx-external",
+      "position": {
+        "x": 100,
+        "y": 1080
+      },
+      "size": {
+        "width": 200,
+        "height": 80
+      },
+      "style": {
+        "shape": "cloud",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#334155",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#cbd5e1"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-input-out-control",
+          "direction": "out",
+          "side": "right",
+          "label": "Control Input",
+          "dataType": "command",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.8-013"
+        ],
+        "responsibilities": [
+          "Provide manual control input to GCS"
+        ],
+        "inputs": [],
+        "outputs": [
+          "Joystick/gamepad control signals"
+        ],
+        "constraints": [
+          "Input freshness must be validated",
+          "Safe behavior on input loss"
+        ],
+        "failureModes": [
+          "Disconnection",
+          "Stale input"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": ""
+      }
+    },
+    {
+      "id": "node-ctx-sitl",
+      "type": "external-system",
+      "label": "SITL Simulator",
+      "description": "Software-in-the-loop simulators that emulate vehicle behavior for testing",
+      "groupId": "grp-ctx-test",
+      "position": {
+        "x": 1570,
+        "y": 770
+      },
+      "size": {
+        "width": 220,
+        "height": 80
+      },
+      "style": {
+        "shape": "cloud",
+        "category": "test",
+        "color": "#64748b",
+        "borderColor": "#475569",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-sitl-inout-sim",
+          "direction": "inout",
+          "side": "left",
+          "label": "Simulation Interface",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.20-001"
+        ],
+        "responsibilities": [
+          "Simulate vehicle behavior",
+          "Respond to commands",
+          "Generate telemetry"
+        ],
+        "inputs": [
+          "Commands from GCS"
+        ],
+        "outputs": [
+          "Simulated telemetry",
+          "Simulated acknowledgements"
+        ],
+        "constraints": [
+          "Protocol-compatible with real vehicle adapters"
+        ],
+        "failureModes": [
+          "Simulation desync"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": ""
+      }
+    },
+    {
+      "id": "node-ctx-hil",
+      "type": "external-system",
+      "label": "HIL Environment",
+      "description": "Hardware-in-the-loop test environments with real controllers and simulated or real actuators",
+      "groupId": "grp-ctx-test",
+      "position": {
+        "x": 1570,
+        "y": 890
+      },
+      "size": {
+        "width": 220,
+        "height": 80
+      },
+      "style": {
+        "shape": "cloud",
+        "category": "test",
+        "color": "#64748b",
+        "borderColor": "#475569",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 14,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-ctx-hil-inout-hil",
+          "direction": "inout",
+          "side": "left",
+          "label": "HIL Interface",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": [
+          "req-2.20-002"
+        ],
+        "responsibilities": [
+          "Test with real hardware controllers",
+          "Validate protocol conformance"
+        ],
+        "inputs": [
+          "Commands from GCS"
+        ],
+        "outputs": [
+          "Real controller responses"
+        ],
+        "constraints": [
+          "Requires physical hardware"
+        ],
+        "failureModes": [
+          "Hardware failure",
+          "Connection issues"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": ""
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-ctx-operator-to-gravitas",
+      "source": "node-ctx-operator",
+      "target": "node-ctx-gravitas",
+      "sourcePort": "port-ctx-operator-out-commands",
+      "targetPort": "port-ctx-gravitas-in-operator",
+      "semantic": {
+        "type": "command",
+        "direction": "unidirectional",
+        "label": "Operator Commands",
+        "protocol": null,
+        "dataType": "Commands, mission definitions, configuration changes",
+        "trigger": "Operator action",
+        "synchronous": null,
+        "description": "Operator issues commands, creates missions, adjusts configuration through the GCS interface",
+        "requirementIds": [
+          "req-2.8-001",
+          "req-2.8-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-gravitas-to-operator",
+      "source": "node-ctx-gravitas",
+      "target": "node-ctx-operator",
+      "sourcePort": "port-ctx-gravitas-out-operator",
+      "targetPort": "port-ctx-operator-in-feedback",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "COP, Telemetry & Alerts",
+        "protocol": null,
+        "dataType": "Telemetry display, COP visualization, alerts, video feeds, mission status",
+        "trigger": "Continuous and event-driven",
+        "synchronous": null,
+        "description": "GCS displays operational picture, telemetry, alerts, and video to the operator",
+        "requirementIds": [
+          "req-2.3-001",
+          "req-2.3-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-admin-to-gravitas",
+      "source": "node-ctx-administrator",
+      "target": "node-ctx-gravitas",
+      "sourcePort": "port-ctx-admin-out-config",
+      "targetPort": "port-ctx-gravitas-in-admin",
+      "semantic": {
+        "type": "control-flow",
+        "direction": "unidirectional",
+        "label": "Admin Configuration",
+        "protocol": null,
+        "dataType": "User management, system configuration, plugin management",
+        "trigger": "Admin action",
+        "synchronous": null,
+        "description": "Administrator manages users, configures system settings, and manages plugins",
+        "requirementIds": [
+          "req-2.12-003",
+          "req-2.18-012"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-gravitas-to-admin",
+      "source": "node-ctx-gravitas",
+      "target": "node-ctx-administrator",
+      "sourcePort": "port-ctx-gravitas-out-admin",
+      "targetPort": "port-ctx-admin-in-status",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "System Health & Audit",
+        "protocol": null,
+        "dataType": "System health, audit logs, diagnostics, configuration status",
+        "trigger": "Continuous monitoring and on-demand queries",
+        "synchronous": null,
+        "description": "GCS reports system health, audit trails, and diagnostics to administrators",
+        "requirementIds": [
+          "req-2.16-013",
+          "req-2.12-014"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-gravitas-to-uav",
+      "source": "node-ctx-gravitas",
+      "target": "node-ctx-uav",
+      "sourcePort": "port-ctx-gravitas-out-vehicle-cmd",
+      "targetPort": "port-ctx-uav-in-cmd",
+      "semantic": {
+        "type": "command",
+        "direction": "unidirectional",
+        "label": "Vehicle Commands",
+        "protocol": null,
+        "dataType": "Navigation commands, mission uploads, configuration, payload control",
+        "trigger": "Operator action or automated workflow",
+        "synchronous": false,
+        "description": "GCS sends validated commands to UAVs through appropriate protocol adapters",
+        "requirementIds": [
+          "req-2.8-005",
+          "req-GA-007"
+        ],
+        "assumptions": [
+          "AS-002"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-uav-to-gravitas-tlm",
+      "source": "node-ctx-uav",
+      "target": "node-ctx-gravitas",
+      "sourcePort": "port-ctx-uav-out-tlm",
+      "targetPort": "port-ctx-gravitas-in-vehicle-tlm",
+      "semantic": {
+        "type": "telemetry",
+        "direction": "unidirectional",
+        "label": "UAV Telemetry",
+        "protocol": null,
+        "dataType": "Position, attitude, battery, GPS, sensor data, status",
+        "trigger": "Periodic and event-driven",
+        "synchronous": false,
+        "description": "UAVs report continuous telemetry and status data to the GCS",
+        "requirementIds": [
+          "req-2.1-006",
+          "req-2.3-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-uav-to-gravitas-stream",
+      "source": "node-ctx-uav",
+      "target": "node-ctx-gravitas",
+      "sourcePort": "port-ctx-uav-out-stream",
+      "targetPort": "port-ctx-gravitas-in-vehicle-stream",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "UAV Video Stream",
+        "protocol": null,
+        "dataType": "Live video stream from onboard cameras",
+        "trigger": "Stream lifecycle events",
+        "synchronous": false,
+        "description": "UAV cameras stream live video to the GCS for display and optional recording",
+        "requirementIds": [
+          "req-2.11-005"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 3,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-gravitas-to-ugv",
+      "source": "node-ctx-gravitas",
+      "target": "node-ctx-ugv",
+      "sourcePort": "port-ctx-gravitas-out-vehicle-cmd",
+      "targetPort": "port-ctx-ugv-in-cmd",
+      "semantic": {
+        "type": "command",
+        "direction": "unidirectional",
+        "label": "Vehicle Commands",
+        "protocol": null,
+        "dataType": "Navigation commands, mission uploads, configuration",
+        "trigger": "Operator action or automated workflow",
+        "synchronous": false,
+        "description": "GCS sends validated commands to UGVs through appropriate protocol adapters",
+        "requirementIds": [
+          "req-2.8-005"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-ugv-to-gravitas-tlm",
+      "source": "node-ctx-ugv",
+      "target": "node-ctx-gravitas",
+      "sourcePort": "port-ctx-ugv-out-tlm",
+      "targetPort": "port-ctx-gravitas-in-vehicle-tlm",
+      "semantic": {
+        "type": "telemetry",
+        "direction": "unidirectional",
+        "label": "UGV Telemetry",
+        "protocol": null,
+        "dataType": "Position, heading, speed, battery, sensor data, status",
+        "trigger": "Periodic and event-driven",
+        "synchronous": false,
+        "description": "UGVs report continuous telemetry and status data to the GCS",
+        "requirementIds": [
+          "req-2.1-006"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-map-to-gravitas",
+      "source": "node-ctx-map-provider",
+      "target": "node-ctx-gravitas",
+      "sourcePort": "port-ctx-map-out-data",
+      "targetPort": "port-ctx-gravitas-in-external-maps",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Map & Terrain Data",
+        "protocol": null,
+        "dataType": "Map tiles, terrain elevation, environmental data",
+        "trigger": "On-demand and cached",
+        "synchronous": null,
+        "description": "External map and geospatial data providers supply map tiles and terrain data to the GCS",
+        "requirementIds": [
+          "req-2.3-016",
+          "req-2.3-006"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-gravitas-to-remote",
+      "source": "node-ctx-gravitas",
+      "target": "node-ctx-remote-service",
+      "sourcePort": "port-ctx-gravitas-inout-remote-sync",
+      "targetPort": "port-ctx-remote-inout-sync",
+      "semantic": {
+        "type": "sync-flow",
+        "direction": "bidirectional",
+        "label": "Remote Sync",
+        "protocol": null,
+        "dataType": "Operational data, mission records, configuration, conflict resolution",
+        "trigger": "Connectivity available and sync policy",
+        "synchronous": false,
+        "description": "Bidirectional data synchronization between GCS and optional remote service",
+        "requirementIds": [
+          "req-2.14-007",
+          "req-GA-010"
+        ],
+        "assumptions": [
+          "AS-001"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#a855f7",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-extint-to-gravitas",
+      "source": "node-ctx-external-integration",
+      "target": "node-ctx-gravitas",
+      "sourcePort": "port-ctx-extint-inout-api",
+      "targetPort": "port-ctx-gravitas-in-external-services",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "bidirectional",
+        "label": "External Integration API",
+        "protocol": null,
+        "dataType": "Third-party data, integration payloads",
+        "trigger": "Integration-defined",
+        "synchronous": null,
+        "description": "Third-party services exchange data with GCS through defined integration interfaces",
+        "requirementIds": [
+          "req-2.18-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-input-to-gravitas",
+      "source": "node-ctx-input-devices",
+      "target": "node-ctx-gravitas",
+      "sourcePort": "port-ctx-input-out-control",
+      "targetPort": "port-ctx-gravitas-in-operator",
+      "semantic": {
+        "type": "command",
+        "direction": "unidirectional",
+        "label": "Manual Control Input",
+        "protocol": null,
+        "dataType": "Joystick/gamepad axis, button, and trigger data",
+        "trigger": "Continuous during manual control",
+        "synchronous": null,
+        "description": "Physical input devices provide manual vehicle control input to the GCS",
+        "requirementIds": [
+          "req-2.8-013",
+          "req-2.8-014"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-gravitas-to-sitl",
+      "source": "node-ctx-gravitas",
+      "target": "node-ctx-sitl",
+      "sourcePort": "port-ctx-gravitas-inout-sim",
+      "targetPort": "port-ctx-sitl-inout-sim",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "bidirectional",
+        "label": "SITL Simulation",
+        "protocol": null,
+        "dataType": "Simulated commands, telemetry, and acknowledgements",
+        "trigger": "Test execution",
+        "synchronous": null,
+        "description": "GCS connects to SITL simulators using the same adapter interfaces as real vehicles",
+        "requirementIds": [
+          "req-2.20-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-ctx-gravitas-to-hil",
+      "source": "node-ctx-gravitas",
+      "target": "node-ctx-hil",
+      "sourcePort": "port-ctx-gravitas-inout-hil",
+      "targetPort": "port-ctx-hil-inout-hil",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "bidirectional",
+        "label": "HIL Testing",
+        "protocol": null,
+        "dataType": "Real controller commands and responses",
+        "trigger": "Test execution",
+        "synchronous": null,
+        "description": "GCS connects to HIL environments for hardware-level integration testing",
+        "requirementIds": [
+          "req-2.20-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    }
+  ],
+  "externalReferences": [],
+  "crossReferences": [],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.1-001",
+      "description": "Discover, identify, register, connect to and disconnect from supported vehicles",
+      "coveredByNodes": [
+        "node-ctx-gravitas"
+      ],
+      "coveredByEdges": [
+        "edge-ctx-gravitas-to-uav",
+        "edge-ctx-gravitas-to-ugv"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Detailed in doc-core-01 and doc-flow-01"
+    },
+    {
+      "requirementId": "req-2.1-002",
+      "description": "Support UAVs, UGVs and additional unmanned-system categories",
+      "coveredByNodes": [
+        "node-ctx-uav",
+        "node-ctx-ugv"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Additional categories addressed by extensible vehicle registry in doc-core-01"
+    },
+    {
+      "requirementId": "req-2.3-001",
+      "description": "Display all authorized, connected vehicles on a shared operational map",
+      "coveredByNodes": [
+        "node-ctx-gravitas"
+      ],
+      "coveredByEdges": [
+        "edge-ctx-gravitas-to-operator"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Detailed in doc-cop-01"
+    },
+    {
+      "requirementId": "req-GA-001",
+      "description": "Capability-driven behavior: application must adapt to verified vehicle and controller capabilities",
+      "coveredByNodes": [
+        "node-ctx-gravitas",
+        "node-ctx-controller"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Cross-cutting requirement. Detailed in doc-core-02"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-CTX-001",
+      "description": "The system context shows all major external interaction boundaries. Internal subsystem details are in doc-master-02.",
+      "justification": "Standard C4 model Level 0 convention"
+    }
+  ],
+  "unresolvedDecisions": [],
+  "metadata": {
+    "status": "draft",
+    "revision": 1,
+    "createdDate": "2025-01-27T00:00:00Z",
+    "lastModified": "2025-01-27T00:00:00Z"
+  }
+}

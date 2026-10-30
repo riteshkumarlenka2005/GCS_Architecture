@@ -1,0 +1,1551 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-comm-03",
+  "title": "Resilience & Routing Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Connection recovery and network routing within the communication subsystem. Detects connection loss, orchestrates reconnection strategies with retry and backoff policies, selects and switches communication paths based on link quality and diagnostics, and coordinates with the Multi-Network Manager to sustain resilient communication under intermittent and degraded connectivity.",
+  "category": "comm",
+  "coordinateSystem": {
+    "unit": "canvas-unit",
+    "origin": "top-left",
+    "yAxis": "down"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.8
+  },
+  "groups": [
+    {
+      "id": "grp-comm03-recovery",
+      "label": "Connection Recovery",
+      "description": "Connection-loss detection, reconnection orchestration, retry and backoff policy enforcement, and recovery state tracking",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#06b6d4",
+        "borderColor": "#0891b2",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.1,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#67e8f9"
+      },
+      "bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 520,
+        "height": 420
+      },
+      "metadata": {
+        "category": "comm",
+        "engineIds": [
+          "eng-comm-connection-recovery"
+        ],
+        "notes": "Owns reconnection lifecycle for all transport channels"
+      }
+    },
+    {
+      "id": "grp-comm03-routing",
+      "label": "Communication Routing",
+      "description": "Path computation, route prioritization, route switching, and route-change event emission",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#06b6d4",
+        "borderColor": "#0e7490",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.08,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#67e8f9"
+      },
+      "bounds": {
+        "x": 620,
+        "y": 50,
+        "width": 500,
+        "height": 420
+      },
+      "metadata": {
+        "category": "comm",
+        "engineIds": [
+          "eng-comm-routing"
+        ],
+        "notes": "Logical route selection over the physical interfaces managed by Multi-Network Manager"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-comm03-loss-detector",
+      "type": "component",
+      "label": "Connection Loss Detector",
+      "description": "Monitors transport channels, link state events, and diagnostic events to detect connection loss, degradation, and heartbeat timeouts. Classifies loss type (transient, sustained, hard failure).",
+      "groupId": "grp-comm03-recovery",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 260,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#06b6d4",
+        "borderColor": "#0891b2",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-comm03-ld-in-channel",
+          "direction": "in",
+          "side": "left",
+          "label": "Channel Status",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm03-ld-in-events",
+          "direction": "in",
+          "side": "left",
+          "label": "Link / Diag Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-comm03-ld-in-netevents",
+          "direction": "in",
+          "side": "top",
+          "label": "Network Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm03-ld-out-loss",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Loss Notifications",
+          "dataType": "event",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm03-ld-out-class",
+          "direction": "out",
+          "side": "right",
+          "label": "Loss Classification",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-comm-connection-recovery",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-006",
+          "req-2.16-001",
+          "req-GA-005"
+        ],
+        "responsibilities": [
+          "Monitor transport channel liveness and heartbeat timing",
+          "Consume link state and diagnostic events for early degradation signals",
+          "Detect connection loss, degradation, and hard failure",
+          "Classify loss type (transient, sustained, hard)",
+          "Notify the Reconnection Orchestrator of loss events"
+        ],
+        "inputs": [
+          "Channel status from Transport Abstraction Engine",
+          "Link state and diagnostic events (via event bus or direct)",
+          "Interface up/down events from Multi-Network Manager"
+        ],
+        "outputs": [
+          "Classified loss notifications to orchestrator"
+        ],
+        "constraints": [
+          "Must avoid false positives under transient fluctuations",
+          "Must distinguish confirmed loss from suspected loss (req-GA-006)"
+        ],
+        "failureModes": [
+          "Missed loss on silent-failure channels",
+          "Over-sensitive triggering causing recovery storms"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-002: Logical component within comm subsystem"
+        ],
+        "unresolvedDecisions": [],
+        "notes": "Canonical engine: eng-comm-connection-recovery (detection portion)"
+      }
+    },
+    {
+      "id": "node-comm03-reconnect-orchestrator",
+      "type": "component",
+      "label": "Reconnection Orchestrator",
+      "description": "Coordinates reconnection attempts across affected channels. Applies retry and backoff policies, serializes attempts to avoid thrash, and reports recovery progress and outcomes.",
+      "groupId": "grp-comm03-recovery",
+      "position": {
+        "x": 100,
+        "y": 260
+      },
+      "size": {
+        "width": 260,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#0891b2",
+        "borderColor": "#0e7490",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-comm03-ro-in-loss",
+          "direction": "in",
+          "side": "top",
+          "label": "Loss Notifications",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm03-ro-in-policy",
+          "direction": "in",
+          "side": "left",
+          "label": "Recovery Policy",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm03-ro-in-route",
+          "direction": "in",
+          "side": "right",
+          "label": "Route Advisory",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm03-ro-out-attempt",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Reconnect Attempts",
+          "dataType": "command",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm03-ro-out-status",
+          "direction": "out",
+          "side": "right",
+          "label": "Recovery Status",
+          "dataType": "event",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-comm-connection-recovery",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-006",
+          "req-2.16-003",
+          "req-GA-005"
+        ],
+        "responsibilities": [
+          "Receive classified loss notifications and open recovery sessions",
+          "Apply configurable retry and backoff policies per channel and loss class",
+          "Serialize attempts to avoid reconnect storms",
+          "Coordinate with Routing Engine to select alternative paths",
+          "Instruct Transport Abstraction Engine to re-establish channels",
+          "Emit recovery progress and outcome events"
+        ],
+        "inputs": [
+          "Loss notifications and classifications from detector",
+          "Recovery policy configuration",
+          "Route advisories from Routing Engine"
+        ],
+        "outputs": [
+          "Reconnect attempt commands to transport layer",
+          "Recovery status events to the event bus"
+        ],
+        "constraints": [
+          "Backoff must bound attempt rate under sustained failure",
+          "Recovery must not block the main transport loop",
+          "Recovery must preserve buffered data where possible (req-GA-005)"
+        ],
+        "failureModes": [
+          "Reconnect storm",
+          "Backoff too aggressive causing delayed recovery",
+          "Policy misconfiguration"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-016: Default retry/backoff policy parameters not prescribed"
+        ],
+        "notes": "Canonical engine: eng-comm-connection-recovery (orchestration portion)"
+      }
+    },
+    {
+      "id": "node-comm03-routing-engine",
+      "type": "component",
+      "label": "Communication Routing Engine",
+      "description": "Computes logical communication paths over the physical interfaces managed by the Multi-Network Manager. Selects routes using link quality, bandwidth, policy, and endpoint reachability, and switches routes on degradation or failure.",
+      "groupId": "grp-comm03-routing",
+      "position": {
+        "x": 680,
+        "y": 100
+      },
+      "size": {
+        "width": 280,
+        "height": 130
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#0e7490",
+        "borderColor": "#155e75",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-comm03-re-in-quality",
+          "direction": "in",
+          "side": "left",
+          "label": "Link Health Scores",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm03-re-in-util",
+          "direction": "in",
+          "side": "left",
+          "label": "Utilization Reports",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-comm03-re-in-topology",
+          "direction": "in",
+          "side": "top",
+          "label": "Topology Info",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm03-re-in-recovery",
+          "direction": "in",
+          "side": "bottom",
+          "label": "Recovery Status",
+          "dataType": "event",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm03-re-out-advisory",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Route Advisory",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-comm03-re-out-select",
+          "direction": "out",
+          "side": "right",
+          "label": "Route Selection",
+          "dataType": "control",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm03-re-out-events",
+          "direction": "out",
+          "side": "right",
+          "label": "Route Change Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-comm03-re-out-table-update",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Route Table Updates",
+          "dataType": "data",
+          "position": {
+            "offset": 0.9
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-comm-routing",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-006",
+          "req-2.2-007",
+          "req-GA-005"
+        ],
+        "responsibilities": [
+          "Maintain the set of candidate routes to each remote endpoint",
+          "Score and prioritize routes using link quality, utilization, policy, and topology",
+          "Select the active route per logical channel",
+          "Switch routes on degradation or failure within configurable thresholds",
+          "Advise the Reconnection Orchestrator on preferred alternative paths",
+          "Emit route change events to the event bus and route table"
+        ],
+        "inputs": [
+          "Link health scores from Monitoring & Diagnostics",
+          "Utilization reports from Bandwidth Analysis",
+          "Topology info from Network Topology (doc-comm-05)",
+          "Recovery status from Reconnection Orchestrator"
+        ],
+        "outputs": [
+          "Route advisories to recovery",
+          "Route selection commands to Multi-Network Manager",
+          "Route change events to the event bus",
+          "Route table updates"
+        ],
+        "constraints": [
+          "Must avoid route flapping via hysteresis or dwell time",
+          "Switching must not drop in-flight messages where avoidable",
+          "Must degrade gracefully when all routes are poor (req-GA-005)"
+        ],
+        "failureModes": [
+          "Route flapping",
+          "No viable route",
+          "Stale topology leading to bad selection"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-002: Logical component within comm subsystem"
+        ],
+        "unresolvedDecisions": [
+          "UD-017: Specific route scoring algorithm not prescribed"
+        ],
+        "notes": "Canonical engine: eng-comm-routing (selection and switching portion)"
+      }
+    },
+    {
+      "id": "node-comm03-route-table",
+      "type": "component",
+      "label": "Route Table & Policy Store",
+      "description": "Authoritative in-memory store of current active routes, candidate routes, and routing policy. Provides fast queries for the Routing Engine, orchestrator, and operator tooling.",
+      "groupId": "grp-comm03-routing",
+      "position": {
+        "x": 680,
+        "y": 290
+      },
+      "size": {
+        "width": 280,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "storage",
+        "color": "#0d9488",
+        "borderColor": "#0f766e",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-comm03-rt-in-update",
+          "direction": "in",
+          "side": "top",
+          "label": "Route Updates",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm03-rt-in-policy",
+          "direction": "in",
+          "side": "left",
+          "label": "Policy Updates",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm03-rt-out-query",
+          "direction": "out",
+          "side": "right",
+          "label": "Route Queries",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm03-rt-out-snapshot",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Route Snapshot",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-comm-routing",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-008",
+          "req-GA-005"
+        ],
+        "responsibilities": [
+          "Maintain active and candidate route sets per endpoint",
+          "Store routing policy and operator overrides",
+          "Serve low-latency route queries to the Routing Engine and orchestrator",
+          "Provide route snapshots for diagnostics, UI, and persistence"
+        ],
+        "inputs": [
+          "Route updates from Routing Engine",
+          "Policy updates from configuration or operator UI"
+        ],
+        "outputs": [
+          "Route query responses",
+          "Route snapshots for UI, diagnostics, and persistence"
+        ],
+        "constraints": [
+          "In-memory for low-latency queries",
+          "Policy changes must be auditable"
+        ],
+        "failureModes": [
+          "Stale route entries",
+          "Policy conflict with runtime state"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Canonical engine: eng-comm-routing (route table portion)"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-comm03-transport-to-loss",
+      "source": "ext-comm03-transport",
+      "target": "node-comm03-loss-detector",
+      "sourcePort": null,
+      "targetPort": "port-comm03-ld-in-channel",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Channel Status Feed",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "continuous",
+        "synchronous": false,
+        "description": "Transport Abstraction Engine reports per-channel liveness, heartbeat timing, and error indicators to the Connection Loss Detector.",
+        "requirementIds": [
+          "req-2.2-001",
+          "req-2.2-005"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-eventbus-to-loss",
+      "source": "ext-comm03-event-bus",
+      "target": "node-comm03-loss-detector",
+      "sourcePort": null,
+      "targetPort": "port-comm03-ld-in-events",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Link / Diagnostic Events",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-publish",
+        "synchronous": false,
+        "description": "Loss Detector subscribes to link state transitions and diagnostic events to catch early degradation signals.",
+        "requirementIds": [
+          "req-2.2-006",
+          "req-2.16-001",
+          "req-2.17-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-multinet-to-loss",
+      "source": "ext-comm03-multi-network",
+      "target": "node-comm03-loss-detector",
+      "sourcePort": null,
+      "targetPort": "port-comm03-ld-in-netevents",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Interface Events",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-change",
+        "synchronous": false,
+        "description": "Multi-Network Manager notifies the Loss Detector of interface up/down and failover-related events.",
+        "requirementIds": [
+          "req-2.2-006"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-loss-to-orchestrator",
+      "source": "node-comm03-loss-detector",
+      "target": "node-comm03-reconnect-orchestrator",
+      "sourcePort": "port-comm03-ld-out-loss",
+      "targetPort": "port-comm03-ro-in-loss",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Loss Notifications",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-detect",
+        "synchronous": false,
+        "description": "Loss Detector hands classified loss notifications to the Reconnection Orchestrator for recovery execution.",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-GA-005"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-loss-to-diagnostics",
+      "source": "node-comm03-loss-detector",
+      "target": "ext-comm03-diagnostics",
+      "sourcePort": "port-comm03-ld-out-class",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Loss Classification",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-detect",
+        "synchronous": false,
+        "description": "Loss classifications are shared with Network Diagnostics for fault correlation and reporting.",
+        "requirementIds": [
+          "req-2.16-001",
+          "req-2.16-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-config-to-orchestrator",
+      "source": "ext-comm03-config",
+      "target": "node-comm03-reconnect-orchestrator",
+      "sourcePort": null,
+      "targetPort": "port-comm03-ro-in-policy",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Recovery Policy",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-change",
+        "synchronous": false,
+        "description": "Platform configuration provides retry, backoff, and recovery policy parameters.",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-GA-005"
+        ],
+        "assumptions": [
+          "UD-016: Default retry/backoff policy parameters not prescribed"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#475569",
+        "strokeWidth": 1,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 0
+      }
+    },
+    {
+      "id": "edge-comm03-routing-to-orchestrator",
+      "source": "node-comm03-routing-engine",
+      "target": "node-comm03-reconnect-orchestrator",
+      "sourcePort": "port-comm03-re-out-advisory",
+      "targetPort": "port-comm03-ro-in-route",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Route Advisory",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-request",
+        "synchronous": false,
+        "description": "Routing Engine advises orchestrator on preferred alternative paths for reconnection.",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-006"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0891b2",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-orchestrator-to-transport",
+      "source": "node-comm03-reconnect-orchestrator",
+      "target": "ext-comm03-transport",
+      "sourcePort": "port-comm03-ro-out-attempt",
+      "targetPort": null,
+      "semantic": {
+        "type": "command",
+        "direction": "unidirectional",
+        "label": "Reconnect Attempts",
+        "protocol": null,
+        "dataType": "command",
+        "trigger": "on-recovery",
+        "synchronous": true,
+        "description": "Orchestrator instructs the Transport Abstraction Engine to re-establish channels using selected routes.",
+        "requirementIds": [
+          "req-2.2-001",
+          "req-2.2-005",
+          "req-GA-005"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-orchestrator-to-eventbus",
+      "source": "node-comm03-reconnect-orchestrator",
+      "target": "ext-comm03-event-bus",
+      "sourcePort": "port-comm03-ro-out-status",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Recovery Status Events",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-progress",
+        "synchronous": false,
+        "description": "Orchestrator publishes recovery progress and outcome events to the event bus.",
+        "requirementIds": [
+          "req-2.2-006",
+          "req-2.17-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-orchestrator-to-routing",
+      "source": "node-comm03-reconnect-orchestrator",
+      "target": "node-comm03-routing-engine",
+      "sourcePort": "port-comm03-ro-out-status",
+      "targetPort": "port-comm03-re-in-recovery",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Recovery Status Feedback",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-progress",
+        "synchronous": false,
+        "description": "Routing Engine consumes recovery status to update route viability and switching decisions.",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-006"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-quality-to-routing",
+      "source": "ext-comm03-quality",
+      "target": "node-comm03-routing-engine",
+      "sourcePort": null,
+      "targetPort": "port-comm03-re-in-quality",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Link Health Scores",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-change",
+        "synchronous": false,
+        "description": "Link Quality Scorer feeds composite link health scores to the Routing Engine for route scoring.",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-007"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0891b2",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-bandwidth-to-routing",
+      "source": "ext-comm03-bandwidth",
+      "target": "node-comm03-routing-engine",
+      "sourcePort": null,
+      "targetPort": "port-comm03-re-in-util",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Utilization Reports",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "periodic",
+        "synchronous": false,
+        "description": "Bandwidth Analyzer feeds utilization and forecast reports to the Routing Engine for load-aware routing.",
+        "requirementIds": [
+          "req-2.2-007"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0891b2",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-routing-to-multinet",
+      "source": "node-comm03-routing-engine",
+      "target": "ext-comm03-multi-network",
+      "sourcePort": "port-comm03-re-out-select",
+      "targetPort": null,
+      "semantic": {
+        "type": "control-flow",
+        "direction": "unidirectional",
+        "label": "Route Selection Commands",
+        "protocol": null,
+        "dataType": "control",
+        "trigger": "on-change",
+        "synchronous": true,
+        "description": "Routing Engine issues route selection commands to the Multi-Network Manager to realize chosen paths over physical interfaces.",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-006"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-routing-to-eventbus",
+      "source": "node-comm03-routing-engine",
+      "target": "ext-comm03-event-bus",
+      "sourcePort": "port-comm03-re-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Route Change Events",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-change",
+        "synchronous": false,
+        "description": "Route changes are published to the event bus for subscribers (UI, diagnostics, audit).",
+        "requirementIds": [
+          "req-2.2-006",
+          "req-2.17-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-routing-to-table",
+      "source": "node-comm03-routing-engine",
+      "target": "node-comm03-route-table",
+      "sourcePort": "port-comm03-re-out-table-update",
+      "targetPort": "port-comm03-rt-in-update",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Route Table Updates",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-change",
+        "synchronous": false,
+        "description": "Routing Engine writes active and candidate route changes to the Route Table through its dedicated update interface.",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-008"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-comm03-config-to-table",
+      "source": "ext-comm03-config",
+      "target": "node-comm03-route-table",
+      "sourcePort": null,
+      "targetPort": "port-comm03-rt-in-policy",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Routing Policy Updates",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-change",
+        "synchronous": false,
+        "description": "Platform configuration supplies routing policy and operator overrides to the Route Table.",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-008"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#475569",
+        "strokeWidth": 1,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 0
+      }
+    },
+    {
+      "id": "edge-comm03-table-to-persistence",
+      "source": "node-comm03-route-table",
+      "target": "ext-comm03-persistence",
+      "sourcePort": "port-comm03-rt-out-snapshot",
+      "targetPort": null,
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Route Snapshots",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "periodic",
+        "synchronous": false,
+        "description": "Route snapshots are persisted for audit, incident evidence, and operator review.",
+        "requirementIds": [
+          "req-2.16-001",
+          "req-2.16-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "ext-comm03-transport",
+      "sourceDocumentId": "doc-comm-01",
+      "engineId": "eng-comm-transport",
+      "label": "Transport Abstraction Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#06b6d4",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm03-multi-network",
+      "sourceDocumentId": "doc-comm-01",
+      "engineId": "eng-comm-multi-network",
+      "label": "Multi-Network Manager",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#0e7490",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm03-quality",
+      "sourceDocumentId": "doc-comm-02",
+      "engineId": "eng-comm-link-quality",
+      "label": "Link Quality Scorer",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#0891b2",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm03-bandwidth",
+      "sourceDocumentId": "doc-comm-02",
+      "engineId": "eng-comm-bandwidth-analysis",
+      "label": "Bandwidth Analyzer",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#155e75",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm03-diagnostics",
+      "sourceDocumentId": "doc-comm-02",
+      "engineId": "eng-comm-network-diagnostics",
+      "label": "Network Diagnostics Engine",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#0e7490",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm03-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Central Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "ellipse",
+        "category": "event",
+        "color": "#fbbf24",
+        "borderColor": "#d97706",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm03-config",
+      "sourceDocumentId": "doc-master-03",
+      "engineId": "eng-plat-config-environment",
+      "label": "Platform Configuration",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#64748b",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm03-persistence",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Event / Health Persistence",
+      "type": "database",
+      "role": "target",
+      "style": {
+        "shape": "cylinder",
+        "category": "storage",
+        "color": "#475569",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-comm-connection-recovery",
+      "localNodeId": "node-comm03-loss-detector",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-comm"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-comm-connection-recovery",
+      "localNodeId": "node-comm03-reconnect-orchestrator",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-comm"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-comm-routing",
+      "localNodeId": "node-comm03-routing-engine",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-comm"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-comm-routing",
+      "localNodeId": "node-comm03-route-table",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-comm"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.2-001",
+      "description": "Multi-protocol transport abstraction (recovery interface)",
+      "coveredByNodes": [
+        "node-comm03-reconnect-orchestrator"
+      ],
+      "coveredByEdges": [
+        "edge-comm03-orchestrator-to-transport",
+        "edge-comm03-transport-to-loss"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "analysis",
+      "notes": "This file consumes and drives the Transport Abstraction Engine for recovery; the engine itself is in doc-comm-01."
+    },
+    {
+      "requirementId": "req-2.2-005",
+      "description": "Automatic network interface failover (routing & recovery side)",
+      "coveredByNodes": [
+        "node-comm03-loss-detector",
+        "node-comm03-reconnect-orchestrator",
+        "node-comm03-routing-engine",
+        "node-comm03-route-table"
+      ],
+      "coveredByEdges": [
+        "edge-comm03-loss-to-orchestrator",
+        "edge-comm03-routing-to-multinet",
+        "edge-comm03-routing-to-orchestrator",
+        "edge-comm03-orchestrator-to-transport"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Covers detection, orchestration, path selection, and switching that together realize failover above the interface layer."
+    },
+    {
+      "requirementId": "req-2.2-006",
+      "description": "Network availability change notification",
+      "coveredByNodes": [
+        "node-comm03-loss-detector",
+        "node-comm03-reconnect-orchestrator",
+        "node-comm03-routing-engine"
+      ],
+      "coveredByEdges": [
+        "edge-comm03-multinet-to-loss",
+        "edge-comm03-orchestrator-to-eventbus",
+        "edge-comm03-routing-to-eventbus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Recovery and route change events are published via the event bus."
+    },
+    {
+      "requirementId": "req-2.2-007",
+      "description": "Variable latency and bandwidth handling",
+      "coveredByNodes": [
+        "node-comm03-routing-engine"
+      ],
+      "coveredByEdges": [
+        "edge-comm03-quality-to-routing",
+        "edge-comm03-bandwidth-to-routing"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Routing uses quality and utilization inputs for adaptive path selection; adaptive transport behavior is in doc-comm-01."
+    },
+    {
+      "requirementId": "req-2.2-008",
+      "description": "Network interface configuration management (routing policy aspect)",
+      "coveredByNodes": [
+        "node-comm03-route-table"
+      ],
+      "coveredByEdges": [
+        "edge-comm03-config-to-table",
+        "edge-comm03-routing-to-table"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Policy store and runtime route table are modeled here; physical interface configuration is in doc-comm-01."
+    },
+    {
+      "requirementId": "req-2.16-001",
+      "description": "Fault detection in communication",
+      "coveredByNodes": [
+        "node-comm03-loss-detector"
+      ],
+      "coveredByEdges": [
+        "edge-comm03-loss-to-diagnostics",
+        "edge-comm03-table-to-persistence"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Connection-loss detection complements diagnostic fault detection in doc-comm-02."
+    },
+    {
+      "requirementId": "req-2.16-002",
+      "description": "System health monitoring and reporting",
+      "coveredByNodes": [
+        "node-comm03-reconnect-orchestrator",
+        "node-comm03-route-table"
+      ],
+      "coveredByEdges": [
+        "edge-comm03-orchestrator-to-eventbus",
+        "edge-comm03-table-to-persistence"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Recovery status and route snapshots contribute to overall system health reporting."
+    },
+    {
+      "requirementId": "req-2.16-003",
+      "description": "Automatic retry and recovery mechanisms",
+      "coveredByNodes": [
+        "node-comm03-reconnect-orchestrator"
+      ],
+      "coveredByEdges": [
+        "edge-comm03-config-to-orchestrator",
+        "edge-comm03-orchestrator-to-transport",
+        "edge-comm03-orchestrator-to-eventbus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Retry/backoff policy enforcement, attempt orchestration, and status reporting."
+    },
+    {
+      "requirementId": "req-2.17-001",
+      "description": "Event-driven architecture backbone (recovery and routing events)",
+      "coveredByNodes": [
+        "node-comm03-reconnect-orchestrator",
+        "node-comm03-routing-engine"
+      ],
+      "coveredByEdges": [
+        "edge-comm03-orchestrator-to-eventbus",
+        "edge-comm03-routing-to-eventbus",
+        "edge-comm03-eventbus-to-loss"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Produces and consumes events on the central bus implemented in doc-core-04."
+    },
+    {
+      "requirementId": "req-GA-005",
+      "description": "Graceful degradation under adverse conditions",
+      "coveredByNodes": [
+        "node-comm03-loss-detector",
+        "node-comm03-reconnect-orchestrator",
+        "node-comm03-routing-engine"
+      ],
+      "coveredByEdges": [
+        "edge-comm03-loss-to-orchestrator",
+        "edge-comm03-routing-to-orchestrator",
+        "edge-comm03-orchestrator-to-transport"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Detection, recovery, and route switching together sustain communication under degradation."
+    },
+    {
+      "requirementId": "req-GA-006",
+      "description": "Explicit uncertainty in all data representations",
+      "coveredByNodes": [
+        "node-comm03-loss-detector"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Loss classifications distinguish confirmed vs. suspected states."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-002",
+      "description": "All engines are logical components. Separate processes or services are not assumed unless explicitly stated.",
+      "impact": "Recovery and routing components are co-located within the comm subsystem."
+    },
+    {
+      "id": "AS-010",
+      "description": "Network interfaces are managed by the host OS and accessed through the Multi-Network Manager.",
+      "impact": "Routing selects logical paths; realization uses interfaces managed by Multi-Network Manager."
+    },
+    {
+      "id": "AS-012",
+      "description": "Route table state is runtime in-memory; persistence applies to snapshots for audit, not live routing decisions.",
+      "impact": "Route Table failure requires rebuild from Routing Engine state; snapshots support post-incident review."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-016",
+      "description": "Default retry and backoff policy parameters not prescribed.",
+      "options": [
+        "Exponential backoff with jitter",
+        "Linear backoff",
+        "Policy-per-channel configuration"
+      ],
+      "decisionOwner": "Implementation team",
+      "status": "deferred"
+    },
+    {
+      "id": "UD-017",
+      "description": "Route scoring algorithm not prescribed.",
+      "options": [
+        "Weighted multi-metric score",
+        "Policy-first with tie-break on quality",
+        "ML-based path selection"
+      ],
+      "decisionOwner": "Implementation team",
+      "status": "deferred"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": "1.0.0",
+    "createdDate": "2025-01-15",
+    "lastModified": "2025-01-15"
+  }
+}

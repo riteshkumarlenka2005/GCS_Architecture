@@ -1,0 +1,945 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-core-03",
+  "title": "Telemetry Ingestion & State Normalization Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Telemetry processing pipeline from raw decoded data through normalization, validation, timestamp alignment, and vehicle state model construction. Produces the common data model consumed by COP, operations, planning, and persistence.",
+  "category": "core",
+  "coordinateSystem": {
+    "unit": "canvas-unit",
+    "origin": "top-left",
+    "yAxis": "down"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.8
+  },
+  "groups": [
+    {
+      "id": "grp-core03-pipeline",
+      "label": "Telemetry Processing Pipeline",
+      "description": "Ingestion, parsing, validation, normalization, and state model construction",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.1,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#93c5fd"
+      },
+      "bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 1100,
+        "height": 420
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-telemetry-ingestion",
+          "eng-core-vehicle-state"
+        ],
+        "notes": "End-to-end telemetry pipeline within the Core subsystem"
+      }
+    },
+    {
+      "id": "grp-core03-state-layer",
+      "label": "Vehicle State Layer",
+      "description": "Normalized state storage and distribution to downstream consumers",
+      "parentGroupId": "grp-core03-pipeline",
+      "style": {
+        "backgroundColor": "#0d9488",
+        "borderColor": "#0f766e",
+        "borderWidth": 1,
+        "borderStyle": "dashed",
+        "opacity": 0.08,
+        "padding": 20,
+        "labelPosition": "top-left",
+        "fontSize": 12,
+        "textColor": "#5eead4"
+      },
+      "bounds": {
+        "x": 620,
+        "y": 260,
+        "width": 480,
+        "height": 180
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-vehicle-state"
+        ],
+        "notes": "State persistence and fan-out to consumers"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-core03-ingestion",
+      "type": "component",
+      "label": "Telemetry Ingestion Engine",
+      "description": "Receives decoded telemetry from protocol adapters, applies initial parsing, timestamp extraction, and source identification.",
+      "groupId": "grp-core03-pipeline",
+      "position": {
+        "x": 100,
+        "y": 120
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core03-ing-in-raw",
+          "direction": "in",
+          "side": "left",
+          "label": "Decoded Telemetry",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core03-ing-out-parsed",
+          "direction": "out",
+          "side": "right",
+          "label": "Parsed Records",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-telemetry-ingestion",
+        "requirementIds": [
+          "req-2.1-006",
+          "req-2.15-002",
+          "req-2.15-003",
+          "req-2.16-004"
+        ],
+        "responsibilities": [
+          "Receive decoded telemetry from protocol adapters",
+          "Extract and align timestamps",
+          "Identify source vehicle and sensor",
+          "Detect stale, missing, or out-of-order data",
+          "Apply initial validation and filtering"
+        ],
+        "inputs": [
+          "Decoded telemetry from protocol adapters"
+        ],
+        "outputs": [
+          "Parsed and timestamped telemetry records"
+        ],
+        "constraints": [
+          "Must handle high-throughput telemetry streams",
+          "Must detect stale data (req-2.16-004)"
+        ],
+        "failureModes": [
+          "Ingestion backlog",
+          "Timestamp drift",
+          "Source misidentification"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Canonical engine: eng-core-telemetry-ingestion"
+      }
+    },
+    {
+      "id": "node-core03-validator",
+      "type": "component",
+      "label": "Telemetry Validator",
+      "description": "Validates telemetry records against expected schemas, ranges, and freshness thresholds. Flags invalid or suspect data.",
+      "groupId": "grp-core03-pipeline",
+      "position": {
+        "x": 400,
+        "y": 120
+      },
+      "size": {
+        "width": 200,
+        "height": 100
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#2563eb",
+        "borderColor": "#1d4ed8",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core03-val-in",
+          "direction": "in",
+          "side": "left",
+          "label": "Parsed Records",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core03-val-out",
+          "direction": "out",
+          "side": "right",
+          "label": "Validated Records",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-telemetry-ingestion",
+        "requirementIds": [
+          "req-2.15-003",
+          "req-2.15-004",
+          "req-GA-006"
+        ],
+        "responsibilities": [
+          "Validate telemetry against schemas",
+          "Check value ranges and units",
+          "Flag stale or inconsistent data",
+          "Distinguish confirmed from uncertain data"
+        ],
+        "inputs": [
+          "Parsed telemetry records"
+        ],
+        "outputs": [
+          "Validated records with quality flags"
+        ],
+        "constraints": [
+          "Explicit uncertainty tagging (req-GA-006)"
+        ],
+        "failureModes": [
+          "False rejection of valid data",
+          "Pass-through of corrupt data"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Logical sub-component of eng-core-telemetry-ingestion"
+      }
+    },
+    {
+      "id": "node-core03-state-normalizer",
+      "type": "component",
+      "label": "Vehicle State Normalizer",
+      "description": "Constructs and maintains the normalized vehicle state model from validated telemetry. Provides the single source of truth for vehicle position, status, and operational state.",
+      "groupId": "grp-core03-pipeline",
+      "position": {
+        "x": 660,
+        "y": 120
+      },
+      "size": {
+        "width": 240,
+        "height": 100
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#1d4ed8",
+        "borderColor": "#1e40af",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core03-sn-in",
+          "direction": "in",
+          "side": "left",
+          "label": "Validated Telemetry",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core03-sn-out-state",
+          "direction": "out",
+          "side": "right",
+          "label": "Normalized State",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core03-sn-out-events",
+          "direction": "out",
+          "side": "bottom",
+          "label": "State Change Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-vehicle-state",
+        "requirementIds": [
+          "req-2.1-006",
+          "req-2.3-002",
+          "req-2.3-014",
+          "req-GA-006"
+        ],
+        "responsibilities": [
+          "Build normalized vehicle state model",
+          "Merge multi-source telemetry into coherent state",
+          "Track state freshness and uncertainty",
+          "Emit state change events",
+          "Distinguish live, stale, estimated, uncertain"
+        ],
+        "inputs": [
+          "Validated telemetry records"
+        ],
+        "outputs": [
+          "Normalized vehicle state",
+          "State change events"
+        ],
+        "constraints": [
+          "Must distinguish live vs stale vs estimated (req-2.3-014)"
+        ],
+        "failureModes": [
+          "State divergence",
+          "Stale state propagation"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Canonical engine: eng-core-vehicle-state"
+      }
+    },
+    {
+      "id": "node-core03-state-store",
+      "type": "component",
+      "label": "Vehicle State Store",
+      "description": "In-memory store of current normalized vehicle states for all active vehicles. Provides fast query access for COP, operations, and planning consumers.",
+      "groupId": "grp-core03-state-layer",
+      "position": {
+        "x": 680,
+        "y": 300
+      },
+      "size": {
+        "width": 240,
+        "height": 80
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "storage",
+        "color": "#0d9488",
+        "borderColor": "#0f766e",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core03-ss-in-update",
+          "direction": "in",
+          "side": "top",
+          "label": "State Updates",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core03-ss-out-query",
+          "direction": "out",
+          "side": "right",
+          "label": "State Queries",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core03-ss-out-snapshot",
+          "direction": "out",
+          "side": "bottom",
+          "label": "State Snapshots",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-vehicle-state",
+        "requirementIds": [
+          "req-2.1-006",
+          "req-2.3-014",
+          "req-2.15-002"
+        ],
+        "responsibilities": [
+          "Maintain current state for all active vehicles",
+          "Serve low-latency state queries to COP and operations",
+          "Provide state snapshots for persistence and replay",
+          "Expire stale vehicle entries"
+        ],
+        "inputs": [
+          "Normalized state updates from state normalizer"
+        ],
+        "outputs": [
+          "Current vehicle state on query",
+          "Periodic state snapshots"
+        ],
+        "constraints": [
+          "In-memory for low latency",
+          "Must support concurrent readers"
+        ],
+        "failureModes": [
+          "Memory exhaustion",
+          "Stale entry retention"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-002: Logical component; not assumed to be a separate process"
+        ],
+        "unresolvedDecisions": [
+          "UD-002: Specific in-memory store technology not prescribed"
+        ],
+        "notes": "Part of eng-core-vehicle-state. Downstream consumers access via query port."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-core03-adapter-to-ingestion",
+      "source": "ext-core03-protocol-adapter",
+      "target": "node-core03-ingestion",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Decoded Telemetry",
+        "protocol": null,
+        "dataType": "telemetry",
+        "trigger": "continuous",
+        "synchronous": false,
+        "description": "Protocol adapters deliver decoded telemetry records to the ingestion engine",
+        "requirementIds": [
+          "req-2.15-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": null,
+      "targetPort": "port-core03-ing-in-raw"
+    },
+    {
+      "id": "edge-core03-ingestion-to-validator",
+      "source": "node-core03-ingestion",
+      "target": "node-core03-validator",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Parsed Records",
+        "protocol": null,
+        "dataType": "telemetry",
+        "trigger": "continuous",
+        "synchronous": false,
+        "description": "Ingestion engine forwards parsed and timestamped records to the validator",
+        "requirementIds": [
+          "req-2.15-003"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core03-ing-out-parsed",
+      "targetPort": "port-core03-val-in"
+    },
+    {
+      "id": "edge-core03-validator-to-normalizer",
+      "source": "node-core03-validator",
+      "target": "node-core03-state-normalizer",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Validated Records",
+        "protocol": null,
+        "dataType": "telemetry",
+        "trigger": "continuous",
+        "synchronous": false,
+        "description": "Validator passes quality-flagged records to the state normalizer for model construction",
+        "requirementIds": [
+          "req-2.15-004",
+          "req-GA-006"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core03-val-out",
+      "targetPort": "port-core03-sn-in"
+    },
+    {
+      "id": "edge-core03-normalizer-to-store",
+      "source": "node-core03-state-normalizer",
+      "target": "node-core03-state-store",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "State Updates",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-change",
+        "synchronous": false,
+        "description": "State normalizer pushes updated vehicle state models into the state store",
+        "requirementIds": [
+          "req-2.1-006",
+          "req-2.3-014"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core03-sn-out-state",
+      "targetPort": "port-core03-ss-in-update"
+    },
+    {
+      "id": "edge-core03-normalizer-to-eventbus",
+      "source": "node-core03-state-normalizer",
+      "target": "ext-core03-event-bus",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "State Change Events",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-change",
+        "synchronous": false,
+        "description": "State normalizer emits events on significant state transitions for downstream subscribers",
+        "requirementIds": [
+          "req-2.1-006",
+          "req-2.3-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core03-sn-out-events",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core03-store-to-cop",
+      "source": "node-core03-state-store",
+      "target": "ext-core03-cop",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Vehicle State Queries",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-demand",
+        "synchronous": true,
+        "description": "COP queries the state store for current vehicle positions and status for map rendering",
+        "requirementIds": [
+          "req-2.3-002",
+          "req-2.3-014"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#10b981",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core03-ss-out-query",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core03-store-to-persistence",
+      "source": "node-core03-state-store",
+      "target": "ext-core03-persistence",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "State Snapshots",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "periodic",
+        "synchronous": false,
+        "description": "Periodic state snapshots forwarded to the persistence layer for historical storage and replay",
+        "requirementIds": [
+          "req-2.15-002",
+          "req-2.16-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#14b8a6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core03-ss-out-snapshot",
+      "targetPort": null
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "ext-core03-protocol-adapter",
+      "sourceDocumentId": "doc-core-02",
+      "engineId": "eng-core-protocol-adapter",
+      "label": "Protocol Adapter",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#64748b",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core03-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "ellipse",
+        "category": "event",
+        "color": "#fbbf24",
+        "borderColor": "#d97706",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core03-cop",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-core",
+      "label": "COP Display",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core03-persistence",
+      "sourceDocumentId": "doc-data-01",
+      "engineId": "eng-data-persistence",
+      "label": "Persistence Layer",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "cylinder",
+        "category": "storage",
+        "color": "#475569",
+        "borderColor": "#14b8a6",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-core-telemetry-ingestion",
+      "localNodeId": "node-core03-ingestion",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-core-02",
+          "nodeId": "node-core02-protocol-adapter"
+        },
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-telemetry-ingestion",
+      "localNodeId": "node-core03-validator",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-core-02",
+          "nodeId": "node-core02-protocol-adapter"
+        },
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-vehicle-state",
+      "localNodeId": "node-core03-state-normalizer",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-cop-01",
+          "nodeId": "node-cop01-core"
+        },
+        {
+          "documentId": "doc-ops-01",
+          "nodeId": null
+        },
+        {
+          "documentId": "doc-data-01",
+          "nodeId": "node-data01-persistence"
+        },
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-vehicle-state",
+      "localNodeId": "node-core03-state-store",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-cop-01",
+          "nodeId": "node-cop01-core"
+        },
+        {
+          "documentId": "doc-ops-01",
+          "nodeId": null
+        },
+        {
+          "documentId": "doc-data-01",
+          "nodeId": "node-data01-persistence"
+        },
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.1-006",
+      "description": "Vehicle state tracking and management",
+      "coveredByNodes": [
+        "node-core03-ingestion",
+        "node-core03-state-normalizer",
+        "node-core03-state-store"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.3-002",
+      "description": "Real-time telemetry display on COP",
+      "coveredByNodes": [
+        "node-core03-state-normalizer",
+        "node-core03-state-store"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": null,
+      "notes": "This file covers the data supply side; COP rendering is in doc-cop-01"
+    },
+    {
+      "requirementId": "req-2.3-014",
+      "description": "Distinguish live, stale, and estimated vehicle data",
+      "coveredByNodes": [
+        "node-core03-state-normalizer",
+        "node-core03-state-store"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.15-002",
+      "description": "Telemetry ingestion from multiple sources",
+      "coveredByNodes": [
+        "node-core03-ingestion",
+        "node-core03-state-store"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.15-003",
+      "description": "Telemetry validation and quality checking",
+      "coveredByNodes": [
+        "node-core03-ingestion",
+        "node-core03-validator"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.15-004",
+      "description": "Telemetry normalization to common data model",
+      "coveredByNodes": [
+        "node-core03-validator",
+        "node-core03-state-normalizer"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.16-004",
+      "description": "Stale data detection and handling",
+      "coveredByNodes": [
+        "node-core03-ingestion",
+        "node-core03-state-store"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-006",
+      "description": "Explicit uncertainty in all data representations",
+      "coveredByNodes": [
+        "node-core03-validator",
+        "node-core03-state-normalizer"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-002",
+      "description": "All engines are logical components. Separate processes or services are not assumed unless explicitly stated.",
+      "impact": "State store is modeled as an in-memory logical component, not a separate database service."
+    },
+    {
+      "id": "AS-007",
+      "description": "Telemetry timestamps are assumed to be synchronizable to a common clock reference (e.g., GPS time or NTP).",
+      "impact": "The ingestion engine performs timestamp alignment but does not implement full clock synchronization."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-002",
+      "description": "No specific in-memory store or database technology is prescribed for the vehicle state store.",
+      "options": [
+        "In-process hash map",
+        "Shared memory segment",
+        "Embedded key-value store"
+      ],
+      "decisionOwner": "Implementation team",
+      "status": "deferred"
+    }
+  ],
+  "metadata": {
+    "status": "pending",
+    "revision": 1,
+    "createdDate": "2025-01-15T00:00:00Z",
+    "lastModified": "2025-01-15T00:00:00Z"
+  }
+}

@@ -1,0 +1,1435 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-core-05",
+  "title": "Plugin Extension & External Integration Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Plugin and extension framework for third-party and custom module lifecycle management, sandboxing, and API surface exposure; external integration gateway for connections to cloud services, third-party APIs, and other GCS instances.",
+  "category": "core",
+  "coordinateSystem": {
+    "unit": "canvas-unit",
+    "origin": "top-left",
+    "yAxis": "down"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.75
+  },
+  "groups": [
+    {
+      "id": "grp-core05-plugins",
+      "label": "Plugin & Extension Framework",
+      "description": "Plugin discovery, loading, lifecycle management, sandboxing, and API surface exposure",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.1,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#93c5fd"
+      },
+      "bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 520,
+        "height": 480
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-plugin-extension"
+        ],
+        "notes": "Manages the full lifecycle of all plugins and extensions within the GCS"
+      }
+    },
+    {
+      "id": "grp-core05-external",
+      "label": "External Integration Layer",
+      "description": "Connections to external systems, cloud services, third-party APIs, and remote GCS instances",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#a855f7",
+        "borderColor": "#7c3aed",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.08,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#c4b5fd"
+      },
+      "bounds": {
+        "x": 620,
+        "y": 50,
+        "width": 500,
+        "height": 480
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-external-integration"
+        ],
+        "notes": "All outbound integration traffic flows through this layer"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-core05-plugin-manager",
+      "type": "component",
+      "label": "Plugin Lifecycle Manager",
+      "description": "Manages the complete lifecycle of all plugins and extensions: discovery, dependency resolution, loading, initialization, activation, deactivation, and unloading.",
+      "groupId": "grp-core05-plugins",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core05-pm-in-cmd",
+          "direction": "in",
+          "side": "left",
+          "label": "Lifecycle Commands",
+          "dataType": "command",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core05-pm-in-discover",
+          "direction": "in",
+          "side": "top",
+          "label": "Plugin Discovery",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core05-pm-out-sandbox",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Load / Unload",
+          "dataType": "control",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core05-pm-out-registry",
+          "direction": "out",
+          "side": "right",
+          "label": "Registration",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-plugin-extension",
+        "requirementIds": [
+          "req-2.1-002",
+          "req-2.19-002",
+          "req-2.19-004",
+          "req-GA-003"
+        ],
+        "responsibilities": [
+          "Discover available plugins from local and remote sources",
+          "Resolve plugin dependencies and version constraints",
+          "Load and initialize plugins in correct order",
+          "Activate and deactivate plugins at runtime",
+          "Unload plugins and reclaim resources",
+          "Report plugin lifecycle events to event bus"
+        ],
+        "inputs": [
+          "Lifecycle commands from operator or API",
+          "Plugin discovery scans"
+        ],
+        "outputs": [
+          "Load/unload directives to sandbox",
+          "Registration updates to extension registry"
+        ],
+        "constraints": [
+          "Plugin loading must not block the main application thread",
+          "Dependency cycles must be detected and rejected",
+          "Failed plugins must be isolated without affecting others (req-GA-004)"
+        ],
+        "failureModes": [
+          "Dependency resolution failure",
+          "Plugin load timeout",
+          "Cascading unload failure"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-002: Logical component within core subsystem"
+        ],
+        "unresolvedDecisions": [],
+        "notes": "Canonical engine: eng-core-plugin-extension"
+      }
+    },
+    {
+      "id": "node-core05-plugin-sandbox",
+      "type": "component",
+      "label": "Plugin Sandbox & API Surface",
+      "description": "Provides isolated execution environments for plugins and exposes a controlled API surface. Enforces resource limits, permission boundaries, and data access restrictions.",
+      "groupId": "grp-core05-plugins",
+      "position": {
+        "x": 100,
+        "y": 280
+      },
+      "size": {
+        "width": 240,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#1d4ed8",
+        "borderColor": "#1e40af",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core05-sb-in-lifecycle",
+          "direction": "in",
+          "side": "top",
+          "label": "Lifecycle Control",
+          "dataType": "control",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core05-sb-out-api",
+          "direction": "out",
+          "side": "right",
+          "label": "API Access",
+          "dataType": "command",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core05-sb-out-events",
+          "direction": "out",
+          "side": "right",
+          "label": "Event Subscription",
+          "dataType": "event",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core05-sb-out-auth",
+          "direction": "out",
+          "side": "left",
+          "label": "Permission Check",
+          "dataType": "auth",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-plugin-extension",
+        "requirementIds": [
+          "req-2.19-001",
+          "req-2.19-003",
+          "req-GA-003",
+          "req-GA-004"
+        ],
+        "responsibilities": [
+          "Create isolated execution contexts for each plugin",
+          "Expose controlled API surface (vehicle data, commands, COP overlays, etc.)",
+          "Enforce resource limits (CPU, memory, network)",
+          "Enforce permission boundaries per plugin manifest",
+          "Mediate plugin access to the event bus",
+          "Monitor plugin health and terminate misbehaving plugins"
+        ],
+        "inputs": [
+          "Lifecycle directives from plugin manager"
+        ],
+        "outputs": [
+          "API calls to core subsystems",
+          "Event subscriptions",
+          "Permission queries to auth"
+        ],
+        "constraints": [
+          "Plugins must not access subsystem internals directly (req-GA-004)",
+          "Resource limits must be enforced per-plugin",
+          "Sandbox escape must be prevented"
+        ],
+        "failureModes": [
+          "Sandbox escape",
+          "Resource exhaustion by rogue plugin",
+          "API surface version mismatch"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-009: Plugin isolation level (process, thread, or container) is implementation-defined"
+        ],
+        "unresolvedDecisions": [
+          "UD-011: Specific sandboxing technology (WebAssembly, container, process isolation) not prescribed"
+        ],
+        "notes": "Logical sub-component of eng-core-plugin-extension"
+      }
+    },
+    {
+      "id": "node-core05-extension-registry",
+      "type": "component",
+      "label": "Extension Registry",
+      "description": "Central catalog of all installed and available plugins and extensions. Tracks versions, capabilities, dependencies, compatibility, and operational status.",
+      "groupId": "grp-core05-plugins",
+      "position": {
+        "x": 380,
+        "y": 140
+      },
+      "size": {
+        "width": 170,
+        "height": 100
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "storage",
+        "color": "#0d9488",
+        "borderColor": "#0f766e",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 12,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core05-er-in-reg",
+          "direction": "in",
+          "side": "left",
+          "label": "Registration",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core05-er-out-query",
+          "direction": "out",
+          "side": "right",
+          "label": "Registry Queries",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-plugin-extension",
+        "requirementIds": [
+          "req-2.19-004",
+          "req-2.1-002",
+          "req-GA-010"
+        ],
+        "responsibilities": [
+          "Maintain catalog of installed plugins with metadata",
+          "Track plugin versions and compatibility matrices",
+          "Record plugin capabilities and declared dependencies",
+          "Report plugin operational status (active, inactive, error)",
+          "Support plugin discovery from remote repositories"
+        ],
+        "inputs": [
+          "Plugin registration data from lifecycle manager"
+        ],
+        "outputs": [
+          "Registry query results for UI, API, and dependency resolution"
+        ],
+        "constraints": [
+          "Registry must survive application restarts",
+          "Must support rollback to previous plugin versions (req-GA-010)"
+        ],
+        "failureModes": [
+          "Registry corruption",
+          "Stale plugin metadata"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-012: Remote plugin repository protocol not specified"
+        ],
+        "notes": "Logical sub-component of eng-core-plugin-extension"
+      }
+    },
+    {
+      "id": "node-core05-integration-gateway",
+      "type": "component",
+      "label": "External Integration Gateway",
+      "description": "Central gateway for all outbound connections to external systems. Manages connection lifecycle, protocol translation, data transformation, and synchronization workflows.",
+      "groupId": "grp-core05-external",
+      "position": {
+        "x": 680,
+        "y": 100
+      },
+      "size": {
+        "width": 260,
+        "height": 120
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#a855f7",
+        "borderColor": "#7c3aed",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core05-ig-in-internal",
+          "direction": "in",
+          "side": "left",
+          "label": "Internal Requests",
+          "dataType": "command",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core05-ig-in-sync",
+          "direction": "in",
+          "side": "left",
+          "label": "Sync Triggers",
+          "dataType": "event",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core05-ig-out-connectors",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Connector Dispatch",
+          "dataType": "command",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core05-ig-out-events",
+          "direction": "out",
+          "side": "right",
+          "label": "Integration Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core05-ig-out-data",
+          "direction": "out",
+          "side": "right",
+          "label": "Imported Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-external-integration",
+        "requirementIds": [
+          "req-2.1-003",
+          "req-2.20-001",
+          "req-2.20-002",
+          "req-2.20-003",
+          "req-GA-003"
+        ],
+        "responsibilities": [
+          "Manage outbound connections to external systems",
+          "Translate between internal data model and external formats",
+          "Orchestrate data import and export workflows",
+          "Coordinate cloud synchronization when connectivity available",
+          "Handle connection failures, retries, and backoff",
+          "Emit integration status events"
+        ],
+        "inputs": [
+          "Internal data requests",
+          "Sync triggers from comm subsystem",
+          "Configuration changes"
+        ],
+        "outputs": [
+          "Connector dispatch commands",
+          "Integration status events",
+          "Imported/transformed data"
+        ],
+        "constraints": [
+          "Must operate in offline-first mode (AS-001)",
+          "Cloud sync is optional and must degrade gracefully (AS-006)",
+          "Data transformation must preserve provenance (req-2.16-005)"
+        ],
+        "failureModes": [
+          "External system unreachable",
+          "Data format incompatibility",
+          "Sync conflict"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-001: Local-first architecture",
+          "AS-006: Remote sync endpoint is optional"
+        ],
+        "unresolvedDecisions": [
+          "UD-006: Cloud vs on-premise vs edge not specified"
+        ],
+        "notes": "Canonical engine: eng-core-external-integration"
+      }
+    },
+    {
+      "id": "node-core05-connector-pool",
+      "type": "component",
+      "label": "Integration Connector Pool",
+      "description": "Pool of specialized connectors for specific external system types: cloud storage, third-party APIs, remote GCS instances, and data import/export endpoints.",
+      "groupId": "grp-core05-external",
+      "position": {
+        "x": 680,
+        "y": 290
+      },
+      "size": {
+        "width": 260,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#7c3aed",
+        "borderColor": "#6d28d9",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core05-cp-in-dispatch",
+          "direction": "in",
+          "side": "top",
+          "label": "Connector Dispatch",
+          "dataType": "command",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core05-cp-out-external",
+          "direction": "out",
+          "side": "right",
+          "label": "External Traffic",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core05-cp-out-status",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Connection Status",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-external-integration",
+        "requirementIds": [
+          "req-2.20-001",
+          "req-2.20-002",
+          "req-2.20-003",
+          "req-GA-003"
+        ],
+        "responsibilities": [
+          "Maintain connection pool for each external system type",
+          "Handle connection establishment, keepalive, and teardown",
+          "Implement protocol-specific adapters (HTTP, MQTT, file, etc.)",
+          "Manage authentication credentials for external systems",
+          "Report connection health and throughput metrics"
+        ],
+        "inputs": [
+          "Connector dispatch from integration gateway"
+        ],
+        "outputs": [
+          "Outbound traffic to external systems",
+          "Connection health status"
+        ],
+        "constraints": [
+          "Each connector must be independently configurable",
+          "Connectors must be hot-swappable without restart",
+          "Credential storage must be secure (delegates to sec subsystem)"
+        ],
+        "failureModes": [
+          "Connection pool exhaustion",
+          "Credential expiration",
+          "Protocol version mismatch"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-006: Cloud vs on-premise vs edge not specified",
+          "UD-007: Specific streaming protocols not prescribed"
+        ],
+        "notes": "Logical sub-component of eng-core-external-integration"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-core05-pm-to-sandbox",
+      "source": "node-core05-plugin-manager",
+      "target": "node-core05-plugin-sandbox",
+      "semantic": {
+        "type": "control-flow",
+        "direction": "unidirectional",
+        "label": "Load / Unload Directives",
+        "protocol": null,
+        "dataType": "control",
+        "trigger": "on-lifecycle-change",
+        "synchronous": true,
+        "description": "Plugin manager instructs sandbox to load, activate, deactivate, or unload specific plugins",
+        "requirementIds": [
+          "req-2.19-002",
+          "req-2.19-003"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core05-pm-out-sandbox",
+      "targetPort": "port-core05-sb-in-lifecycle"
+    },
+    {
+      "id": "edge-core05-pm-to-registry",
+      "source": "node-core05-plugin-manager",
+      "target": "node-core05-extension-registry",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Plugin Registration",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-lifecycle-change",
+        "synchronous": true,
+        "description": "Plugin manager registers and updates plugin metadata in the extension registry",
+        "requirementIds": [
+          "req-2.19-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core05-pm-out-registry",
+      "targetPort": "port-core05-er-in-reg"
+    },
+    {
+      "id": "edge-core05-sandbox-to-api",
+      "source": "node-core05-plugin-sandbox",
+      "target": "ext-core05-api-gateway",
+      "semantic": {
+        "type": "command",
+        "direction": "unidirectional",
+        "label": "Plugin API Calls",
+        "protocol": null,
+        "dataType": "command",
+        "trigger": "on-demand",
+        "synchronous": true,
+        "description": "Sandboxed plugins access core subsystem functionality through the API gateway",
+        "requirementIds": [
+          "req-2.19-001",
+          "req-GA-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#3b82f6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core05-sb-out-api",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core05-sandbox-to-eventbus",
+      "source": "node-core05-plugin-sandbox",
+      "target": "ext-core05-event-bus",
+      "semantic": {
+        "type": "event",
+        "direction": "bidirectional",
+        "label": "Plugin Events",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-publish-or-subscribe",
+        "synchronous": false,
+        "description": "Plugins publish and subscribe to events through the central event bus",
+        "requirementIds": [
+          "req-2.19-001",
+          "req-2.17-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core05-sb-out-events",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core05-sandbox-to-auth",
+      "source": "node-core05-plugin-sandbox",
+      "target": "ext-core05-auth",
+      "semantic": {
+        "type": "auth-flow",
+        "direction": "bidirectional",
+        "label": "Plugin Permission Check",
+        "protocol": null,
+        "dataType": "auth",
+        "trigger": "per-operation",
+        "synchronous": true,
+        "description": "Sandbox checks plugin permissions against RBAC policies before allowing API access",
+        "requirementIds": [
+          "req-2.19-003",
+          "req-GA-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core05-sb-out-auth",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core05-ig-to-connectors",
+      "source": "node-core05-integration-gateway",
+      "target": "node-core05-connector-pool",
+      "semantic": {
+        "type": "control-flow",
+        "direction": "unidirectional",
+        "label": "Connector Dispatch",
+        "protocol": null,
+        "dataType": "command",
+        "trigger": "on-request",
+        "synchronous": true,
+        "description": "Integration gateway dispatches connection requests to the appropriate connector in the pool",
+        "requirementIds": [
+          "req-2.20-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core05-ig-out-connectors",
+      "targetPort": "port-core05-cp-in-dispatch"
+    },
+    {
+      "id": "edge-core05-connectors-to-external",
+      "source": "node-core05-connector-pool",
+      "target": "ext-core05-external-systems",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "bidirectional",
+        "label": "External Data Exchange",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-request-or-sync",
+        "synchronous": false,
+        "description": "Connectors exchange data with external systems including cloud storage, APIs, and remote GCS instances",
+        "requirementIds": [
+          "req-2.20-001",
+          "req-2.20-002",
+          "req-2.20-003"
+        ],
+        "assumptions": [
+          "AS-006: Remote sync endpoint is optional"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#a855f7",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core05-cp-out-external",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core05-ig-to-eventbus",
+      "source": "node-core05-integration-gateway",
+      "target": "ext-core05-event-bus",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Integration Status Events",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-status-change",
+        "synchronous": false,
+        "description": "Integration gateway publishes connection status, sync progress, and error events",
+        "requirementIds": [
+          "req-2.20-001",
+          "req-2.17-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core05-ig-out-events",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core05-ig-to-persistence",
+      "source": "node-core05-integration-gateway",
+      "target": "ext-core05-persistence",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Imported Data",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-import",
+        "synchronous": false,
+        "description": "Data imported from external systems is forwarded to the persistence layer for storage",
+        "requirementIds": [
+          "req-2.20-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#14b8a6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core05-ig-out-data",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core05-comm-to-ig",
+      "source": "ext-core05-comm",
+      "target": "node-core05-integration-gateway",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Network Availability",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-network-change",
+        "synchronous": false,
+        "description": "Communication subsystem notifies integration gateway of network availability changes to trigger sync",
+        "requirementIds": [
+          "req-2.20-003",
+          "req-2.2-006"
+        ],
+        "assumptions": [
+          "AS-001: Local-first; sync only when connectivity available"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": null,
+      "targetPort": "port-core05-ig-in-sync"
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "ext-core05-api-gateway",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-api-gateway",
+      "label": "API Gateway",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#3b82f6",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core05-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "ellipse",
+        "category": "event",
+        "color": "#fbbf24",
+        "borderColor": "#d97706",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core05-auth",
+      "sourceDocumentId": "doc-sec-01",
+      "engineId": "eng-sec-authentication",
+      "label": "Auth & RBAC",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core05-external-systems",
+      "sourceDocumentId": "doc-master-01",
+      "engineId": null,
+      "label": "External Systems",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "cloud",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#a855f7",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core05-persistence",
+      "sourceDocumentId": "doc-data-01",
+      "engineId": "eng-data-persistence",
+      "label": "Data Persistence",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "cylinder",
+        "category": "storage",
+        "color": "#475569",
+        "borderColor": "#14b8a6",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core05-comm",
+      "sourceDocumentId": "doc-comm-01",
+      "engineId": "eng-comm-transport",
+      "label": "Comm Subsystem",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#06b6d4",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-core-plugin-extension",
+      "localNodeId": "node-core05-plugin-manager",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-api-gateway"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-event-bus"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-schema-registry"
+        },
+        {
+          "documentId": "doc-sec-01",
+          "nodeId": "node-sec01-auth"
+        },
+        {
+          "documentId": "doc-cust-02",
+          "nodeId": null
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-plugin-extension",
+      "localNodeId": "node-core05-plugin-sandbox",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-api-gateway"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-event-bus"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-schema-registry"
+        },
+        {
+          "documentId": "doc-sec-01",
+          "nodeId": "node-sec01-auth"
+        },
+        {
+          "documentId": "doc-cust-02",
+          "nodeId": null
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-plugin-extension",
+      "localNodeId": "node-core05-extension-registry",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-api-gateway"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-event-bus"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-schema-registry"
+        },
+        {
+          "documentId": "doc-sec-01",
+          "nodeId": "node-sec01-auth"
+        },
+        {
+          "documentId": "doc-cust-02",
+          "nodeId": null
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-external-integration",
+      "localNodeId": "node-core05-integration-gateway",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-master-01",
+          "nodeId": "node-ctx-external"
+        },
+        {
+          "documentId": "doc-comm-01",
+          "nodeId": "node-comm01-transport"
+        },
+        {
+          "documentId": "doc-data-01",
+          "nodeId": "node-data01-persistence"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-event-bus"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-external-integration",
+      "localNodeId": "node-core05-connector-pool",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-master-01",
+          "nodeId": "node-ctx-external"
+        },
+        {
+          "documentId": "doc-comm-01",
+          "nodeId": "node-comm01-transport"
+        },
+        {
+          "documentId": "doc-data-01",
+          "nodeId": "node-data01-persistence"
+        },
+        {
+          "documentId": "doc-core-04",
+          "nodeId": "node-core04-event-bus"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.1-002",
+      "description": "Plugin and extension support",
+      "coveredByNodes": [
+        "node-core05-plugin-manager",
+        "node-core05-extension-registry"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.1-003",
+      "description": "Third-party system integration",
+      "coveredByNodes": [
+        "node-core05-integration-gateway",
+        "node-core05-connector-pool"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.1-004",
+      "description": "Extensible and modular architecture",
+      "coveredByNodes": [
+        "node-core05-plugin-manager",
+        "node-core05-plugin-sandbox",
+        "node-core05-integration-gateway"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.19-001",
+      "description": "Plugin API for accessing GCS functionality",
+      "coveredByNodes": [
+        "node-core05-plugin-sandbox"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.19-002",
+      "description": "Plugin lifecycle management",
+      "coveredByNodes": [
+        "node-core05-plugin-manager"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.19-003",
+      "description": "Plugin sandboxing and security isolation",
+      "coveredByNodes": [
+        "node-core05-plugin-sandbox"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.19-004",
+      "description": "Plugin registry and discovery",
+      "coveredByNodes": [
+        "node-core05-plugin-manager",
+        "node-core05-extension-registry"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.20-001",
+      "description": "External system integration framework",
+      "coveredByNodes": [
+        "node-core05-integration-gateway",
+        "node-core05-connector-pool"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.20-002",
+      "description": "Data import and export",
+      "coveredByNodes": [
+        "node-core05-integration-gateway",
+        "node-core05-connector-pool"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.20-003",
+      "description": "Cloud synchronization",
+      "coveredByNodes": [
+        "node-core05-integration-gateway",
+        "node-core05-connector-pool"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": null,
+      "notes": "Integration layer handles sync orchestration; network transport is in doc-comm-01"
+    },
+    {
+      "requirementId": "req-GA-003",
+      "description": "Extensibility through well-defined interfaces",
+      "coveredByNodes": [
+        "node-core05-plugin-sandbox",
+        "node-core05-integration-gateway",
+        "node-core05-connector-pool"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-004",
+      "description": "Plugin isolation and fault containment",
+      "coveredByNodes": [
+        "node-core05-plugin-sandbox"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-010",
+      "description": "Backward compatibility for all interfaces",
+      "coveredByNodes": [
+        "node-core05-extension-registry"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": null,
+      "notes": "Registry tracks version compatibility; enforcement is in doc-core-04 schema registry"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-001",
+      "description": "GCS operates in local-first mode. Cloud and remote connectivity are optional enhancements.",
+      "impact": "External integration gateway must function in fully offline mode with deferred sync."
+    },
+    {
+      "id": "AS-002",
+      "description": "All engines are logical components. Separate processes or services are not assumed.",
+      "impact": "Plugin sandbox isolation level is implementation-defined."
+    },
+    {
+      "id": "AS-006",
+      "description": "Remote sync endpoint is optional and may not be available in all deployments.",
+      "impact": "Cloud synchronization workflows must degrade gracefully when no remote endpoint is configured."
+    },
+    {
+      "id": "AS-009",
+      "description": "Plugin isolation level (process, thread, container, or WebAssembly sandbox) is implementation-defined.",
+      "impact": "The sandbox component is modeled as a logical boundary; physical isolation mechanism is deferred."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-006",
+      "description": "Cloud vs on-premise vs edge deployment for external integration targets not specified.",
+      "options": [
+        "Public cloud storage",
+        "Private cloud",
+        "On-premise server",
+        "Edge node"
+      ],
+      "decisionOwner": "Deployment team",
+      "status": "deferred"
+    },
+    {
+      "id": "UD-007",
+      "description": "Specific streaming and data exchange protocols for external integration not prescribed.",
+      "options": [
+        "HTTP/REST",
+        "gRPC",
+        "MQTT",
+        "WebSocket",
+        "File-based exchange"
+      ],
+      "decisionOwner": "Implementation team",
+      "status": "deferred"
+    },
+    {
+      "id": "UD-011",
+      "description": "Plugin sandboxing technology not prescribed.",
+      "options": [
+        "Process isolation",
+        "Container (Docker)",
+        "WebAssembly (Wasm)",
+        "Thread-level sandboxing"
+      ],
+      "decisionOwner": "Implementation team",
+      "status": "deferred"
+    },
+    {
+      "id": "UD-012",
+      "description": "Remote plugin repository protocol and format not specified.",
+      "options": [
+        "HTTP package registry",
+        "Git-based repository",
+        "OCI container registry"
+      ],
+      "decisionOwner": "Implementation team",
+      "status": "deferred"
+    }
+  ],
+  "metadata": {
+    "status": "pending",
+    "revision": 1,
+    "createdDate": "2025-01-15T00:00:00Z",
+    "lastModified": "2025-01-15T00:00:00Z"
+  }
+}

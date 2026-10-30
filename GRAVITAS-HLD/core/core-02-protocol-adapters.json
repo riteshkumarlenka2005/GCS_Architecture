@@ -1,0 +1,906 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-core-02",
+  "title": "Protocol Adapter & Capability Discovery Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Detailed view of the protocol abstraction layer, multi-controller compatibility, adapter lifecycle management, and capability discovery. Shows how protocol-specific logic is isolated from domain logic and how new adapters can be added without core changes.",
+  "category": "core",
+  "coordinateSystem": {
+    "unit": "canvas-unit",
+    "origin": "top-left",
+    "yAxis": "down"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.8
+  },
+  "groups": [
+    {
+      "id": "grp-core02-adapters",
+      "label": "Protocol Adapter Layer",
+      "description": "Protocol-specific adapters that translate between vehicle protocols and the normalized internal model",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.1,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#93c5fd"
+      },
+      "bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 550,
+        "height": 350
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-protocol-adapter",
+          "eng-core-multi-controller"
+        ],
+        "notes": ""
+      }
+    },
+    {
+      "id": "grp-core02-capability",
+      "label": "Capability Discovery",
+      "description": "Runtime discovery and validation of vehicle and controller capabilities",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.08,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#93c5fd"
+      },
+      "bounds": {
+        "x": 670,
+        "y": 50,
+        "width": 450,
+        "height": 350
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-capability-discovery"
+        ],
+        "notes": ""
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-core02-protocol-adapter",
+      "type": "adapter",
+      "label": "Protocol Adapter Engine",
+      "description": "Manages the lifecycle of protocol-specific adapters. Translates between raw protocol data and the normalized internal model. Keeps protocol logic isolated from domain and UI.",
+      "groupId": "grp-core02-adapters",
+      "position": {
+        "x": 100,
+        "y": 120
+      },
+      "size": {
+        "width": 260,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core02-pa-in-raw",
+          "direction": "in",
+          "side": "left",
+          "label": "Raw Protocol Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core02-pa-out-normalized",
+          "direction": "out",
+          "side": "right",
+          "label": "Normalized Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core02-pa-out-commands",
+          "direction": "out",
+          "side": "left",
+          "label": "Encoded Commands",
+          "dataType": "command",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core02-pa-in-commands",
+          "direction": "in",
+          "side": "right",
+          "label": "Internal Commands",
+          "dataType": "command",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core02-pa-out-events",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Adapter Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-protocol-adapter",
+        "requirementIds": [
+          "req-2.1-007",
+          "req-2.1-008",
+          "req-GA-003"
+        ],
+        "responsibilities": [
+          "Load and manage protocol-specific adapters",
+          "Decode raw protocol data into normalized internal format",
+          "Encode internal commands into protocol-specific format",
+          "Isolate protocol logic from domain and UI",
+          "Handle adapter initialization failures gracefully"
+        ],
+        "inputs": [
+          "Raw protocol data from transport",
+          "Internal commands from operations"
+        ],
+        "outputs": [
+          "Normalized data to telemetry",
+          "Encoded commands to transport",
+          "Adapter lifecycle events"
+        ],
+        "constraints": [
+          "Protocol logic must not leak into domain (req-GA-003)"
+        ],
+        "failureModes": [
+          "Adapter init failure",
+          "Protocol decode error",
+          "Incompatible firmware"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-001"
+        ],
+        "notes": "Canonical engine: eng-core-protocol-adapter"
+      }
+    },
+    {
+      "id": "node-core02-multi-controller",
+      "type": "component",
+      "label": "Multi-Controller Compatibility",
+      "description": "Manages compatibility across multiple controller manufacturers, families, firmware versions, and protocol variants.",
+      "groupId": "grp-core02-adapters",
+      "position": {
+        "x": 100,
+        "y": 290
+      },
+      "size": {
+        "width": 260,
+        "height": 80
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#2563eb",
+        "borderColor": "#1d4ed8",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core02-mc-out-pa",
+          "direction": "out",
+          "side": "top",
+          "label": "Controller Profile",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core02-mc-in-detect",
+          "direction": "in",
+          "side": "left",
+          "label": "Controller Detection",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-multi-controller",
+        "requirementIds": [
+          "req-2.1-003",
+          "req-2.1-005"
+        ],
+        "responsibilities": [
+          "Detect controller manufacturer, family, and firmware version",
+          "Select appropriate adapter variant for detected controller",
+          "Handle firmware version differences and protocol variants"
+        ],
+        "inputs": [
+          "Controller detection data from adapters"
+        ],
+        "outputs": [
+          "Controller profiles to adapter engine"
+        ],
+        "constraints": [],
+        "failureModes": [
+          "Unknown controller",
+          "Firmware mismatch"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-001"
+        ],
+        "notes": "Canonical engine: eng-core-multi-controller"
+      }
+    },
+    {
+      "id": "node-core02-adapter-lifecycle",
+      "type": "component",
+      "label": "Adapter Lifecycle Manager",
+      "description": "Manages adapter loading, initialization, health monitoring, isolation, and unloading. Ensures failed adapters do not affect unrelated integrations.",
+      "groupId": "grp-core02-adapters",
+      "position": {
+        "x": 400,
+        "y": 180
+      },
+      "size": {
+        "width": 180,
+        "height": 100
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#1d4ed8",
+        "borderColor": "#1e40af",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 12,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core02-al-in-events",
+          "direction": "in",
+          "side": "left",
+          "label": "Adapter Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core02-al-out-status",
+          "direction": "out",
+          "side": "right",
+          "label": "Adapter Status",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-protocol-adapter",
+        "requirementIds": [
+          "req-2.1-011",
+          "req-2.1-012",
+          "req-GA-008"
+        ],
+        "responsibilities": [
+          "Load and initialize adapters dynamically",
+          "Monitor adapter health and detect failures",
+          "Isolate failed adapters from unrelated integrations",
+          "Handle adapter unloading and cleanup"
+        ],
+        "inputs": [
+          "Adapter lifecycle events"
+        ],
+        "outputs": [
+          "Adapter status to registry and diagnostics"
+        ],
+        "constraints": [
+          "Fault containment mandatory (req-GA-008)"
+        ],
+        "failureModes": [
+          "Adapter crash",
+          "Resource leak"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Part of eng-core-protocol-adapter."
+      }
+    },
+    {
+      "id": "node-core02-capability-discovery",
+      "type": "component",
+      "label": "Capability Discovery Engine",
+      "description": "Detects and registers controller capabilities, firmware details, available sensors, payloads, and supported commands at runtime.",
+      "groupId": "grp-core02-capability",
+      "position": {
+        "x": 720,
+        "y": 120
+      },
+      "size": {
+        "width": 260,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core02-cd-in-adapter",
+          "direction": "in",
+          "side": "left",
+          "label": "Adapter Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core02-cd-out-capabilities",
+          "direction": "out",
+          "side": "right",
+          "label": "Discovered Capabilities",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core02-cd-out-sensors",
+          "direction": "out",
+          "side": "right",
+          "label": "Sensor List",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core02-cd-out-commands",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Supported Commands",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-capability-discovery",
+        "requirementIds": [
+          "req-2.1-005",
+          "req-GA-001"
+        ],
+        "responsibilities": [
+          "Query controller for available capabilities",
+          "Detect firmware version and supported features",
+          "Enumerate available sensors and payloads",
+          "Build supported command list per vehicle",
+          "Update capabilities on firmware change"
+        ],
+        "inputs": [
+          "Adapter data from protocol layer"
+        ],
+        "outputs": [
+          "Capability profiles",
+          "Sensor lists",
+          "Supported command sets"
+        ],
+        "constraints": [
+          "Capability-driven behavior (req-GA-001)"
+        ],
+        "failureModes": [
+          "Incomplete capability data",
+          "Query timeout"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Canonical engine: eng-core-capability-discovery"
+      }
+    },
+    {
+      "id": "node-core02-capability-store",
+      "type": "component",
+      "label": "Capability Profile Store",
+      "description": "Stores and serves per-vehicle capability profiles including supported commands, sensors, payloads, and operational limits.",
+      "groupId": "grp-core02-capability",
+      "position": {
+        "x": 720,
+        "y": 290
+      },
+      "size": {
+        "width": 260,
+        "height": 80
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#2563eb",
+        "borderColor": "#1d4ed8",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core02-cs-in-discovered",
+          "direction": "in",
+          "side": "top",
+          "label": "Discovered Caps",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core02-cs-out-query",
+          "direction": "out",
+          "side": "right",
+          "label": "Capability Query API",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-capability-discovery",
+        "requirementIds": [
+          "req-2.1-013",
+          "req-2.9-015"
+        ],
+        "responsibilities": [
+          "Store per-vehicle capability profiles",
+          "Serve capability queries to operations and planning",
+          "Clearly indicate unsupported features per vehicle"
+        ],
+        "inputs": [
+          "Discovered capabilities from discovery engine"
+        ],
+        "outputs": [
+          "Capability query API responses"
+        ],
+        "constraints": [],
+        "failureModes": [
+          "Stale capability data"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Part of eng-core-capability-discovery."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-core02-raw-to-adapter",
+      "source": "node-core02-ext-transport",
+      "target": "node-core02-protocol-adapter",
+      "sourcePort": null,
+      "targetPort": "port-core02-pa-in-raw",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Raw Data → Adapter",
+        "protocol": null,
+        "dataType": "Raw protocol bytes from transport layer",
+        "trigger": "Continuous",
+        "synchronous": false,
+        "description": "Transport layer delivers raw protocol data to the adapter for decoding.",
+        "requirementIds": [
+          "req-2.1-007",
+          "req-GA-003"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core02-adapter-to-normalized",
+      "source": "node-core02-protocol-adapter",
+      "target": "node-core02-ext-telemetry",
+      "sourcePort": "port-core02-pa-out-normalized",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Normalized Data → Telemetry",
+        "protocol": null,
+        "dataType": "Protocol-decoded data in normalized internal format",
+        "trigger": "Continuous",
+        "synchronous": false,
+        "description": "Adapter outputs normalized data to the telemetry ingestion engine.",
+        "requirementIds": [
+          "req-2.1-006",
+          "req-2.1-007"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core02-mc-to-adapter",
+      "source": "node-core02-multi-controller",
+      "target": "node-core02-protocol-adapter",
+      "sourcePort": "port-core02-mc-out-pa",
+      "targetPort": "port-core02-pa-in-commands",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Controller Profile → Adapter",
+        "protocol": null,
+        "dataType": "Controller identity, firmware version, protocol variant selection",
+        "trigger": "Controller detection",
+        "synchronous": true,
+        "description": "Multi-controller engine provides controller profile so the adapter can select the correct protocol variant.",
+        "requirementIds": [
+          "req-2.1-003",
+          "req-2.1-005"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#2563eb",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core02-adapter-to-lifecycle",
+      "source": "node-core02-protocol-adapter",
+      "target": "node-core02-adapter-lifecycle",
+      "sourcePort": "port-core02-pa-out-events",
+      "targetPort": "port-core02-al-in-events",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Adapter Events → Lifecycle",
+        "protocol": null,
+        "dataType": "Init success/failure, health status, error events",
+        "trigger": "Adapter lifecycle changes",
+        "synchronous": false,
+        "description": "Adapter reports lifecycle events to the lifecycle manager for health monitoring and isolation.",
+        "requirementIds": [
+          "req-2.1-011",
+          "req-2.1-012",
+          "req-GA-008"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core02-adapter-to-capability",
+      "source": "node-core02-protocol-adapter",
+      "target": "node-core02-capability-discovery",
+      "sourcePort": "port-core02-pa-out-normalized",
+      "targetPort": "port-core02-cd-in-adapter",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Adapter Data → Capability Discovery",
+        "protocol": null,
+        "dataType": "Decoded controller and vehicle data for capability extraction",
+        "trigger": "Connection and capability query",
+        "synchronous": null,
+        "description": "Adapter provides decoded data to capability discovery for runtime feature detection.",
+        "requirementIds": [
+          "req-2.1-005",
+          "req-GA-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#3b82f6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-core02-capability-to-store",
+      "source": "node-core02-capability-discovery",
+      "target": "node-core02-capability-store",
+      "sourcePort": "port-core02-cd-out-capabilities",
+      "targetPort": "port-core02-cs-in-discovered",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Discovered → Profile Store",
+        "protocol": null,
+        "dataType": "Complete capability profile for a vehicle",
+        "trigger": "Capability discovery completion",
+        "synchronous": true,
+        "description": "Discovery engine stores discovered capabilities in the profile store.",
+        "requirementIds": [
+          "req-2.1-013"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#2563eb",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-core02-ext-transport",
+      "sourceDocumentId": "doc-comm-01",
+      "engineId": "eng-comm-transport",
+      "label": "Transport Layer",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core02-ext-telemetry",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-telemetry-ingestion",
+      "label": "Telemetry Ingestion",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-core-protocol-adapter",
+      "localNodeId": "node-core02-protocol-adapter",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-flow-01",
+          "nodeId": "node-flow01-protocol-adapter"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-multi-controller",
+      "localNodeId": "node-core02-multi-controller",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-capability-discovery",
+      "localNodeId": "node-core02-capability-discovery",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-flow-01",
+          "nodeId": "node-flow01-capability"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.1-003",
+      "description": "Support multiple controller manufacturers, families, firmware versions and protocol variants",
+      "coveredByNodes": [
+        "node-core02-multi-controller"
+      ],
+      "coveredByEdges": [
+        "edge-core02-mc-to-adapter"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.1-005",
+      "description": "Detect controller capabilities, firmware details, available sensors, payloads and supported commands",
+      "coveredByNodes": [
+        "node-core02-capability-discovery",
+        "node-core02-multi-controller"
+      ],
+      "coveredByEdges": [
+        "edge-core02-adapter-to-capability"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.1-007",
+      "description": "Keep protocol-specific logic outside the main user interface",
+      "coveredByNodes": [
+        "node-core02-protocol-adapter"
+      ],
+      "coveredByEdges": [
+        "edge-core02-raw-to-adapter",
+        "edge-core02-adapter-to-normalized"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "inspection",
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.1-011",
+      "description": "Detect adapter initialization failures, incompatible firmware and unavailable capabilities",
+      "coveredByNodes": [
+        "node-core02-adapter-lifecycle"
+      ],
+      "coveredByEdges": [
+        "edge-core02-adapter-to-lifecycle"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.1-012",
+      "description": "Isolate a failed adapter so unrelated vehicle integrations remain operational",
+      "coveredByNodes": [
+        "node-core02-adapter-lifecycle"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-003",
+      "description": "Protocol isolation: protocol-specific details outside shared domain logic and UI",
+      "coveredByNodes": [
+        "node-core02-protocol-adapter"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "inspection",
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-008",
+      "description": "Fault containment: failure of one integration must not disable unrelated functionality",
+      "coveredByNodes": [
+        "node-core02-adapter-lifecycle"
+      ],
+      "coveredByEdges": [
+        "edge-core02-adapter-to-lifecycle"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": ""
+    }
+  ],
+  "assumptions": [],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-001",
+      "description": "No specific communication protocols named.",
+      "impact": "Adapters modeled generically.",
+      "resolution": "Pending"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 1,
+    "createdDate": "2025-01-27T00:00:00Z",
+    "lastModified": "2025-01-27T00:00:00Z"
+  }
+}

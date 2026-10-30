@@ -1,0 +1,1273 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-comm-01",
+  "title": "Transport Layer & Multi-Network Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Core transport abstraction layer providing protocol-agnostic communication channels, and multi-network manager handling discovery, enumeration, selection, and failover across all available network interfaces (WiFi, cellular, satellite, mesh, wired).",
+  "category": "comm",
+  "coordinateSystem": {
+    "unit": "canvas-unit",
+    "origin": "top-left",
+    "yAxis": "down"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.8
+  },
+  "groups": [
+    {
+      "id": "grp-comm01-transport",
+      "label": "Transport Abstraction Layer",
+      "description": "Protocol-agnostic transport channels, connection management, and data framing",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#06b6d4",
+        "borderColor": "#0891b2",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.1,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#67e8f9"
+      },
+      "bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 520,
+        "height": 420
+      },
+      "metadata": {
+        "category": "comm",
+        "engineIds": [
+          "eng-comm-transport"
+        ],
+        "notes": "Provides the foundational communication channels used by all higher-level subsystems"
+      }
+    },
+    {
+      "id": "grp-comm01-multi-net",
+      "label": "Multi-Network Management",
+      "description": "Network interface discovery, enumeration, selection, prioritization, and failover",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#06b6d4",
+        "borderColor": "#0e7490",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.08,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#67e8f9"
+      },
+      "bounds": {
+        "x": 620,
+        "y": 50,
+        "width": 500,
+        "height": 420
+      },
+      "metadata": {
+        "category": "comm",
+        "engineIds": [
+          "eng-comm-multi-network"
+        ],
+        "notes": "Manages all physical and virtual network interfaces available to the GCS"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-comm01-transport",
+      "type": "component",
+      "label": "Transport Abstraction Engine",
+      "description": "Core transport layer providing protocol-agnostic communication channels. Abstracts underlying network details and presents a uniform send/receive interface to all subsystems.",
+      "groupId": "grp-comm01-transport",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 260,
+        "height": 120
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#06b6d4",
+        "borderColor": "#0891b2",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-comm01-tx-in-data",
+          "direction": "in",
+          "side": "top",
+          "label": "Outbound Data",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm01-tx-in-cmd",
+          "direction": "in",
+          "side": "top",
+          "label": "Outbound Commands",
+          "dataType": "command",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-comm01-tx-out-down",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Framed Packets",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm01-tx-out-up",
+          "direction": "out",
+          "side": "top",
+          "label": "Inbound Data",
+          "dataType": "telemetry",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm01-tx-out-status",
+          "direction": "out",
+          "side": "right",
+          "label": "Channel Status",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-comm-transport",
+        "requirementIds": [
+          "req-2.2-001",
+          "req-2.2-004",
+          "req-2.2-007",
+          "req-GA-005"
+        ],
+        "responsibilities": [
+          "Provide uniform send/receive API to all subsystems",
+          "Abstract underlying transport protocols (UDP, TCP, serial, etc.)",
+          "Handle data framing, segmentation, and reassembly",
+          "Manage connection lifecycle (open, maintain, close)",
+          "Buffer outbound data during transient disconnections",
+          "Report channel status and throughput metrics"
+        ],
+        "inputs": [
+          "Outbound data and commands from all subsystems",
+          "Inbound raw packets from network interfaces"
+        ],
+        "outputs": [
+          "Framed packets to network interfaces",
+          "Reassembled inbound data to subsystems",
+          "Channel status events"
+        ],
+        "constraints": [
+          "Must support multiple concurrent transport channels",
+          "Must handle variable latency and bandwidth (req-2.2-007)",
+          "Must buffer data during transient link loss (req-GA-005)"
+        ],
+        "failureModes": [
+          "Channel deadlock",
+          "Buffer overflow",
+          "Protocol mismatch"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-002: Logical component within comm subsystem"
+        ],
+        "unresolvedDecisions": [
+          "UD-001: Specific communication protocols not named"
+        ],
+        "notes": "Canonical engine: eng-comm-transport"
+      }
+    },
+    {
+      "id": "node-comm01-protocol-stack",
+      "type": "component",
+      "label": "Protocol Stack Manager",
+      "description": "Manages the stack of communication protocols available for each transport channel. Handles protocol negotiation, encoding/decoding, and protocol-specific framing.",
+      "groupId": "grp-comm01-transport",
+      "position": {
+        "x": 100,
+        "y": 280
+      },
+      "size": {
+        "width": 260,
+        "height": 100
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#0891b2",
+        "borderColor": "#0e7490",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-comm01-ps-in",
+          "direction": "in",
+          "side": "top",
+          "label": "Raw Packets",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm01-ps-out-decoded",
+          "direction": "out",
+          "side": "top",
+          "label": "Decoded Messages",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm01-ps-out-net",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Encoded Frames",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm01-ps-out-discovery",
+          "direction": "out",
+          "side": "right",
+          "label": "Protocol Info",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-comm-transport",
+        "requirementIds": [
+          "req-2.2-001",
+          "req-2.2-004",
+          "req-2.1-001"
+        ],
+        "responsibilities": [
+          "Register and manage available protocol implementations",
+          "Negotiate protocol version with remote endpoints",
+          "Encode outbound messages into protocol-specific frames",
+          "Decode inbound frames into internal message format",
+          "Support hot-loading of new protocol adapters",
+          "Provide protocol capability metadata to multi-network manager"
+        ],
+        "inputs": [
+          "Raw packets from network interfaces",
+          "Outbound messages from transport engine"
+        ],
+        "outputs": [
+          "Decoded messages to transport engine",
+          "Encoded frames to network interfaces",
+          "Protocol capability metadata"
+        ],
+        "constraints": [
+          "Protocol adapters must be pluggable (req-2.1-001)",
+          "Must support concurrent multi-protocol operation",
+          "Protocol switching must not drop in-flight messages"
+        ],
+        "failureModes": [
+          "Protocol version mismatch",
+          "Decode failure on malformed frames",
+          "Adapter load failure"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-001: Specific protocols (MAVLink, STANAG 4586, etc.) not prescribed"
+        ],
+        "notes": "Logical sub-component of eng-comm-transport"
+      }
+    },
+    {
+      "id": "node-comm01-multi-network",
+      "type": "component",
+      "label": "Multi-Network Manager",
+      "description": "Discovers, enumerates, and manages all available network interfaces. Handles interface selection, prioritization, load balancing, and automatic failover between networks.",
+      "groupId": "grp-comm01-multi-net",
+      "position": {
+        "x": 680,
+        "y": 100
+      },
+      "size": {
+        "width": 260,
+        "height": 120
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#0e7490",
+        "borderColor": "#155e75",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-comm01-mn-in-status",
+          "direction": "in",
+          "side": "left",
+          "label": "Interface Status",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm01-mn-in-quality",
+          "direction": "in",
+          "side": "left",
+          "label": "Link Quality",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-comm01-mn-out-select",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Interface Selection",
+          "dataType": "control",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm01-mn-out-events",
+          "direction": "out",
+          "side": "right",
+          "label": "Network Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm01-mn-out-topology",
+          "direction": "out",
+          "side": "right",
+          "label": "Topology Info",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-comm-multi-network",
+        "requirementIds": [
+          "req-2.2-002",
+          "req-2.2-003",
+          "req-2.2-005",
+          "req-2.2-006",
+          "req-GA-005"
+        ],
+        "responsibilities": [
+          "Discover and enumerate all available network interfaces",
+          "Classify interfaces by type (WiFi, cellular, satellite, mesh, wired, serial)",
+          "Prioritize interfaces based on policy, quality, and cost",
+          "Select optimal interface for each communication channel",
+          "Execute automatic failover when primary interface degrades",
+          "Emit network topology and availability change events",
+          "Support simultaneous multi-interface operation"
+        ],
+        "inputs": [
+          "Interface status from interface pool",
+          "Link quality metrics from diagnostics"
+        ],
+        "outputs": [
+          "Interface selection directives",
+          "Network change events",
+          "Topology information"
+        ],
+        "constraints": [
+          "Failover must complete within configurable timeout (req-2.2-005)",
+          "Must support simultaneous use of multiple interfaces (req-2.2-002)",
+          "Must degrade gracefully when no interfaces available (req-GA-005)"
+        ],
+        "failureModes": [
+          "Split-brain interface selection",
+          "Failover loop",
+          "All interfaces down"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-001: Local-first; network connectivity may be intermittent"
+        ],
+        "unresolvedDecisions": [],
+        "notes": "Canonical engine: eng-comm-multi-network"
+      }
+    },
+    {
+      "id": "node-comm01-interface-pool",
+      "type": "component",
+      "label": "Network Interface Pool",
+      "description": "Manages the pool of physical and virtual network interfaces. Handles interface initialization, configuration, health monitoring, and lifecycle.",
+      "groupId": "grp-comm01-multi-net",
+      "position": {
+        "x": 680,
+        "y": 290
+      },
+      "size": {
+        "width": 260,
+        "height": 100
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#155e75",
+        "borderColor": "#164e63",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-comm01-ip-in-select",
+          "direction": "in",
+          "side": "top",
+          "label": "Selection Directives",
+          "dataType": "control",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm01-ip-out-status",
+          "direction": "out",
+          "side": "left",
+          "label": "Interface Status",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-comm01-ip-out-data",
+          "direction": "out",
+          "side": "left",
+          "label": "Raw I/O",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-comm01-ip-out-hw",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Hardware Access",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-comm01-ip-in-data",
+          "direction": "in",
+          "side": "left",
+          "label": "Encoded Frames",
+          "dataType": "data",
+          "position": {
+            "offset": 0.9
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-comm-multi-network",
+        "requirementIds": [
+          "req-2.2-002",
+          "req-2.2-003",
+          "req-2.2-008"
+        ],
+        "responsibilities": [
+          "Initialize and configure physical network interfaces",
+          "Manage virtual interfaces (VPN tunnels, mesh overlays)",
+          "Monitor interface health (up/down, signal strength, errors)",
+          "Apply interface-specific configuration (IP, MTU, QoS)",
+          "Report interface capabilities and constraints",
+          "Handle interface hot-plug and removal events"
+        ],
+        "inputs": [
+          "Interface selection directives from multi-network manager"
+        ],
+        "outputs": [
+          "Interface status reports",
+          "Raw I/O to/from transport layer",
+          "Hardware access requests"
+        ],
+        "constraints": [
+          "Must detect interface hot-plug within configurable timeout",
+          "Interface configuration must be persistable across restarts",
+          "Must support at least WiFi, cellular, and serial interfaces"
+        ],
+        "failureModes": [
+          "Interface initialization failure",
+          "Hot-plug detection miss",
+          "Configuration conflict"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [
+          "UD-013: Specific network interface types beyond WiFi/cellular/serial not enumerated"
+        ],
+        "notes": "Logical sub-component of eng-comm-multi-network"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-comm01-subsystems-to-transport",
+      "source": "ext-comm01-subsystems",
+      "target": "node-comm01-transport",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "bidirectional",
+        "label": "Subsystem Data & Commands",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "continuous",
+        "synchronous": false,
+        "description": "All subsystems send outbound data and commands through the transport layer and receive inbound telemetry",
+        "requirementIds": [
+          "req-2.2-001",
+          "req-2.2-007"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": null,
+      "targetPort": "port-comm01-tx-in-data"
+    },
+    {
+      "id": "edge-comm01-transport-to-protocol",
+      "source": "node-comm01-transport",
+      "target": "node-comm01-protocol-stack",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "bidirectional",
+        "label": "Framed / Decoded Messages",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "continuous",
+        "synchronous": false,
+        "description": "Transport engine exchanges framed packets with the protocol stack for encoding and decoding",
+        "requirementIds": [
+          "req-2.2-001",
+          "req-2.2-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-comm01-tx-out-down",
+      "targetPort": "port-comm01-ps-in"
+    },
+    {
+      "id": "edge-comm01-transport-to-multi-net",
+      "source": "node-comm01-transport",
+      "target": "node-comm01-multi-network",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Channel Quality Feedback",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "periodic",
+        "synchronous": false,
+        "description": "Transport layer reports channel throughput, latency, and error rates to the multi-network manager for interface selection",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-007"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0891b2",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-comm01-tx-out-status",
+      "targetPort": "port-comm01-mn-in-quality"
+    },
+    {
+      "id": "edge-comm01-multi-net-to-interface",
+      "source": "node-comm01-multi-network",
+      "target": "node-comm01-interface-pool",
+      "semantic": {
+        "type": "control-flow",
+        "direction": "unidirectional",
+        "label": "Interface Selection",
+        "protocol": null,
+        "dataType": "control",
+        "trigger": "on-change",
+        "synchronous": true,
+        "description": "Multi-network manager directs the interface pool to activate, deactivate, or prioritize specific interfaces",
+        "requirementIds": [
+          "req-2.2-005",
+          "req-2.2-006"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-comm01-mn-out-select",
+      "targetPort": "port-comm01-ip-in-select"
+    },
+    {
+      "id": "edge-comm01-interface-to-multi-net",
+      "source": "node-comm01-interface-pool",
+      "target": "node-comm01-multi-network",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Interface Status Reports",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-change",
+        "synchronous": false,
+        "description": "Interface pool reports interface availability, signal strength, and error counters to the multi-network manager",
+        "requirementIds": [
+          "req-2.2-003",
+          "req-2.2-008"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-comm01-ip-out-status",
+      "targetPort": "port-comm01-mn-in-status"
+    },
+    {
+      "id": "edge-comm01-protocol-to-interface",
+      "source": "node-comm01-protocol-stack",
+      "target": "node-comm01-interface-pool",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Encoded Frames to Network Interface",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "continuous",
+        "synchronous": false,
+        "description": "Protocol stack sends encoded frames to the network interface pool for physical transmission.",
+        "requirementIds": [
+          "req-2.2-002",
+          "req-2.2-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#22d3ee",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-comm01-ps-out-net",
+      "targetPort": "port-comm01-ip-in-data"
+    },
+    {
+      "id": "edge-comm01-multi-net-to-eventbus",
+      "source": "node-comm01-multi-network",
+      "target": "ext-comm01-event-bus",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Network Change Events",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-change",
+        "synchronous": false,
+        "description": "Multi-network manager publishes interface availability and failover events to the central event bus",
+        "requirementIds": [
+          "req-2.2-006",
+          "req-2.17-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-comm01-mn-out-events",
+      "targetPort": null
+    },
+    {
+      "id": "edge-comm01-transport-to-vehicles",
+      "source": "node-comm01-protocol-stack",
+      "target": "ext-comm01-vehicles",
+      "semantic": {
+        "type": "telemetry",
+        "direction": "bidirectional",
+        "label": "Vehicle Telemetry & Commands",
+        "protocol": null,
+        "dataType": "telemetry",
+        "trigger": "continuous",
+        "synchronous": false,
+        "description": "Decoded vehicle telemetry flows inbound; encoded vehicle commands flow outbound through the transport stack",
+        "requirementIds": [
+          "req-2.2-001",
+          "req-2.2-007"
+        ],
+        "assumptions": [
+          "UD-001: Specific vehicle protocols not prescribed"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#22d3ee",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-comm01-ps-out-decoded",
+      "targetPort": null
+    },
+    {
+      "id": "edge-comm01-interface-to-platform",
+      "source": "node-comm01-interface-pool",
+      "target": "ext-comm01-platform",
+      "semantic": {
+        "type": "dependency",
+        "direction": "unidirectional",
+        "label": "Hardware / OS Network API",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-demand",
+        "synchronous": true,
+        "description": "Interface pool accesses physical network hardware through the platform runtime and OS network APIs",
+        "requirementIds": [
+          "req-2.2-003",
+          "req-GA-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#475569",
+        "strokeWidth": 1,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 0
+      },
+      "sourcePort": "port-comm01-ip-out-hw",
+      "targetPort": null
+    },
+    {
+      "id": "edge-comm01-interface-to-protocol",
+      "source": "node-comm01-interface-pool",
+      "target": "node-comm01-protocol-stack",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Received Network Frames",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "continuous",
+        "synchronous": false,
+        "description": "Network interface pool delivers received raw frames to the protocol stack for decoding.",
+        "requirementIds": [
+          "req-2.2-002",
+          "req-2.2-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#22d3ee",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-comm01-ip-out-data",
+      "targetPort": "port-comm01-ps-in"
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "ext-comm01-subsystems",
+      "sourceDocumentId": "doc-master-02",
+      "engineId": null,
+      "label": "GCS Subsystems",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#3b82f6",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm01-vehicles",
+      "sourceDocumentId": "doc-master-01",
+      "engineId": null,
+      "label": "Vehicles",
+      "type": "vehicle",
+      "role": "target",
+      "style": {
+        "shape": "hexagon",
+        "category": "vehicle",
+        "color": "#475569",
+        "borderColor": "#22d3ee",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm01-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "ellipse",
+        "category": "event",
+        "color": "#fbbf24",
+        "borderColor": "#d97706",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm01-platform",
+      "sourceDocumentId": "doc-master-03",
+      "engineId": "eng-plat-runtime",
+      "label": "Platform Runtime",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#64748b",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-comm01-sec-comms",
+      "sourceDocumentId": "doc-comm-04",
+      "engineId": "eng-comm-secure-comms",
+      "label": "Secure Comms",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-comm-transport",
+      "localNodeId": "node-comm01-transport",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-comm"
+        },
+        {
+          "documentId": "doc-core-02",
+          "nodeId": "node-core02-protocol-adapter"
+        },
+        {
+          "documentId": "doc-core-03",
+          "nodeId": "node-core03-ingestion"
+        },
+        {
+          "documentId": "doc-comm-04",
+          "nodeId": "node-comm04-secure"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-comm-transport",
+      "localNodeId": "node-comm01-protocol-stack",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-comm"
+        },
+        {
+          "documentId": "doc-core-02",
+          "nodeId": "node-core02-protocol-adapter"
+        },
+        {
+          "documentId": "doc-core-03",
+          "nodeId": "node-core03-ingestion"
+        },
+        {
+          "documentId": "doc-comm-04",
+          "nodeId": "node-comm04-secure"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-comm-multi-network",
+      "localNodeId": "node-comm01-multi-network",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-comm"
+        },
+        {
+          "documentId": "doc-core-05",
+          "nodeId": "node-core05-integration-gateway"
+        },
+        {
+          "documentId": "doc-master-03",
+          "nodeId": "node-deploy-net-if"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-comm-multi-network",
+      "localNodeId": "node-comm01-interface-pool",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-comm"
+        },
+        {
+          "documentId": "doc-core-05",
+          "nodeId": "node-core05-integration-gateway"
+        },
+        {
+          "documentId": "doc-master-03",
+          "nodeId": "node-deploy-net-if"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.1-001",
+      "description": "Modular, loosely coupled architecture",
+      "coveredByNodes": [
+        "node-comm01-protocol-stack"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": null,
+      "notes": "Protocol adapters are pluggable modules; full modularity spans all subsystems"
+    },
+    {
+      "requirementId": "req-2.2-001",
+      "description": "Multi-protocol transport abstraction",
+      "coveredByNodes": [
+        "node-comm01-transport",
+        "node-comm01-protocol-stack"
+      ],
+      "coveredByEdges": [
+        "edge-comm01-subsystems-to-transport",
+        "edge-comm01-transport-to-protocol",
+        "edge-comm01-transport-to-vehicles"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.2-002",
+      "description": "Support for multiple simultaneous network interfaces",
+      "coveredByNodes": [
+        "node-comm01-multi-network",
+        "node-comm01-interface-pool"
+      ],
+      "coveredByEdges": [
+        "edge-comm01-interface-to-protocol",
+        "edge-comm01-protocol-to-interface"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.2-003",
+      "description": "Network interface discovery and enumeration",
+      "coveredByNodes": [
+        "node-comm01-multi-network",
+        "node-comm01-interface-pool"
+      ],
+      "coveredByEdges": [
+        "edge-comm01-interface-to-multi-net",
+        "edge-comm01-interface-to-platform"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.2-004",
+      "description": "Transport protocol selection and negotiation",
+      "coveredByNodes": [
+        "node-comm01-transport",
+        "node-comm01-protocol-stack"
+      ],
+      "coveredByEdges": [
+        "edge-comm01-interface-to-protocol",
+        "edge-comm01-protocol-to-interface",
+        "edge-comm01-transport-to-protocol"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.2-005",
+      "description": "Automatic network interface failover",
+      "coveredByNodes": [
+        "node-comm01-multi-network"
+      ],
+      "coveredByEdges": [
+        "edge-comm01-multi-net-to-interface",
+        "edge-comm01-transport-to-multi-net"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.2-006",
+      "description": "Network availability change notification",
+      "coveredByNodes": [
+        "node-comm01-multi-network"
+      ],
+      "coveredByEdges": [
+        "edge-comm01-multi-net-to-eventbus",
+        "edge-comm01-multi-net-to-interface"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.2-007",
+      "description": "Variable latency and bandwidth handling",
+      "coveredByNodes": [
+        "node-comm01-transport"
+      ],
+      "coveredByEdges": [
+        "edge-comm01-subsystems-to-transport",
+        "edge-comm01-transport-to-multi-net",
+        "edge-comm01-transport-to-vehicles"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.2-008",
+      "description": "Network interface configuration management",
+      "coveredByNodes": [
+        "node-comm01-interface-pool"
+      ],
+      "coveredByEdges": [
+        "edge-comm01-interface-to-multi-net"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-002",
+      "description": "Cross-platform compatibility",
+      "coveredByNodes": [
+        "node-comm01-interface-pool"
+      ],
+      "coveredByEdges": [
+        "edge-comm01-interface-to-platform"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": null,
+      "notes": "Interface pool abstracts OS-specific network APIs; full cross-platform coverage spans platform subsystem"
+    },
+    {
+      "requirementId": "req-GA-005",
+      "description": "Graceful degradation under adverse conditions",
+      "coveredByNodes": [
+        "node-comm01-transport",
+        "node-comm01-multi-network"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-001",
+      "description": "GCS operates in local-first mode. Network connectivity to vehicles and remote systems may be intermittent.",
+      "impact": "Transport layer must buffer data and multi-network manager must handle zero-interface states gracefully."
+    },
+    {
+      "id": "AS-002",
+      "description": "All engines are logical components. Separate processes or services are not assumed.",
+      "impact": "Transport and multi-network components are co-located within the comm subsystem."
+    },
+    {
+      "id": "AS-010",
+      "description": "Network interfaces are assumed to be managed by the host OS. The GCS accesses them through standard OS APIs.",
+      "impact": "Interface pool does not implement raw hardware drivers; it relies on platform runtime abstraction."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-001",
+      "description": "Specific communication protocols (MAVLink, STANAG 4586, DDS, etc.) are not named in requirements.",
+      "options": [
+        "MAVLink v2",
+        "STANAG 4586",
+        "DDS",
+        "MQTT",
+        "Custom binary protocol"
+      ],
+      "decisionOwner": "Implementation team",
+      "status": "deferred"
+    },
+    {
+      "id": "UD-013",
+      "description": "Specific network interface types beyond WiFi, cellular, and serial are not enumerated.",
+      "options": [
+        "Satellite (Iridium, Starlink)",
+        "Mesh radio (Silvus, TrellisWare)",
+        "Ethernet",
+        "Bluetooth",
+        "LoRa"
+      ],
+      "decisionOwner": "Implementation team",
+      "status": "deferred"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": "1.0.0",
+    "createdDate": "2025-01-15T00:00:00Z",
+    "lastModified": "2026-10-30T00:00:00Z"
+  }
+}

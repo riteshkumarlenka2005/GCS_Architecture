@@ -1,0 +1,1399 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-core-04",
+  "title": "API Gateway, Event Processing & Schema Management Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Central API gateway for request routing, versioning, and rate limiting; event bus for event-driven communication across all subsystems; and schema registry for data model governance and versioning.",
+  "category": "core",
+  "coordinateSystem": {
+    "unit": "canvas-unit",
+    "origin": "top-left",
+    "yAxis": "down"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.75
+  },
+  "groups": [
+    {
+      "id": "grp-core04-api-layer",
+      "label": "API Gateway Layer",
+      "description": "Request ingress, authentication delegation, routing, rate limiting, and version management",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.1,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#93c5fd"
+      },
+      "bounds": {
+        "x": 50,
+        "y": 50,
+        "width": 480,
+        "height": 320
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-api-gateway"
+        ],
+        "notes": "All external and internal API traffic passes through this layer"
+      }
+    },
+    {
+      "id": "grp-core04-event-layer",
+      "label": "Event Processing Layer",
+      "description": "Central event bus, routing, filtering, subscription management, and event persistence",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#fbbf24",
+        "borderColor": "#d97706",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.08,
+        "padding": 30,
+        "labelPosition": "top-left",
+        "fontSize": 14,
+        "textColor": "#fcd34d"
+      },
+      "bounds": {
+        "x": 580,
+        "y": 50,
+        "width": 520,
+        "height": 320
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-event-processing"
+        ],
+        "notes": "Backbone of the event-driven architecture connecting all subsystems"
+      }
+    },
+    {
+      "id": "grp-core04-schema",
+      "label": "Schema Management",
+      "description": "Data model governance, schema versioning, and compatibility enforcement",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#14b8a6",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.08,
+        "padding": 20,
+        "labelPosition": "top-left",
+        "fontSize": 13,
+        "textColor": "#5eead4"
+      },
+      "bounds": {
+        "x": 300,
+        "y": 420,
+        "width": 460,
+        "height": 150
+      },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-schema-management"
+        ],
+        "notes": "Cross-cutting concern serving both API and event layers"
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-core04-api-gateway",
+      "type": "component",
+      "label": "API Gateway",
+      "description": "Central entry point for all API requests. Handles authentication delegation, rate limiting, request validation, and forwarding to the API router.",
+      "groupId": "grp-core04-api-layer",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 240,
+        "height": 110
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core04-gw-in-req",
+          "direction": "in",
+          "side": "left",
+          "label": "API Requests",
+          "dataType": "command",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core04-gw-in-ws",
+          "direction": "in",
+          "side": "left",
+          "label": "WebSocket",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core04-gw-out-routed",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Routed Requests",
+          "dataType": "command",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core04-gw-out-auth",
+          "direction": "out",
+          "side": "left",
+          "label": "Auth Check",
+          "dataType": "auth",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core04-gw-bidi-events",
+          "direction": "out",
+          "side": "right",
+          "label": "API Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-api-gateway",
+        "requirementIds": [
+          "req-2.8-001",
+          "req-2.8-002",
+          "req-2.8-004",
+          "req-2.8-005",
+          "req-GA-001"
+        ],
+        "responsibilities": [
+          "Accept REST and WebSocket connections",
+          "Delegate authentication to security subsystem",
+          "Enforce rate limiting per client and endpoint",
+          "Validate request structure against schemas",
+          "Forward validated requests to API router",
+          "Emit API access events to event bus"
+        ],
+        "inputs": [
+          "REST API requests",
+          "WebSocket connections",
+          "Authentication tokens"
+        ],
+        "outputs": [
+          "Routed internal requests",
+          "Auth validation queries",
+          "API access events"
+        ],
+        "constraints": [
+          "Must support concurrent connections (req-2.8-002)",
+          "Must enforce rate limits without blocking valid traffic (req-2.8-004)"
+        ],
+        "failureModes": [
+          "Gateway overload",
+          "Auth service timeout",
+          "Rate limit misconfiguration"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-002: Logical component within the core subsystem"
+        ],
+        "unresolvedDecisions": [
+          "UD-003: Deployment topology not prescribed"
+        ],
+        "notes": "Canonical engine: eng-core-api-gateway"
+      }
+    },
+    {
+      "id": "node-core04-api-router",
+      "type": "component",
+      "label": "API Router & Version Manager",
+      "description": "Routes validated API requests to the correct downstream subsystem handler based on path, version, and capability. Manages API version negotiation and backward compatibility.",
+      "groupId": "grp-core04-api-layer",
+      "position": {
+        "x": 100,
+        "y": 260
+      },
+      "size": {
+        "width": 240,
+        "height": 90
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#2563eb",
+        "borderColor": "#1d4ed8",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core04-rt-in",
+          "direction": "in",
+          "side": "top",
+          "label": "Validated Requests",
+          "dataType": "command",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core04-rt-out-downstream",
+          "direction": "out",
+          "side": "right",
+          "label": "Subsystem Calls",
+          "dataType": "command",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core04-rt-out-schema",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Schema Lookup",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-api-gateway",
+        "requirementIds": [
+          "req-2.8-001",
+          "req-2.8-003",
+          "req-GA-010"
+        ],
+        "responsibilities": [
+          "Route requests to correct subsystem handler",
+          "Negotiate API version with client",
+          "Enforce backward compatibility rules",
+          "Resolve endpoint to engine mapping",
+          "Query schema registry for request/response validation"
+        ],
+        "inputs": [
+          "Validated requests from API gateway"
+        ],
+        "outputs": [
+          "Routed subsystem calls",
+          "Schema validation queries"
+        ],
+        "constraints": [
+          "Must support multiple concurrent API versions (req-2.8-003)",
+          "Must maintain backward compatibility (req-GA-010)"
+        ],
+        "failureModes": [
+          "Route misconfiguration",
+          "Version mismatch",
+          "Schema lookup failure"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Logical sub-component of eng-core-api-gateway"
+      }
+    },
+    {
+      "id": "node-core04-event-bus",
+      "type": "event-bus",
+      "label": "Central Event Bus",
+      "description": "Core event-driven communication backbone. Receives events from all subsystems, persists them, and distributes to the event router for fan-out to subscribers.",
+      "groupId": "grp-core04-event-layer",
+      "position": {
+        "x": 640,
+        "y": 100
+      },
+      "size": {
+        "width": 260,
+        "height": 110
+      },
+      "style": {
+        "shape": "ellipse",
+        "category": "event",
+        "color": "#fbbf24",
+        "borderColor": "#d97706",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#1e293b"
+      },
+      "ports": [
+        {
+          "id": "port-core04-eb-in-publish",
+          "direction": "in",
+          "side": "left",
+          "label": "Published Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core04-eb-in-api",
+          "direction": "in",
+          "side": "left",
+          "label": "API Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core04-eb-out-router",
+          "direction": "out",
+          "side": "bottom",
+          "label": "Events to Route",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core04-eb-out-persist",
+          "direction": "out",
+          "side": "right",
+          "label": "Event Log",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-event-processing",
+        "requirementIds": [
+          "req-2.17-001",
+          "req-2.17-004",
+          "req-GA-001",
+          "req-GA-003"
+        ],
+        "responsibilities": [
+          "Accept published events from all subsystems",
+          "Assign event IDs and timestamps",
+          "Persist events for audit and replay",
+          "Forward events to event router for distribution",
+          "Support event replay from persisted log"
+        ],
+        "inputs": [
+          "Published events from all engines",
+          "API-triggered events"
+        ],
+        "outputs": [
+          "Events for routing",
+          "Persisted event log entries"
+        ],
+        "constraints": [
+          "Must handle high event throughput without loss",
+          "Must persist events before acknowledgment (req-2.17-004)",
+          "Must support event replay (req-2.17-005)"
+        ],
+        "failureModes": [
+          "Event loss under load",
+          "Persistence bottleneck",
+          "Replay inconsistency"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-002: Logical component; not assumed to be a separate message broker process"
+        ],
+        "unresolvedDecisions": [
+          "UD-003: Whether event bus is in-process or a separate broker"
+        ],
+        "notes": "Canonical engine: eng-core-event-processing"
+      }
+    },
+    {
+      "id": "node-core04-event-router",
+      "type": "component",
+      "label": "Event Router & Subscription Manager",
+      "description": "Manages event subscriptions, applies filtering rules, and routes events to registered subscribers across all subsystems.",
+      "groupId": "grp-core04-event-layer",
+      "position": {
+        "x": 640,
+        "y": 260
+      },
+      "size": {
+        "width": 260,
+        "height": 90
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#d97706",
+        "borderColor": "#b45309",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core04-er-in",
+          "direction": "in",
+          "side": "top",
+          "label": "Events to Route",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core04-er-out-subscribers",
+          "direction": "out",
+          "side": "right",
+          "label": "Filtered Events",
+          "dataType": "event",
+          "position": {
+            "offset": 0.5
+          }
+        },
+        {
+          "id": "port-core04-er-in-subscribe",
+          "direction": "in",
+          "side": "left",
+          "label": "Subscriptions",
+          "dataType": "command",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-event-processing",
+        "requirementIds": [
+          "req-2.17-002",
+          "req-2.17-003",
+          "req-2.17-005",
+          "req-GA-003"
+        ],
+        "responsibilities": [
+          "Maintain subscription registry for all consumers",
+          "Apply topic-based and content-based filtering",
+          "Route events to matching subscribers",
+          "Support dynamic subscription changes at runtime",
+          "Coordinate event replay for late-joining subscribers"
+        ],
+        "inputs": [
+          "Events from event bus",
+          "Subscription registration requests"
+        ],
+        "outputs": [
+          "Filtered events to subscribers"
+        ],
+        "constraints": [
+          "Filtering must not introduce significant latency",
+          "Subscription changes must take effect without restart (req-2.17-003)"
+        ],
+        "failureModes": [
+          "Subscription leak",
+          "Filter misconfiguration",
+          "Missed events during replay"
+        ],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Logical sub-component of eng-core-event-processing"
+      }
+    },
+    {
+      "id": "node-core04-schema-registry",
+      "type": "component",
+      "label": "Schema Registry",
+      "description": "Central repository for all data schemas, message formats, and API contracts. Enforces versioning, compatibility rules, and schema evolution policies.",
+      "groupId": "grp-core04-schema",
+      "position": {
+        "x": 370,
+        "y": 445
+      },
+      "size": {
+        "width": 280,
+        "height": 90
+      },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#14b8a6",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 13,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        {
+          "id": "port-core04-sr-in-api",
+          "direction": "in",
+          "side": "top",
+          "label": "API Schema Query",
+          "dataType": "data",
+          "position": {
+            "offset": 0.3
+          }
+        },
+        {
+          "id": "port-core04-sr-in-event",
+          "direction": "in",
+          "side": "top",
+          "label": "Event Schema Query",
+          "dataType": "data",
+          "position": {
+            "offset": 0.7
+          }
+        },
+        {
+          "id": "port-core04-sr-out-validate",
+          "direction": "out",
+          "side": "right",
+          "label": "Validation Result",
+          "dataType": "data",
+          "position": {
+            "offset": 0.5
+          }
+        }
+      ],
+      "metadata": {
+        "engineId": "eng-core-schema-management",
+        "requirementIds": [
+          "req-GA-007",
+          "req-GA-010",
+          "req-2.1-001",
+          "req-2.1-002"
+        ],
+        "responsibilities": [
+          "Store and version all data schemas",
+          "Validate API request/response payloads",
+          "Validate event message formats",
+          "Enforce forward and backward compatibility rules",
+          "Support schema evolution without breaking consumers",
+          "Provide schema lookup for plugin/extension developers"
+        ],
+        "inputs": [
+          "Schema validation queries from API router",
+          "Schema validation queries from event bus"
+        ],
+        "outputs": [
+          "Validation results",
+          "Schema definitions"
+        ],
+        "constraints": [
+          "Schema changes must follow compatibility rules (req-GA-010)",
+          "Must support multiple schema versions concurrently (req-GA-007)"
+        ],
+        "failureModes": [
+          "Schema version conflict",
+          "Incompatible schema migration",
+          "Registry unavailability"
+        ],
+        "technologyNotes": null,
+        "assumptions": [
+          "AS-002: Logical component within core subsystem"
+        ],
+        "unresolvedDecisions": [
+          "UD-005: Schema format (JSON Schema, Protobuf, etc.) not prescribed"
+        ],
+        "notes": "Canonical engine: eng-core-schema-management. Cross-cutting concern."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-core04-client-to-gateway",
+      "source": "ext-core04-external-client",
+      "target": "node-core04-api-gateway",
+      "semantic": {
+        "type": "command",
+        "direction": "unidirectional",
+        "label": "REST / WebSocket Requests",
+        "protocol": null,
+        "dataType": "command",
+        "trigger": "on-demand",
+        "synchronous": true,
+        "description": "External clients and internal UI components send API requests through the gateway",
+        "requirementIds": [
+          "req-2.8-001",
+          "req-2.8-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": null,
+      "targetPort": "port-core04-gw-in-req"
+    },
+    {
+      "id": "edge-core04-gateway-to-auth",
+      "source": "node-core04-api-gateway",
+      "target": "ext-core04-auth",
+      "semantic": {
+        "type": "auth-flow",
+        "direction": "bidirectional",
+        "label": "Auth Delegation",
+        "protocol": null,
+        "dataType": "auth",
+        "trigger": "per-request",
+        "synchronous": true,
+        "description": "Gateway delegates authentication and authorization checks to the security subsystem",
+        "requirementIds": [
+          "req-2.8-005",
+          "req-GA-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core04-gw-out-auth",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core04-gateway-to-router",
+      "source": "node-core04-api-gateway",
+      "target": "node-core04-api-router",
+      "semantic": {
+        "type": "control-flow",
+        "direction": "unidirectional",
+        "label": "Validated Requests",
+        "protocol": null,
+        "dataType": "command",
+        "trigger": "per-request",
+        "synchronous": true,
+        "description": "Gateway forwards authenticated and rate-limited requests to the router for subsystem dispatch",
+        "requirementIds": [
+          "req-2.8-001",
+          "req-2.8-004"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core04-gw-out-routed",
+      "targetPort": "port-core04-rt-in"
+    },
+    {
+      "id": "edge-core04-router-to-downstream",
+      "source": "node-core04-api-router",
+      "target": "ext-core04-downstream",
+      "semantic": {
+        "type": "command",
+        "direction": "unidirectional",
+        "label": "Subsystem API Calls",
+        "protocol": null,
+        "dataType": "command",
+        "trigger": "per-request",
+        "synchronous": true,
+        "description": "Router dispatches requests to the appropriate downstream subsystem engine",
+        "requirementIds": [
+          "req-2.8-003",
+          "req-GA-010"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core04-rt-out-downstream",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core04-gateway-to-eventbus",
+      "source": "node-core04-api-gateway",
+      "target": "node-core04-event-bus",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "API Access Events",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "per-request",
+        "synchronous": false,
+        "description": "Gateway publishes API access and audit events to the event bus",
+        "requirementIds": [
+          "req-2.17-001",
+          "req-2.8-005"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core04-gw-bidi-events",
+      "targetPort": "port-core04-eb-in-api"
+    },
+    {
+      "id": "edge-core04-eventbus-to-router",
+      "source": "node-core04-event-bus",
+      "target": "node-core04-event-router",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Events for Distribution",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-publish",
+        "synchronous": false,
+        "description": "Event bus forwards persisted events to the router for subscriber fan-out",
+        "requirementIds": [
+          "req-2.17-001",
+          "req-2.17-002"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core04-eb-out-router",
+      "targetPort": "port-core04-er-in"
+    },
+    {
+      "id": "edge-core04-eventrouter-to-subscribers",
+      "source": "node-core04-event-router",
+      "target": "ext-core04-subscribers",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Filtered Events to Subscribers",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-match",
+        "synchronous": false,
+        "description": "Event router delivers filtered events to registered subscribers across all subsystems",
+        "requirementIds": [
+          "req-2.17-002",
+          "req-2.17-003"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core04-er-out-subscribers",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core04-eventbus-to-persistence",
+      "source": "node-core04-event-bus",
+      "target": "ext-core04-persistence",
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Event Log Persistence",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": "on-publish",
+        "synchronous": false,
+        "description": "Event bus persists all events to the data layer for audit, replay, and diagnostics",
+        "requirementIds": [
+          "req-2.17-004",
+          "req-2.17-005"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 1
+      },
+      "sourcePort": "port-core04-eb-out-persist",
+      "targetPort": null
+    },
+    {
+      "id": "edge-core04-router-to-schema",
+      "source": "node-core04-api-router",
+      "target": "node-core04-schema-registry",
+      "semantic": {
+        "type": "dependency",
+        "direction": "unidirectional",
+        "label": "API Schema Validation",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "per-request",
+        "synchronous": true,
+        "description": "API router queries the schema registry to validate request and response payloads",
+        "requirementIds": [
+          "req-GA-007",
+          "req-GA-010"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#14b8a6",
+        "strokeWidth": 1,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 0
+      },
+      "sourcePort": "port-core04-rt-out-schema",
+      "targetPort": "port-core04-sr-in-api"
+    },
+    {
+      "id": "edge-core04-eventbus-to-schema",
+      "source": "node-core04-event-bus",
+      "target": "node-core04-schema-registry",
+      "semantic": {
+        "type": "dependency",
+        "direction": "unidirectional",
+        "label": "Event Schema Validation",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "on-publish",
+        "synchronous": true,
+        "description": "Event bus validates event payloads against registered schemas before acceptance",
+        "requirementIds": [
+          "req-GA-007",
+          "req-2.17-001"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#14b8a6",
+        "strokeWidth": 1,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 0
+      },
+      "sourcePort": "port-core04-eb-in-publish",
+      "targetPort": "port-core04-sr-in-event"
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "ext-core04-external-client",
+      "sourceDocumentId": "doc-master-01",
+      "engineId": null,
+      "label": "API Clients",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rectangle",
+        "category": "actor",
+        "color": "#475569",
+        "borderColor": "#f8fafc",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core04-auth",
+      "sourceDocumentId": "doc-sec-01",
+      "engineId": "eng-sec-authentication",
+      "label": "Auth Service",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core04-downstream",
+      "sourceDocumentId": "doc-master-02",
+      "engineId": null,
+      "label": "Subsystem Engines",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#3b82f6",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core04-subscribers",
+      "sourceDocumentId": "doc-master-02",
+      "engineId": null,
+      "label": "Event Subscribers",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#475569",
+        "borderColor": "#fbbf24",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    },
+    {
+      "nodeId": "ext-core04-persistence",
+      "sourceDocumentId": "doc-data-01",
+      "engineId": "eng-data-persistence",
+      "label": "Data Persistence",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "cylinder",
+        "category": "storage",
+        "color": "#475569",
+        "borderColor": "#14b8a6",
+        "borderWidth": 2,
+        "borderStyle": "dashed",
+        "opacity": 0.7,
+        "fontSize": 10,
+        "textColor": "#94a3b8"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-core-api-gateway",
+      "localNodeId": "node-core04-api-gateway",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-sec-01",
+          "nodeId": "node-sec01-auth"
+        },
+        {
+          "documentId": "doc-cust-02",
+          "nodeId": null
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-api-gateway",
+      "localNodeId": "node-core04-api-router",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-sec-01",
+          "nodeId": "node-sec01-auth"
+        },
+        {
+          "documentId": "doc-cust-02",
+          "nodeId": null
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-event-processing",
+      "localNodeId": "node-core04-event-bus",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-core-03",
+          "nodeId": "node-core03-state-normalizer"
+        },
+        {
+          "documentId": "doc-cop-01",
+          "nodeId": null
+        },
+        {
+          "documentId": "doc-ops-01",
+          "nodeId": null
+        },
+        {
+          "documentId": "doc-data-01",
+          "nodeId": "node-data01-persistence"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-event-processing",
+      "localNodeId": "node-core04-event-router",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-core-03",
+          "nodeId": "node-core03-state-normalizer"
+        },
+        {
+          "documentId": "doc-cop-01",
+          "nodeId": null
+        },
+        {
+          "documentId": "doc-ops-01",
+          "nodeId": null
+        },
+        {
+          "documentId": "doc-data-01",
+          "nodeId": "node-data01-persistence"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-core-schema-management",
+      "localNodeId": "node-core04-schema-registry",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-core"
+        },
+        {
+          "documentId": "doc-core-02",
+          "nodeId": "node-core02-protocol-adapter"
+        },
+        {
+          "documentId": "doc-cust-02",
+          "nodeId": null
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.1-001",
+      "description": "Modular, loosely coupled architecture",
+      "coveredByNodes": [
+        "node-core04-api-gateway",
+        "node-core04-event-bus",
+        "node-core04-schema-registry"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.1-002",
+      "description": "Plugin and extension support",
+      "coveredByNodes": [
+        "node-core04-api-gateway",
+        "node-core04-schema-registry"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": null,
+      "notes": "API surface and schema support for plugins covered here; plugin lifecycle in doc-core-05 and doc-cust-02"
+    },
+    {
+      "requirementId": "req-2.8-001",
+      "description": "RESTful API for all operations",
+      "coveredByNodes": [
+        "node-core04-api-gateway",
+        "node-core04-api-router"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.8-002",
+      "description": "WebSocket support for real-time data",
+      "coveredByNodes": [
+        "node-core04-api-gateway"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.8-003",
+      "description": "API versioning and negotiation",
+      "coveredByNodes": [
+        "node-core04-api-router"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.8-004",
+      "description": "Rate limiting and throttling",
+      "coveredByNodes": [
+        "node-core04-api-gateway"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.8-005",
+      "description": "API authentication and authorization",
+      "coveredByNodes": [
+        "node-core04-api-gateway"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.17-001",
+      "description": "Event-driven architecture backbone",
+      "coveredByNodes": [
+        "node-core04-event-bus",
+        "node-core04-event-router"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.17-002",
+      "description": "Event filtering (topic and content based)",
+      "coveredByNodes": [
+        "node-core04-event-router"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.17-003",
+      "description": "Dynamic event subscription management",
+      "coveredByNodes": [
+        "node-core04-event-router"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.17-004",
+      "description": "Event persistence for audit and replay",
+      "coveredByNodes": [
+        "node-core04-event-bus"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-2.17-005",
+      "description": "Event replay capability",
+      "coveredByNodes": [
+        "node-core04-event-bus",
+        "node-core04-event-router"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-001",
+      "description": "Modular, loosely coupled system design",
+      "coveredByNodes": [
+        "node-core04-api-gateway",
+        "node-core04-event-bus"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-003",
+      "description": "Extensibility through well-defined interfaces",
+      "coveredByNodes": [
+        "node-core04-event-bus",
+        "node-core04-event-router"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-007",
+      "description": "Schema versioning and governance",
+      "coveredByNodes": [
+        "node-core04-schema-registry"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    },
+    {
+      "requirementId": "req-GA-010",
+      "description": "Backward compatibility for all interfaces",
+      "coveredByNodes": [
+        "node-core04-api-router",
+        "node-core04-schema-registry"
+      ],
+      "coveredByEdges": [],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": null,
+      "notes": ""
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-002",
+      "description": "All engines are logical components. Separate processes or services are not assumed unless explicitly stated.",
+      "impact": "API gateway, event bus, and schema registry are modeled as co-located logical components within the core subsystem."
+    },
+    {
+      "id": "AS-008",
+      "description": "The event bus is assumed to support at-least-once delivery semantics.",
+      "impact": "Subscribers must be idempotent. Exactly-once delivery is not guaranteed by the bus itself."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-003",
+      "description": "Deployment topology (monolith vs microservices vs hybrid) is not mandated by requirements.",
+      "options": [
+        "Single-process event loop",
+        "Separate broker process",
+        "Distributed message queue"
+      ],
+      "decisionOwner": "Implementation team",
+      "status": "deferred"
+    },
+    {
+      "id": "UD-005",
+      "description": "Schema format and serialization protocol not prescribed.",
+      "options": [
+        "JSON Schema",
+        "Protocol Buffers",
+        "Apache Avro",
+        "MessagePack"
+      ],
+      "decisionOwner": "Implementation team",
+      "status": "deferred"
+    }
+  ],
+  "metadata": {
+    "status": "pending",
+    "revision": 1,
+    "createdDate": "2025-01-15T00:00:00Z",
+    "lastModified": "2025-01-15T00:00:00Z"
+  }
+}

@@ -1,0 +1,1940 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-master-02",
+  "title": "GRAVITAS GCS Master Architecture — All Subsystems",
+  "diagramType": "master-architecture",
+  "description": "Level 1 view showing all 12 major subsystem groups and their primary inter-subsystem dependencies. Each subsystem is further detailed in dedicated architecture files.",
+  "category": "master",
+  "coordinateSystem": {
+    "unit": "canvas-unit",
+    "origin": "top-left",
+    "yAxis": "down"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.65
+  },
+  "groups": [
+    {
+      "id": "grp-master-core",
+      "label": "A. Core Architecture",
+      "description": "Vehicle registry, protocol adapters, telemetry, events, API gateway, schema management",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#93c5fd"
+      },
+      "bounds": { "x": 600, "y": 50, "width": 900, "height": 350 },
+      "metadata": {
+        "category": "core",
+        "engineIds": [
+          "eng-core-vehicle-registry", "eng-core-universal-integration",
+          "eng-core-multi-controller", "eng-core-protocol-adapter",
+          "eng-core-capability-discovery", "eng-core-vehicle-state",
+          "eng-core-telemetry-ingestion", "eng-core-event-processing",
+          "eng-core-api-gateway", "eng-core-plugin-extension",
+          "eng-core-schema-management", "eng-core-external-integration"
+        ],
+        "notes": "Foundation layer. All other subsystems depend on core services."
+      }
+    },
+    {
+      "id": "grp-master-comm",
+      "label": "B. Communications",
+      "description": "Transport, networking, link monitoring, encryption, offline operation",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#06b6d4",
+        "borderColor": "#0891b2",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#67e8f9"
+      },
+      "bounds": { "x": 50, "y": 50, "width": 480, "height": 350 },
+      "metadata": {
+        "category": "comm",
+        "engineIds": [
+          "eng-comm-transport", "eng-comm-multi-network",
+          "eng-comm-network-diagnostics", "eng-comm-link-quality",
+          "eng-comm-connection-recovery", "eng-comm-routing",
+          "eng-comm-secure-comms", "eng-comm-offline-sync",
+          "eng-comm-remote-session", "eng-comm-network-topology",
+          "eng-comm-bandwidth-analysis"
+        ],
+        "notes": "Provides all communication services to core and operational layers."
+      }
+    },
+    {
+      "id": "grp-master-ops",
+      "label": "F. Vehicle Operations",
+      "description": "Command & control, missions, fleet management, manual control, preflight, recovery",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#8b5cf6",
+        "borderColor": "#7c3aed",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#c4b5fd"
+      },
+      "bounds": { "x": 50, "y": 470, "width": 480, "height": 400 },
+      "metadata": {
+        "category": "ops",
+        "engineIds": [
+          "eng-ops-unified", "eng-ops-mission-planning",
+          "eng-ops-mission-validation", "eng-ops-mission-execution",
+          "eng-ops-command-control", "eng-ops-command-validation",
+          "eng-ops-command-tracking", "eng-ops-vehicle-config",
+          "eng-ops-preflight", "eng-ops-health-assessment",
+          "eng-ops-nav-geospatial", "eng-ops-manual-control",
+          "eng-ops-fleet-management", "eng-ops-task-coordination",
+          "eng-ops-vehicle-recovery", "eng-ops-mission-versioning",
+          "eng-ops-mission-monitoring"
+        ],
+        "notes": "Operational logic. Depends on core, communications, planning, and security."
+      }
+    },
+    {
+      "id": "grp-master-plan",
+      "label": "E. Planning & Navigation",
+      "description": "Centralized, decentralized, hybrid planning; motion models; deconfliction; fleet optimization",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#f59e0b",
+        "borderColor": "#d97706",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#fcd34d"
+      },
+      "bounds": { "x": 600, "y": 470, "width": 900, "height": 400 },
+      "metadata": {
+        "category": "plan",
+        "engineIds": [
+          "eng-plan-centralized", "eng-plan-decentralized",
+          "eng-plan-hybrid", "eng-plan-motion-model",
+          "eng-plan-global-route", "eng-plan-local-replan",
+          "eng-plan-reactive-avoidance", "eng-plan-multi-vehicle-coord",
+          "eng-plan-deconfliction", "eng-plan-fleet-optimization",
+          "eng-plan-cost-function", "eng-plan-feasibility",
+          "eng-plan-trajectory-analysis", "eng-plan-terrain-traversability",
+          "eng-plan-energy-aware", "eng-plan-nav-constraints",
+          "eng-plan-plugin-algorithm"
+        ],
+        "notes": "Route planning and navigation. Uses motion models, terrain, energy data."
+      }
+    },
+    {
+      "id": "grp-master-cop",
+      "label": "D. COP & Geospatial",
+      "description": "Common operational picture, maps, terrain, geofences, overlays, replay",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#10b981",
+        "borderColor": "#059669",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#6ee7b7"
+      },
+      "bounds": { "x": 1580, "y": 50, "width": 480, "height": 350 },
+      "metadata": {
+        "category": "cop",
+        "engineIds": [
+          "eng-cop-core", "eng-cop-geospatial-viz",
+          "eng-cop-map-layers", "eng-cop-terrain",
+          "eng-cop-vehicle-tracks", "eng-cop-geofence",
+          "eng-cop-dynamic-obstacles", "eng-cop-geospatial-data",
+          "eng-cop-historical-playback", "eng-cop-data-fusion-viz",
+          "eng-cop-configurable-overlays", "eng-cop-offline-maps"
+        ],
+        "notes": "Visualization and geospatial intelligence layer."
+      }
+    },
+    {
+      "id": "grp-master-sensor",
+      "label": "G. Sensors & FOV",
+      "description": "Sensor integration, FOV, coverage analysis, fusion, observations",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#ec4899",
+        "borderColor": "#db2777",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#f9a8d4"
+      },
+      "bounds": { "x": 1580, "y": 470, "width": 480, "height": 180 },
+      "metadata": {
+        "category": "sensor",
+        "engineIds": [
+          "eng-sensor-integration", "eng-sensor-fov",
+          "eng-sensor-pose-calibration", "eng-sensor-coverage",
+          "eng-sensor-camera-frustum", "eng-sensor-blind-spot",
+          "eng-sensor-fusion", "eng-sensor-observations",
+          "eng-sensor-coverage-planning", "eng-sensor-data-quality"
+        ],
+        "notes": "Sensor intelligence layer. Feeds COP and planning."
+      }
+    },
+    {
+      "id": "grp-master-payload",
+      "label": "H. Payload, Video & Media",
+      "description": "Payload management, camera, gimbal, video streaming, recording, media storage",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#f43f5e",
+        "borderColor": "#e11d48",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#fda4af"
+      },
+      "bounds": { "x": 1580, "y": 710, "width": 480, "height": 160 },
+      "metadata": {
+        "category": "payload",
+        "engineIds": [
+          "eng-payload-management", "eng-payload-camera",
+          "eng-payload-gimbal", "eng-payload-video-streaming",
+          "eng-payload-recording", "eng-payload-media-storage",
+          "eng-payload-telemetry", "eng-payload-media-metadata",
+          "eng-payload-review"
+        ],
+        "notes": "Payload and media layer. Depends on sensor integration and comms."
+      }
+    },
+    {
+      "id": "grp-master-sec",
+      "label": "I. Security & Reliability",
+      "description": "Auth, RBAC, safety, fault detection, recovery, audit",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#ef4444",
+        "borderColor": "#dc2626",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#fca5a5"
+      },
+      "bounds": { "x": 50, "y": 940, "width": 480, "height": 300 },
+      "metadata": {
+        "category": "sec",
+        "engineIds": [
+          "eng-sec-authentication", "eng-sec-rbac",
+          "eng-sec-authorization", "eng-sec-credentials",
+          "eng-sec-safety-policy", "eng-sec-fault-detection",
+          "eng-sec-retry-recovery", "eng-sec-watchdog",
+          "eng-sec-error-classification", "eng-sec-audit",
+          "eng-sec-data-integrity", "eng-sec-config-security",
+          "eng-sec-command-uncertainty", "eng-sec-operational-risk"
+        ],
+        "notes": "Cross-cutting security and reliability. All operational subsystems depend on this."
+      }
+    },
+    {
+      "id": "grp-master-data",
+      "label": "J. Data & Observability",
+      "description": "Persistence, telemetry history, logging, health dashboard, alerts, backup",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#14b8a6",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#5eead4"
+      },
+      "bounds": { "x": 600, "y": 940, "width": 450, "height": 300 },
+      "metadata": {
+        "category": "data",
+        "engineIds": [
+          "eng-data-persistence", "eng-data-telemetry-history",
+          "eng-data-logging", "eng-data-replay",
+          "eng-data-diagnostics", "eng-data-health-dashboard",
+          "eng-data-alerts", "eng-data-incident-evidence",
+          "eng-data-retention", "eng-data-sync-resolution",
+          "eng-data-provenance", "eng-data-backup"
+        ],
+        "notes": "Data persistence and observability foundation."
+      }
+    },
+    {
+      "id": "grp-master-cust",
+      "label": "K. Customization & Intelligence",
+      "description": "Plugins, automation, rules, AI diagnostics, dashboards, workflows",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#a855f7",
+        "borderColor": "#9333ea",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#d8b4fe"
+      },
+      "bounds": { "x": 1120, "y": 940, "width": 450, "height": 300 },
+      "metadata": {
+        "category": "cust",
+        "engineIds": [
+          "eng-cust-workflow-automation", "eng-cust-rules-engine",
+          "eng-cust-scripting", "eng-cust-ai-diagnostics",
+          "eng-cust-anomaly-detection", "eng-cust-geospatial-analysis",
+          "eng-cust-task-execution", "eng-cust-scenarios",
+          "eng-cust-dashboards", "eng-cust-mission-templates",
+          "eng-cust-alert-config", "eng-cust-sdk",
+          "eng-cust-plugin-lifecycle", "eng-cust-operator-preferences"
+        ],
+        "notes": "Customization and intelligence layer. Uses plugin framework from core."
+      }
+    },
+    {
+      "id": "grp-master-plat",
+      "label": "C. Cross-Platform",
+      "description": "Runtime, OS compatibility, deployment, performance, updates",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#64748b",
+        "borderColor": "#475569",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#cbd5e1"
+      },
+      "bounds": { "x": 50, "y": 1310, "width": 980, "height": 200 },
+      "metadata": {
+        "category": "test",
+        "engineIds": [
+          "eng-plat-runtime", "eng-plat-os-compat",
+          "eng-plat-os-diagnostics", "eng-plat-dependency-detection",
+          "eng-plat-device-interface", "eng-plat-app-performance",
+          "eng-plat-resource-monitoring", "eng-plat-config-environment",
+          "eng-plat-update-management", "eng-plat-deployment"
+        ],
+        "notes": "Platform abstraction layer. Enables cross-OS support."
+      }
+    },
+    {
+      "id": "grp-master-test",
+      "label": "L. Testing & Simulation",
+      "description": "SITL, HIL, automated testing, fault injection, performance, release validation",
+      "parentGroupId": null,
+      "style": {
+        "backgroundColor": "#64748b",
+        "borderColor": "#475569",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "opacity": 0.10,
+        "padding": 40,
+        "labelPosition": "top-left",
+        "fontSize": 16,
+        "textColor": "#cbd5e1"
+      },
+      "bounds": { "x": 1100, "y": 1310, "width": 960, "height": 200 },
+      "metadata": {
+        "category": "test",
+        "engineIds": [
+          "eng-test-sitl", "eng-test-hil",
+          "eng-test-automated", "eng-test-fault-injection",
+          "eng-test-protocol-conformance", "eng-test-cross-platform",
+          "eng-test-performance", "eng-test-latency",
+          "eng-test-route-benchmark", "eng-test-sensor-validation",
+          "eng-test-fleet-scenarios", "eng-test-release-validation",
+          "eng-test-config-migration", "eng-test-compat-matrix"
+        ],
+        "notes": "Testing and validation layer. Tests all other subsystems."
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-master-core",
+      "type": "subsystem",
+      "label": "Core Architecture",
+      "description": "Vehicle registry, protocol adapters, telemetry pipeline, event bus, API gateway, schema management, plugin framework",
+      "groupId": "grp-master-core",
+      "position": { "x": 650, "y": 130 },
+      "size": { "width": 800, "height": 100 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "core",
+        "color": "#3b82f6",
+        "borderColor": "#2563eb",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-core-in-comm", "direction": "in", "side": "left", "label": "Transport Data", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-core-out-cop", "direction": "out", "side": "right", "label": "Normalized State", "dataType": "data", "position": { "offset": 0.3 } },
+        { "id": "port-master-core-out-ops", "direction": "out", "side": "bottom", "label": "Vehicle Services", "dataType": "data", "position": { "offset": 0.2 } },
+        { "id": "port-master-core-out-plan", "direction": "out", "side": "bottom", "label": "Vehicle Capabilities", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-core-out-data", "direction": "out", "side": "bottom", "label": "Events & Telemetry", "dataType": "event", "position": { "offset": 0.8 } },
+        { "id": "port-master-core-out-sensor", "direction": "out", "side": "right", "label": "Sensor Registry", "dataType": "data", "position": { "offset": 0.7 } },
+        { "id": "port-master-core-in-sec", "direction": "in", "side": "bottom", "label": "Auth & Validation", "dataType": "auth", "position": { "offset": 0.1 } },
+        { "id": "port-master-core-out-cust", "direction": "out", "side": "bottom", "label": "Plugin API", "dataType": "data", "position": { "offset": 0.9 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-GA-001", "req-GA-002", "req-GA-003", "req-GA-004", "req-GA-005"],
+        "responsibilities": [
+          "Vehicle discovery and registration",
+          "Protocol abstraction and adapter management",
+          "Telemetry ingestion and normalization",
+          "Event processing and distribution",
+          "API gateway for internal services",
+          "Schema versioning and contract validation"
+        ],
+        "inputs": ["Raw transport data from communications layer"],
+        "outputs": ["Normalized vehicle state", "Events", "Vehicle services API"],
+        "constraints": ["Protocol logic isolated from domain", "Adapters independently deployable"],
+        "failureModes": ["Adapter failure isolated", "Event bus backpressure"],
+        "technologyNotes": null,
+        "assumptions": ["AS-002"],
+        "unresolvedDecisions": ["UD-001"],
+        "notes": "Detailed in doc-core-01 through doc-core-05"
+      }
+    },
+    {
+      "id": "node-master-comm",
+      "type": "subsystem",
+      "label": "Communications",
+      "description": "Transport layer, multi-network, link monitoring, encryption, offline sync, failover",
+      "groupId": "grp-master-comm",
+      "position": { "x": 100, "y": 130 },
+      "size": { "width": 380, "height": 100 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "comm",
+        "color": "#06b6d4",
+        "borderColor": "#0891b2",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-comm-out-core", "direction": "out", "side": "right", "label": "Transport Data", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-comm-out-data", "direction": "out", "side": "bottom", "label": "Link Metrics", "dataType": "telemetry", "position": { "offset": 0.5 } },
+        { "id": "port-master-comm-in-sec", "direction": "in", "side": "bottom", "label": "Encryption Config", "dataType": "config", "position": { "offset": 0.8 } },
+        { "id": "port-master-comm-out-cop", "direction": "out", "side": "right", "label": "Link Status", "dataType": "data", "position": { "offset": 0.8 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-GA-009", "req-GA-010"],
+        "responsibilities": [
+          "Manage all communication transports",
+          "Monitor link quality and availability",
+          "Handle failover and reconnection",
+          "Encrypt communications",
+          "Support offline operation and sync"
+        ],
+        "inputs": ["Physical transport interfaces", "Encryption configuration"],
+        "outputs": ["Transport data to core", "Link metrics to data layer"],
+        "constraints": ["Must define failure behavior for every critical path"],
+        "failureModes": ["Total link loss", "Partial connectivity", "Stale connection"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": ["UD-001"],
+        "notes": "Detailed in doc-comm-01 through doc-comm-05"
+      }
+    },
+    {
+      "id": "node-master-ops",
+      "type": "subsystem",
+      "label": "Vehicle Operations",
+      "description": "Unified ops, C2, missions, fleet management, manual control, preflight, recovery",
+      "groupId": "grp-master-ops",
+      "position": { "x": 100, "y": 550 },
+      "size": { "width": 380, "height": 100 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "ops",
+        "color": "#8b5cf6",
+        "borderColor": "#7c3aed",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-ops-in-core", "direction": "in", "side": "top", "label": "Vehicle Services", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-ops-out-plan", "direction": "out", "side": "right", "label": "Planning Requests", "dataType": "data", "position": { "offset": 0.3 } },
+        { "id": "port-master-ops-out-data", "direction": "out", "side": "bottom", "label": "Mission & Command Records", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-ops-in-sec", "direction": "in", "side": "bottom", "label": "Auth & Safety", "dataType": "auth", "position": { "offset": 0.2 } },
+        { "id": "port-master-ops-out-cop", "direction": "out", "side": "right", "label": "Mission Visualization", "dataType": "data", "position": { "offset": 0.7 } },
+        { "id": "port-master-ops-in-sensor", "direction": "in", "side": "right", "label": "Sensor Coverage", "dataType": "data", "position": { "offset": 0.9 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-GA-007", "req-GA-020"],
+        "responsibilities": [
+          "Command validation and dispatch",
+          "Mission lifecycle management",
+          "Fleet coordination",
+          "Manual control handling",
+          "Preflight checks",
+          "Recovery and state reconciliation"
+        ],
+        "inputs": ["Vehicle services from core", "Auth from security", "Plans from planning"],
+        "outputs": ["Commands to vehicles", "Mission records to data layer"],
+        "constraints": ["Every command through authorization and safety", "Command ≠ execution"],
+        "failureModes": ["Command timeout", "Rejected commands", "Mission failure"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Detailed in doc-ops-01 through doc-ops-05"
+      }
+    },
+    {
+      "id": "node-master-plan",
+      "type": "subsystem",
+      "label": "Planning & Navigation",
+      "description": "Centralized, decentralized, hybrid planning; motion models; deconfliction; optimization",
+      "groupId": "grp-master-plan",
+      "position": { "x": 650, "y": 550 },
+      "size": { "width": 800, "height": 100 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "plan",
+        "color": "#f59e0b",
+        "borderColor": "#d97706",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-plan-in-ops", "direction": "in", "side": "left", "label": "Planning Requests", "dataType": "data", "position": { "offset": 0.3 } },
+        { "id": "port-master-plan-in-core", "direction": "in", "side": "top", "label": "Vehicle Capabilities", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-plan-out-ops", "direction": "out", "side": "left", "label": "Planned Routes", "dataType": "data", "position": { "offset": 0.7 } },
+        { "id": "port-master-plan-in-cop", "direction": "in", "side": "right", "label": "Terrain & Geofences", "dataType": "data", "position": { "offset": 0.3 } },
+        { "id": "port-master-plan-in-sensor", "direction": "in", "side": "right", "label": "Sensor Coverage", "dataType": "data", "position": { "offset": 0.7 } },
+        { "id": "port-master-plan-out-data", "direction": "out", "side": "bottom", "label": "Planning Records", "dataType": "data", "position": { "offset": 0.5 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-2.4-001", "req-2.4-002", "req-2.4-003"],
+        "responsibilities": [
+          "Generate and validate routes",
+          "Apply vehicle-specific motion constraints",
+          "Coordinate multi-vehicle paths",
+          "Detect and resolve conflicts",
+          "Support multiple planning algorithms"
+        ],
+        "inputs": ["Planning requests from ops", "Vehicle capabilities from core", "Terrain from COP", "Sensor data"],
+        "outputs": ["Planned routes to ops", "Planning records to data layer"],
+        "constraints": ["Proposed ≠ approved route", "Feasibility must be validated per vehicle"],
+        "failureModes": ["Infeasible route", "Planning timeout", "Conflict unresolvable"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Detailed in doc-plan-01 through doc-plan-05"
+      }
+    },
+    {
+      "id": "node-master-cop",
+      "type": "subsystem",
+      "label": "COP & Geospatial",
+      "description": "Common operational picture, maps, terrain, geofences, overlays, tracks, replay",
+      "groupId": "grp-master-cop",
+      "position": { "x": 1630, "y": 130 },
+      "size": { "width": 380, "height": 100 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "cop",
+        "color": "#10b981",
+        "borderColor": "#059669",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-cop-in-core", "direction": "in", "side": "left", "label": "Normalized State", "dataType": "data", "position": { "offset": 0.3 } },
+        { "id": "port-master-cop-in-comm", "direction": "in", "side": "left", "label": "Link Status", "dataType": "data", "position": { "offset": 0.6 } },
+        { "id": "port-master-cop-in-ops", "direction": "in", "side": "left", "label": "Mission Data", "dataType": "data", "position": { "offset": 0.9 } },
+        { "id": "port-master-cop-out-plan", "direction": "out", "side": "bottom", "label": "Terrain & Geofences", "dataType": "data", "position": { "offset": 0.3 } },
+        { "id": "port-master-cop-in-sensor", "direction": "in", "side": "bottom", "label": "Sensor Overlays", "dataType": "data", "position": { "offset": 0.7 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-2.3-001", "req-2.3-010", "req-2.3-016"],
+        "responsibilities": [
+          "Render the common operational picture",
+          "Manage map layers and overlays",
+          "Display vehicle tracks and trajectories",
+          "Show geofences and restricted areas",
+          "Support historical replay"
+        ],
+        "inputs": ["Normalized state from core", "Link status from comms", "Mission data from ops", "Sensor overlays"],
+        "outputs": ["Terrain and geofence data to planning"],
+        "constraints": ["Must distinguish live vs stale vs estimated data"],
+        "failureModes": ["Stale display", "Map provider unavailable"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": ["UD-008"],
+        "notes": "Detailed in doc-cop-01 through doc-cop-04"
+      }
+    },
+    {
+      "id": "node-master-sensor",
+      "type": "subsystem",
+      "label": "Sensors & FOV",
+      "description": "Sensor integration, FOV calculation, coverage analysis, fusion, observations",
+      "groupId": "grp-master-sensor",
+      "position": { "x": 1630, "y": 530 },
+      "size": { "width": 380, "height": 70 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "sensor",
+        "color": "#ec4899",
+        "borderColor": "#db2777",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-sensor-in-core", "direction": "in", "side": "left", "label": "Sensor Registry", "dataType": "data", "position": { "offset": 0.3 } },
+        { "id": "port-master-sensor-out-cop", "direction": "out", "side": "top", "label": "FOV Overlays", "dataType": "data", "position": { "offset": 0.7 } },
+        { "id": "port-master-sensor-out-plan", "direction": "out", "side": "left", "label": "Coverage Data", "dataType": "data", "position": { "offset": 0.7 } },
+        { "id": "port-master-sensor-out-payload", "direction": "out", "side": "bottom", "label": "Sensor Config", "dataType": "data", "position": { "offset": 0.5 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-2.6-001", "req-2.6-005", "req-2.6-012"],
+        "responsibilities": [
+          "Discover and register sensors",
+          "Calculate FOV and ground footprints",
+          "Analyze coverage and visibility",
+          "Fuse multi-sensor observations",
+          "Assess data quality"
+        ],
+        "inputs": ["Sensor registry from core", "Pose and calibration data"],
+        "outputs": ["FOV overlays to COP", "Coverage data to planning"],
+        "constraints": ["Must distinguish measured vs estimated coverage"],
+        "failureModes": ["Missing calibration", "Stale sensor data"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Detailed in doc-sensor-01 through doc-sensor-03"
+      }
+    },
+    {
+      "id": "node-master-payload",
+      "type": "subsystem",
+      "label": "Payload, Video & Media",
+      "description": "Payload management, camera, gimbal, video streaming, recording, media storage",
+      "groupId": "grp-master-payload",
+      "position": { "x": 1630, "y": 760 },
+      "size": { "width": 380, "height": 70 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "payload",
+        "color": "#f43f5e",
+        "borderColor": "#e11d48",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-payload-in-sensor", "direction": "in", "side": "top", "label": "Sensor Config", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-payload-out-data", "direction": "out", "side": "bottom", "label": "Media Records", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-payload-in-sec", "direction": "in", "side": "left", "label": "Payload Permissions", "dataType": "auth", "position": { "offset": 0.5 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-2.11-001", "req-2.11-005", "req-2.11-016"],
+        "responsibilities": [
+          "Manage payload lifecycle",
+          "Control cameras and gimbals",
+          "Manage video stream lifecycle",
+          "Handle recording and media capture",
+          "Store and associate media assets"
+        ],
+        "inputs": ["Sensor configuration", "Permissions from security"],
+        "outputs": ["Media records to data layer"],
+        "constraints": ["Stream disconnection recovery", "Media ≠ reference tracking"],
+        "failureModes": ["Stream loss", "Storage exhaustion", "Stale references"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": ["UD-007"],
+        "notes": "Detailed in doc-payload-01"
+      }
+    },
+    {
+      "id": "node-master-sec",
+      "type": "subsystem",
+      "label": "Security & Reliability",
+      "description": "Authentication, RBAC, safety policies, fault detection, recovery, audit, data integrity",
+      "groupId": "grp-master-sec",
+      "position": { "x": 100, "y": 1020 },
+      "size": { "width": 380, "height": 100 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "sec",
+        "color": "#ef4444",
+        "borderColor": "#dc2626",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-sec-out-core", "direction": "out", "side": "top", "label": "Auth & Validation", "dataType": "auth", "position": { "offset": 0.3 } },
+        { "id": "port-master-sec-out-ops", "direction": "out", "side": "top", "label": "Safety Policies", "dataType": "auth", "position": { "offset": 0.6 } },
+        { "id": "port-master-sec-out-comm", "direction": "out", "side": "top", "label": "Encryption", "dataType": "config", "position": { "offset": 0.9 } },
+        { "id": "port-master-sec-out-data", "direction": "out", "side": "right", "label": "Audit Records", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-sec-out-payload", "direction": "out", "side": "right", "label": "Payload Auth", "dataType": "auth", "position": { "offset": 0.8 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-GA-007", "req-GA-008", "req-GA-014"],
+        "responsibilities": [
+          "Authenticate and authorize all users",
+          "Enforce safety policies and interlocks",
+          "Detect, isolate, and recover from faults",
+          "Manage command uncertainty",
+          "Maintain audit trails"
+        ],
+        "inputs": ["Auth requests from all subsystems"],
+        "outputs": ["Auth decisions", "Safety gate results", "Audit records"],
+        "constraints": ["Cross-cutting — all subsystems consume security services"],
+        "failureModes": ["Auth service unavailable (safe-deny default)"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Detailed in doc-sec-01 through doc-sec-04"
+      }
+    },
+    {
+      "id": "node-master-data",
+      "type": "subsystem",
+      "label": "Data & Observability",
+      "description": "Persistence, telemetry history, logging, replay, health dashboard, alerts, backup",
+      "groupId": "grp-master-data",
+      "position": { "x": 650, "y": 1020 },
+      "size": { "width": 350, "height": 100 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "data",
+        "color": "#14b8a6",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-data-in-core", "direction": "in", "side": "top", "label": "Events & Telemetry", "dataType": "event", "position": { "offset": 0.3 } },
+        { "id": "port-master-data-in-ops", "direction": "in", "side": "top", "label": "Mission Records", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-data-in-sec", "direction": "in", "side": "left", "label": "Audit Records", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-data-in-comm", "direction": "in", "side": "top", "label": "Link Metrics", "dataType": "telemetry", "position": { "offset": 0.7 } },
+        { "id": "port-master-data-in-plan", "direction": "in", "side": "top", "label": "Planning Records", "dataType": "data", "position": { "offset": 0.9 } },
+        { "id": "port-master-data-in-payload", "direction": "in", "side": "right", "label": "Media Records", "dataType": "data", "position": { "offset": 0.5 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-GA-013", "req-GA-014", "req-2.15-001"],
+        "responsibilities": [
+          "Persist all operational data",
+          "Maintain telemetry time-series",
+          "Provide structured logging",
+          "Support operational replay",
+          "Manage data retention and backup"
+        ],
+        "inputs": ["Events and telemetry from all subsystems"],
+        "outputs": ["Historical data for replay", "Health metrics for dashboard"],
+        "constraints": ["Must preserve provenance and timestamps"],
+        "failureModes": ["Storage exhaustion", "Data corruption"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": ["UD-002"],
+        "notes": "Detailed in doc-data-01 through doc-data-04"
+      }
+    },
+    {
+      "id": "node-master-cust",
+      "type": "subsystem",
+      "label": "Customization & Intelligence",
+      "description": "Plugins, automation, rules, AI diagnostics, dashboards, workflows, operator preferences",
+      "groupId": "grp-master-cust",
+      "position": { "x": 1170, "y": 1020 },
+      "size": { "width": 350, "height": 100 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "cust",
+        "color": "#a855f7",
+        "borderColor": "#9333ea",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-cust-in-core", "direction": "in", "side": "top", "label": "Plugin API", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-cust-in-data", "direction": "in", "side": "left", "label": "Operational Data", "dataType": "data", "position": { "offset": 0.5 } },
+        { "id": "port-master-cust-in-events", "direction": "in", "side": "top", "label": "System Events", "dataType": "event", "position": { "offset": 0.2 } },
+        { "id": "port-master-cust-out-ops", "direction": "out", "side": "top", "label": "Automated Actions", "dataType": "command", "position": { "offset": 0.8 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-GA-002", "req-GA-012"],
+        "responsibilities": [
+          "Manage plugin lifecycle",
+          "Execute workflow automation",
+          "Provide AI-assisted diagnostics",
+          "Detect anomalies",
+          "Support custom dashboards"
+        ],
+        "inputs": ["Plugin API from core", "Operational data", "System events"],
+        "outputs": ["Automated actions (through standard command pathway)"],
+        "constraints": ["Cannot bypass authorization or safety", "Resource-limited"],
+        "failureModes": ["Plugin crash (isolated)", "AI recommendation rejected"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": ["UD-005"],
+        "notes": "Detailed in doc-cust-01 through doc-cust-03"
+      }
+    },
+    {
+      "id": "node-master-plat",
+      "type": "subsystem",
+      "label": "Cross-Platform",
+      "description": "Runtime abstraction, OS compatibility, deployment, performance, updates",
+      "groupId": "grp-master-plat",
+      "position": { "x": 100, "y": 1380 },
+      "size": { "width": 880, "height": 80 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "test",
+        "color": "#64748b",
+        "borderColor": "#475569",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-plat-out-all", "direction": "out", "side": "top", "label": "Platform Services", "dataType": "data", "position": { "offset": 0.5 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-GA-011", "req-2.13-001", "req-2.13-002"],
+        "responsibilities": [
+          "Abstract OS-specific interfaces",
+          "Manage cross-platform runtime",
+          "Handle deployment and updates",
+          "Monitor application performance"
+        ],
+        "inputs": ["OS interfaces"],
+        "outputs": ["Platform services to all layers above"],
+        "constraints": ["Domain logic must be OS-independent"],
+        "failureModes": ["Missing dependency", "Incompatible runtime"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Detailed in doc-master-03 and doc-test-03"
+      }
+    },
+    {
+      "id": "node-master-test",
+      "type": "subsystem",
+      "label": "Testing & Simulation",
+      "description": "SITL, HIL, automated testing, fault injection, performance, release validation",
+      "groupId": "grp-master-test",
+      "position": { "x": 1150, "y": 1380 },
+      "size": { "width": 860, "height": 80 },
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "test",
+        "color": "#64748b",
+        "borderColor": "#475569",
+        "borderWidth": 2,
+        "opacity": 1.0,
+        "icon": null,
+        "fontSize": 16,
+        "textColor": "#ffffff"
+      },
+      "ports": [
+        { "id": "port-master-test-inout-all", "direction": "inout", "side": "top", "label": "Test Interfaces", "dataType": "data", "position": { "offset": 0.5 } }
+      ],
+      "metadata": {
+        "engineId": null,
+        "requirementIds": ["req-GA-018", "req-2.20-001", "req-2.20-019"],
+        "responsibilities": [
+          "Integrate simulation environments",
+          "Run automated and regression tests",
+          "Inject faults for resilience testing",
+          "Profile performance",
+          "Validate releases"
+        ],
+        "inputs": ["All subsystem test interfaces"],
+        "outputs": ["Test results", "Compatibility matrix", "Release readiness report"],
+        "constraints": ["Tests must cover all subsystems", "Regression on every change"],
+        "failureModes": ["Test environment unavailable"],
+        "technologyNotes": null,
+        "assumptions": [],
+        "unresolvedDecisions": [],
+        "notes": "Detailed in doc-test-01 through doc-test-03"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-master-comm-to-core",
+      "source": "node-master-comm",
+      "target": "node-master-core",
+      "sourcePort": "port-master-comm-out-core",
+      "targetPort": "port-master-core-in-comm",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Transport Data → Core",
+        "protocol": null,
+        "dataType": "Raw vehicle data received through communication transports",
+        "trigger": "Continuous",
+        "synchronous": false,
+        "description": "Communications layer delivers raw transport data to the core for protocol-specific decoding and normalization",
+        "requirementIds": ["req-GA-003", "req-GA-009"],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-master-core-to-cop",
+      "source": "node-master-core",
+      "target": "node-master-cop",
+      "sourcePort": "port-master-core-out-cop",
+      "targetPort": "port-master-cop-in-core",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Normalized State → COP",
+        "protocol": null,
+        "dataType": "Normalized vehicle state, position, status, events",
+        "trigger": "State change events",
+        "synchronous": false,
+        "description": "Core provides normalized vehicle state to COP for visualization",
+        "requirementIds": ["req-2.3-001", "req-2.3-002"],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-master-comm-to-cop",
+      "source": "node-master-comm",
+      "target": "node-master-cop",
+      "sourcePort": "port-master-comm-out-cop",
+      "targetPort": "port-master-cop-in-comm",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Link Status → COP",
+        "protocol": null,
+        "dataType": "Communication link status, network topology",
+        "trigger": "Link state changes",
+        "synchronous": false,
+        "description": "Communications provides link status for COP network overlay display",
+        "requirementIds": ["req-2.3-008"],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-master-core-to-ops",
+      "source": "node-master-core",
+      "target": "node-master-ops",
+      "sourcePort": "port-master-core-out-ops",
+      "targetPort": "port-master-ops-in-core",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Vehicle Services → Operations",
+        "protocol": null,
+        "dataType": "Vehicle registry, capabilities, command interfaces, adapter services",
+        "trigger": "Service discovery and on-demand",
+        "synchronous": null,
+        "description": "Core provides vehicle services and adapter interfaces to the operations layer",
+        "requirementIds": ["req-GA-001", "req-GA-004"],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-master-core-to-plan",
+      "source": "node-master-core",
+      "target": "node-master-plan",
+      "sourcePort": "port-master-core-out-plan",
+      "targetPort": "port-master-plan-in-core",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Vehicle Capabilities → Planning",
+        "protocol": null,
+        "dataType": "Vehicle capability profiles, motion constraints, operational limits",
+        "trigger": "Planning request and vehicle registration",
+        "synchronous": null,
+        "description": "Core provides vehicle capability data so planners can validate route feasibility",
+        "requirementIds": ["req-2.4-012", "req-2.5-012"],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-master-ops-to-plan",
+      "source": "node-master-ops",
+      "target": "node-master-plan",
+      "sourcePort": "port-master-ops-out-plan",
+      "targetPort": "port-master-plan-in-ops",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "bidirectional",
+        "label": "Planning Requests ↔ Routes",
+        "protocol": null,
+        "dataType": "Planning requests (objectives, constraints) and planned routes",
+        "trigger": "Mission planning and replanning events",
+        "synchronous": null,
+        "description": "Operations submits planning requests; planning returns proposed routes for validation and approval",
+        "requirementIds": ["req-2.4-001", "req-2.7-006"],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#f59e0b",
+        "strokeWidth": 2,
+        "arrow": "both",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-master-cop-to-plan",
+      "source": "node-master-cop",
+      "target": "node-master-plan",
+      "sourcePort": "port-master-cop-out-plan",
+      "targetPort": "port-master-plan-in-cop",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Terrain & Geofences → Planning",
+        "protocol": null,
+        "dataType": "Terrain data, elevation, geofences, restricted areas, environmental constraints",
+        "trigger": "Planning request",
+        "synchronous": null,
+        "description": "COP provides geospatial constraints to the planning subsystem for route generation and validation",
+        "requirementIds": ["req-2.4-011", "req-2.5-010"],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#10b981",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-master-ops-to-cop",
+      "source": "node-master-ops",
+      "target": "node-master-cop",
+      "sourcePort": "port-master-ops-out-cop",
+      "targetPort": "port-master-cop-in-ops",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Mission Data → COP",
+        "protocol": null,
+        "dataType": "Active missions, waypoints, routes, execution progress",
+        "trigger": "Mission state changes",
+        "synchronous": false,
+        "description": "Operations provides mission visualization data to COP for display",
+        "requirementIds": ["req-2.3-004", "req-2.7-005"],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-master-core-to-sensor",
+      "source": "node-master-core",
+      "target": "node-master-sensor",
+      "sourcePort": "port-master-core-out-sensor",
+      "targetPort": "port-master-sensor-in-core",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Sensor Registry → Sensors",
+        "protocol": null,
+        "dataType": "Registered sensors, capabilities, association with vehicles",
+        "trigger": "Sensor discovery",
+        "synchronous": null,
+        "description": "Core provides sensor registry data to the sensor subsystem",
+        "requirementIds": ["req-2.6-001", "req-2.6-003"],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 1
+      }
+    },
+    {
+      "id": "edge-master-sensor-to-cop",
+      "source": "node-master-sensor",
+      "target": "node-master-cop",
+      "sourcePort": "port-master-sensor-out-cop",
+      "targetPort": "port-master-cop-in-sensor",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "FOV Overlays → COP",
+        "protocol": null,
+        "dataType": "FOV geometries, coverage overlays, observation markers",
+        "trigger": "Sensor state changes",
+        "synchronous": false,
+        "description": "Sensor subsystem provides FOV overlays and observation data to COP for visualization on the operational map",
+"requirementIds": ["req-2.3-005", "req-2.6-005"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#ec4899",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "solid",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-sensor-to-plan",
+"source": "node-master-sensor",
+"target": "node-master-plan",
+"sourcePort": "port-master-sensor-out-plan",
+"targetPort": "port-master-plan-in-sensor",
+"semantic": {
+"type": "data-flow",
+"direction": "unidirectional",
+"label": "Coverage Data → Planning",
+"protocol": null,
+"dataType": "Sensor coverage analysis, visibility constraints, observation quality",
+"trigger": "Coverage-oriented planning request",
+"synchronous": null,
+"description": "Sensor subsystem provides coverage data to planning for coverage-oriented route optimization",
+"requirementIds": ["req-2.6-014", "req-2.4-016"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#ec4899",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "solid",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-sec-to-core",
+"source": "node-master-sec",
+"target": "node-master-core",
+"sourcePort": "port-master-sec-out-core",
+"targetPort": "port-master-core-in-sec",
+"semantic": {
+"type": "auth-flow",
+"direction": "unidirectional",
+"label": "Auth & Validation → Core",
+"protocol": null,
+"dataType": "Authentication decisions, authorization tokens, validation results",
+"trigger": "Auth request from core services",
+"synchronous": true,
+"description": "Security provides authentication and authorization services to core for all vehicle and adapter operations",
+"requirementIds": ["req-GA-007", "req-2.12-001"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#ef4444",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "dashed",
+"labelPosition": "center",
+"zIndex": 2
+}
+},
+{
+"id": "edge-master-sec-to-ops",
+"source": "node-master-sec",
+"target": "node-master-ops",
+"sourcePort": "port-master-sec-out-ops",
+"targetPort": "port-master-ops-in-sec",
+"semantic": {
+"type": "auth-flow",
+"direction": "unidirectional",
+"label": "Safety Policies → Operations",
+"protocol": null,
+"dataType": "Safety interlock states, command authorization, operational risk assessments",
+"trigger": "Command submission and mission approval",
+"synchronous": true,
+"description": "Security enforces safety policies and authorization gates on all operational commands and mission actions",
+"requirementIds": ["req-GA-007", "req-GA-020", "req-2.8-004"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#ef4444",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "dashed",
+"labelPosition": "center",
+"zIndex": 2
+}
+},
+{
+"id": "edge-master-sec-to-comm",
+"source": "node-master-sec",
+"target": "node-master-comm",
+"sourcePort": "port-master-sec-out-comm",
+"targetPort": "port-master-comm-in-sec",
+"semantic": {
+"type": "control-flow",
+"direction": "unidirectional",
+"label": "Encryption Config → Comms",
+"protocol": null,
+"dataType": "Encryption keys, certificate configuration, secure transport policies",
+"trigger": "Connection establishment and key rotation",
+"synchronous": null,
+"description": "Security provides encryption configuration and certificate management to the communications layer",
+"requirementIds": ["req-2.2-014", "req-2.12-006"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#ef4444",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "dashed",
+"labelPosition": "center",
+"zIndex": 2
+}
+},
+{
+"id": "edge-master-sec-to-data",
+"source": "node-master-sec",
+"target": "node-master-data",
+"sourcePort": "port-master-sec-out-data",
+"targetPort": "port-master-data-in-sec",
+"semantic": {
+"type": "data-flow",
+"direction": "unidirectional",
+"label": "Audit Records → Data",
+"protocol": null,
+"dataType": "Audit trail entries, authorization decisions, incident records",
+"trigger": "Consequential actions and security events",
+"synchronous": false,
+"description": "Security persists audit records and incident evidence through the data layer",
+"requirementIds": ["req-GA-014", "req-2.12-010"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#ef4444",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "dashed",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-core-to-data",
+"source": "node-master-core",
+"target": "node-master-data",
+"sourcePort": "port-master-core-out-data",
+"targetPort": "port-master-data-in-core",
+"semantic": {
+"type": "event",
+"direction": "unidirectional",
+"label": "Events & Telemetry → Data",
+"protocol": null,
+"dataType": "Normalized telemetry records, system events, vehicle state changes",
+"trigger": "Telemetry ingestion and event processing",
+"synchronous": false,
+"description": "Core streams processed telemetry and events to the data layer for persistence and time-series storage",
+"requirementIds": ["req-2.15-001", "req-2.15-002", "req-GA-013"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#fbbf24",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "dotted",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-ops-to-data",
+"source": "node-master-ops",
+"target": "node-master-data",
+"sourcePort": "port-master-ops-out-data",
+"targetPort": "port-master-data-in-ops",
+"semantic": {
+"type": "persistence",
+"direction": "unidirectional",
+"label": "Mission & Command Records → Data",
+"protocol": null,
+"dataType": "Mission records, command history, execution outcomes, preflight results",
+"trigger": "Mission lifecycle events and command completion",
+"synchronous": false,
+"description": "Operations persists mission and command records through the data layer for audit and replay",
+"requirementIds": ["req-2.15-001", "req-2.8-010", "req-2.7-012"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#0d9488",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "dashed",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-comm-to-data",
+"source": "node-master-comm",
+"target": "node-master-data",
+"sourcePort": "port-master-comm-out-data",
+"targetPort": "port-master-data-in-comm",
+"semantic": {
+"type": "telemetry",
+"direction": "unidirectional",
+"label": "Link Metrics → Data",
+"protocol": null,
+"dataType": "Link quality metrics, latency, packet loss, bandwidth, connection events",
+"trigger": "Periodic measurement and link state changes",
+"synchronous": false,
+"description": "Communications provides link performance metrics to the data layer for monitoring and diagnostics",
+"requirementIds": ["req-2.2-004", "req-2.16-003"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#06b6d4",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "solid",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-plan-to-data",
+"source": "node-master-plan",
+"target": "node-master-data",
+"sourcePort": "port-master-plan-out-data",
+"targetPort": "port-master-data-in-plan",
+"semantic": {
+"type": "persistence",
+"direction": "unidirectional",
+"label": "Planning Records → Data",
+"protocol": null,
+"dataType": "Planned routes, trajectory comparisons, planning evaluation results",
+"trigger": "Route generation and plan-versus-actual analysis",
+"synchronous": false,
+"description": "Planning persists route records and evaluation data for historical analysis and replay",
+"requirementIds": ["req-2.4-017", "req-2.15-001"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#0d9488",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "dashed",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-core-to-cust",
+"source": "node-master-core",
+"target": "node-master-cust",
+"sourcePort": "port-master-core-out-cust",
+"targetPort": "port-master-cust-in-core",
+"semantic": {
+"type": "dependency",
+"direction": "unidirectional",
+"label": "Plugin API → Customization",
+"protocol": null,
+"dataType": "Extension interfaces, plugin registration hooks, SDK contracts",
+"trigger": "Plugin initialization and lifecycle events",
+"synchronous": null,
+"description": "Core exposes the plugin API and extension SDK to the customization layer",
+"requirementIds": ["req-2.18-001", "req-2.18-003", "req-GA-002"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#475569",
+"strokeWidth": 1,
+"arrow": "end",
+"dash": "dashed",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-cust-to-ops",
+"source": "node-master-cust",
+"target": "node-master-ops",
+"sourcePort": "port-master-cust-out-ops",
+"targetPort": "port-master-ops-in-sec",
+"semantic": {
+"type": "command",
+"direction": "unidirectional",
+"label": "Automated Actions → Operations",
+"protocol": null,
+"dataType": "Automated command requests triggered by rules and workflows",
+"trigger": "Rule evaluation and workflow execution",
+"synchronous": null,
+"description": "Customization submits automated actions through the standard command pathway. Must pass authorization and safety validation.",
+"requirementIds": ["req-2.19-003", "req-2.19-011", "req-2.19-012"],
+"assumptions": ["Automated actions enter the same command validation pipeline as operator commands"]
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#a855f7",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "dotted",
+"labelPosition": "center",
+"zIndex": 2
+}
+},
+{
+"id": "edge-master-data-to-cust",
+"source": "node-master-data",
+"target": "node-master-cust",
+"sourcePort": null,
+"targetPort": "port-master-cust-in-data",
+"semantic": {
+"type": "data-flow",
+"direction": "unidirectional",
+"label": "Operational Data → AI & Analytics",
+"protocol": null,
+"dataType": "Historical telemetry, event logs, health metrics, incident records",
+"trigger": "AI diagnostic request and anomaly detection cycle",
+"synchronous": null,
+"description": "Data layer provides operational history to customization layer for AI-assisted diagnostics and anomaly detection",
+"requirementIds": ["req-2.19-005", "req-2.19-006", "req-2.16-012"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#14b8a6",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "solid",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-sensor-to-payload",
+"source": "node-master-sensor",
+"target": "node-master-payload",
+"sourcePort": "port-master-sensor-out-payload",
+"targetPort": "port-master-payload-in-sensor",
+"semantic": {
+"type": "data-flow",
+"direction": "unidirectional",
+"label": "Sensor Config → Payload",
+"protocol": null,
+"dataType": "Sensor calibration, pose data, FOV parameters for payload-mounted sensors",
+"trigger": "Sensor configuration change and payload initialization",
+"synchronous": null,
+"description": "Sensor subsystem provides calibration and configuration data to payload management for camera and gimbal coordination",
+"requirementIds": ["req-2.6-004", "req-2.11-004"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#ec4899",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "solid",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-payload-to-data",
+"source": "node-master-payload",
+"target": "node-master-data",
+"sourcePort": "port-master-payload-out-data",
+"targetPort": "port-master-data-in-payload",
+"semantic": {
+"type": "persistence",
+"direction": "unidirectional",
+"label": "Media Records → Data",
+"protocol": null,
+"dataType": "Media metadata, recording references, stream lifecycle events",
+"trigger": "Media capture and stream events",
+"synchronous": false,
+"description": "Payload persists media metadata and lifecycle records through the data layer",
+"requirementIds": ["req-2.11-010", "req-2.15-001"],
+"assumptions": []
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#0d9488",
+"strokeWidth": 2,
+"arrow": "end",
+"dash": "dashed",
+"labelPosition": "center",
+"zIndex": 1
+}
+},
+{
+"id": "edge-master-plat-to-subsystems",
+"source": "node-master-plat",
+"target": "node-master-core",
+"sourcePort": "port-master-plat-out-all",
+"targetPort": null,
+"semantic": {
+"type": "dependency",
+"direction": "unidirectional",
+"label": "Platform Services → All Subsystems",
+"protocol": null,
+"dataType": "OS abstraction, runtime services, device interfaces, environment configuration",
+"trigger": "Application startup and runtime",
+"synchronous": null,
+"description": "Cross-platform layer provides OS-independent runtime services to all subsystems above. Representative connection shown to core; applies to all.",
+"requirementIds": ["req-GA-011", "req-2.13-001"],
+"assumptions": ["Single representative edge shown. Platform services are consumed by all subsystems."]
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#475569",
+"strokeWidth": 1,
+"arrow": "end",
+"dash": "dotted",
+"labelPosition": "center",
+"zIndex": 0
+}
+},
+{
+"id": "edge-master-test-to-subsystems",
+"source": "node-master-test",
+"target": "node-master-core",
+"sourcePort": "port-master-test-inout-all",
+"targetPort": null,
+"semantic": {
+"type": "dependency",
+"direction": "bidirectional",
+"label": "Test Interfaces ↔ All Subsystems",
+"protocol": null,
+"dataType": "Test harness connections, simulation interfaces, fault injection points",
+"trigger": "Test execution",
+"synchronous": null,
+"description": "Testing layer connects to all subsystems for simulation, automated testing, and fault injection. Representative connection shown to core.",
+"requirementIds": ["req-GA-018", "req-2.20-001"],
+"assumptions": ["Single representative edge shown. Test interfaces connect to all subsystems."]
+},
+"visual": {
+"routing": "orthogonal",
+"waypoints": [],
+"cornerRadius": 8,
+"stroke": "#475569",
+"strokeWidth": 1,
+"arrow": "both",
+"dash": "dotted",
+"labelPosition": "center",
+"zIndex": 0
+}
+}
+],
+"externalReferences": [],
+"crossReferences": [
+{
+"canonicalEngineId": "eng-core-vehicle-registry",
+"localNodeId": "node-master-core",
+"otherOccurrences": [
+{ "documentId": "doc-core-01", "nodeId": "node-core01-vehicle-registry" },
+{ "documentId": "doc-flow-01", "nodeId": "node-flow01-vehicle-registry" }
+]
+},
+{
+"canonicalEngineId": "eng-comm-transport",
+"localNodeId": "node-master-comm",
+"otherOccurrences": [
+{ "documentId": "doc-comm-01", "nodeId": "node-comm01-transport" },
+{ "documentId": "doc-flow-01", "nodeId": "node-flow01-transport" }
+]
+},
+{
+"canonicalEngineId": "eng-ops-command-control",
+"localNodeId": "node-master-ops",
+"otherOccurrences": [
+{ "documentId": "doc-ops-01", "nodeId": "node-ops01-command-control" },
+{ "documentId": "doc-flow-03", "nodeId": "node-flow03-command-control" }
+]
+},
+{
+"canonicalEngineId": "eng-cop-core",
+"localNodeId": "node-master-cop",
+"otherOccurrences": [
+{ "documentId": "doc-cop-01", "nodeId": "node-cop01-core" },
+{ "documentId": "doc-flow-02", "nodeId": "node-flow02-cop" }
+]
+},
+{
+"canonicalEngineId": "eng-plan-centralized",
+"localNodeId": "node-master-plan",
+"otherOccurrences": [
+{ "documentId": "doc-plan-01", "nodeId": "node-plan01-centralized" },
+{ "documentId": "doc-flow-05", "nodeId": "node-flow05-centralized" }
+]
+},
+{
+"canonicalEngineId": "eng-sec-authentication",
+"localNodeId": "node-master-sec",
+"otherOccurrences": [
+{ "documentId": "doc-sec-01", "nodeId": "node-sec01-authentication" },
+{ "documentId": "doc-flow-10", "nodeId": "node-flow10-authentication" }
+]
+},
+{
+"canonicalEngineId": "eng-data-persistence",
+"localNodeId": "node-master-data",
+"otherOccurrences": [
+{ "documentId": "doc-data-01", "nodeId": "node-data01-persistence" }
+]
+}
+],
+"requirementsCoverage": [
+{
+"requirementId": "req-GA-001",
+"description": "Capability-driven behavior: adapt to verified vehicle and controller capabilities",
+"coveredByNodes": ["node-master-core", "node-master-ops"],
+"coveredByEdges": ["edge-master-core-to-ops", "edge-master-core-to-plan"],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "test",
+"notes": "Core registry and adapter layers provide capability data to all consumers"
+},
+{
+"requirementId": "req-GA-002",
+"description": "Universal extensibility: new integrations must not require rewriting the entire GCS",
+"coveredByNodes": ["node-master-core", "node-master-cust"],
+"coveredByEdges": ["edge-master-core-to-cust"],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "inspection",
+"notes": "Plugin framework and adapter abstraction enable extensibility"
+},
+{
+"requirementId": "req-GA-003",
+"description": "Protocol isolation: protocol-specific details outside shared domain logic and UI",
+"coveredByNodes": ["node-master-core", "node-master-comm"],
+"coveredByEdges": ["edge-master-comm-to-core"],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "inspection",
+"notes": "Protocol adapters in core isolate protocol logic; transport in comms is protocol-agnostic"
+},
+{
+"requirementId": "req-GA-004",
+"description": "Clear service boundaries: telemetry, commands, planning, persistence, diagnostics must have explicit interfaces",
+"coveredByNodes": ["node-master-core", "node-master-ops", "node-master-plan", "node-master-data"],
+"coveredByEdges": [],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "inspection",
+"notes": "Each subsystem has defined ports and interfaces in this diagram"
+},
+{
+"requirementId": "req-GA-007",
+"description": "Safe command execution: every command through authorization, validation and safety controls",
+"coveredByNodes": ["node-master-sec", "node-master-ops"],
+"coveredByEdges": ["edge-master-sec-to-ops", "edge-master-cust-to-ops"],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "test",
+"notes": "Security enforces auth and safety gates on all command paths including automation"
+},
+{
+"requirementId": "req-GA-008",
+"description": "Fault containment: failure of one integration must not unnecessarily disable unrelated functionality",
+"coveredByNodes": ["node-master-sec", "node-master-core"],
+"coveredByEdges": [],
+"coverageStatus": "partially-mapped",
+"verificationMethod": "test",
+"notes": "Detailed fault isolation boundaries shown in sec-03 and core subsystem files"
+},
+{
+"requirementId": "req-GA-009",
+"description": "Network resilience: every critical communication path must define failure and recovery behavior",
+"coveredByNodes": ["node-master-comm"],
+"coveredByEdges": ["edge-master-comm-to-core"],
+"coverageStatus": "partially-mapped",
+"verificationMethod": "test",
+"notes": "Detailed failover and recovery in comm-05 and flow-09"
+},
+{
+"requirementId": "req-GA-010",
+"description": "Offline resilience: locally available functionality and sync behavior explicitly defined",
+"coveredByNodes": ["node-master-comm"],
+"coveredByEdges": [],
+"coverageStatus": "partially-mapped",
+"verificationMethod": "test",
+"notes": "Detailed offline architecture in comm-05 and flow-09"
+},
+{
+"requirementId": "req-GA-011",
+"description": "Cross-platform separation: domain logic independent of OS-specific interfaces",
+"coveredByNodes": ["node-master-plat"],
+"coveredByEdges": ["edge-master-plat-to-subsystems"],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "inspection",
+"notes": "Platform layer provides OS abstraction to all subsystems"
+},
+{
+"requirementId": "req-GA-012",
+"description": "Secure customization: extensions under defined permissions, resource limits, lifecycle rules",
+"coveredByNodes": ["node-master-cust", "node-master-sec"],
+"coveredByEdges": ["edge-master-core-to-cust", "edge-master-cust-to-ops"],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "test",
+"notes": "Plugin lifecycle in cust-01; permissions enforced through sec"
+},
+{
+"requirementId": "req-GA-013",
+"description": "Data integrity: operational records preserve provenance, timestamps, validation status",
+"coveredByNodes": ["node-master-data"],
+"coveredByEdges": ["edge-master-core-to-data", "edge-master-ops-to-data"],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "inspection",
+"notes": "Data provenance engine detailed in data-02"
+},
+{
+"requirementId": "req-GA-014",
+"description": "Auditable operation: consequential commands, config changes, admin actions traceable",
+"coveredByNodes": ["node-master-sec", "node-master-data"],
+"coveredByEdges": ["edge-master-sec-to-data"],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "inspection",
+"notes": "Audit engine in sec-04; persistence in data-03"
+},
+{
+"requirementId": "req-GA-018",
+"description": "Continuous testing: regression, integration, fault-injection, compatibility testing in release process",
+"coveredByNodes": ["node-master-test"],
+"coveredByEdges": ["edge-master-test-to-subsystems"],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "demonstration",
+"notes": "Testing subsystem detailed in test-01 through test-03"
+},
+{
+"requirementId": "req-GA-020",
+"description": "No false execution claims: command submission, acknowledgement, verified execution remain distinct",
+"coveredByNodes": ["node-master-ops", "node-master-sec"],
+"coveredByEdges": ["edge-master-sec-to-ops"],
+"coverageStatus": "fully-mapped",
+"verificationMethod": "test",
+"notes": "Command tracking engine in ops-05; uncertainty handling in sec-03"
+}
+],
+"assumptions": [
+{
+"id": "AS-002",
+"description": "All engines are logical components. Deployment as separate processes is not assumed unless requirements specify it.",
+"justification": "Requirements state clear service boundaries but do not mandate microservice deployment."
+},
+{
+"id": "AS-004",
+"description": "At the master architecture level, each subsystem is represented as a single node. Internal engine-level detail is deferred to subsystem-specific files.",
+"justification": "The master diagram provides a Level 1 overview. 152 engines cannot be meaningfully displayed in a single view."
+}
+],
+"unresolvedDecisions": [
+{
+"id": "UD-001",
+"description": "No specific communication protocols named in requirements.",
+"impact": "Edges between comms and core show abstract transport data flow.",
+"resolution": "Pending requirements clarification"
+},
+{
+"id": "UD-002",
+"description": "No specific database technology prescribed.",
+"impact": "Data layer shown as a single logical subsystem.",
+"resolution": "Architecture decision record needed"
+},
+{
+"id": "UD-003",
+"description": "Deployment topology not mandated.",
+"impact": "This diagram shows logical subsystems, not deployment units.",
+"resolution": "See doc-master-03 for deployment view"
+}
+],
+"metadata": {
+"status": "draft",
+"revision": 1,
+"createdDate": "2025-01-27T00:00:00Z",
+"lastModified": "2025-01-27T00:00:00Z"
+}
+}
