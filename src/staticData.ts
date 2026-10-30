@@ -20,25 +20,29 @@ const orderPriority: Record<string, number> = {
   'doc-core-05': 14,
 }
 
-// Only eagerly import JSON files that are known-populated (non-empty).
-// Empty stub files cause build-time EOF parse errors with eager glob imports.
-const populatedJsonModules = import.meta.glob<RawDiagram>(
-  [
-    '../GRAVITAS-HLD/manifest/*.json',
-    '../GRAVITAS-HLD/master/*.json',
-    '../GRAVITAS-HLD/core/*.json',
-    '../GRAVITAS-HLD/communications/comm-01-transport-connectivity.json',
-    '../GRAVITAS-HLD/communications/comm-02-multi-network.json',
-    '../GRAVITAS-HLD/communications/comm-03-link-monitoring.json',
-  ],
-  { eager: true },
+// Import all GRAVITAS-HLD JSON files as raw strings so that empty placeholder
+// files (filled in later) are skipped gracefully without crashing the build.
+const rawJsonModules = import.meta.glob<string>(
+  '../GRAVITAS-HLD/**/*.json',
+  { eager: true, query: '?raw', import: 'default' },
 )
 
 export function getStaticArchitectureStore(): CanvasStoreState {
   let manifest: ArchitectureManifest | null = null
   const canvases: CanvasMeta[] = []
 
-  for (const [filePath, content] of Object.entries(populatedJsonModules)) {
+  for (const [filePath, rawContent] of Object.entries(rawJsonModules)) {
+    // Skip empty placeholder files — they will be picked up once filled in
+    if (!rawContent || !rawContent.trim()) continue
+
+    let content: RawDiagram
+    try {
+      content = JSON.parse(rawContent) as RawDiagram
+    } catch {
+      // Skip malformed JSON silently
+      continue
+    }
+
     if (!content || typeof content !== 'object') continue
 
     if (filePath.includes('00_manifest.json')) {
@@ -46,13 +50,12 @@ export function getStaticArchitectureStore(): CanvasStoreState {
       continue
     }
 
-    const doc = content as RawDiagram
-    if (doc.documentId) {
+    if (content.documentId) {
       canvases.push({
-        id: doc.documentId,
-        name: doc.title || doc.documentId,
+        id: content.documentId,
+        name: content.title || content.documentId,
         shapes: [],
-        diagram: doc as unknown as DiagramDocument,
+        diagram: content as unknown as DiagramDocument,
       })
     }
   }
