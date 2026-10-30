@@ -15,19 +15,49 @@ export interface CanvasStoreState {
   manifest: ArchitectureManifest | null
 }
 
-const STORAGE_KEY = 'gcs_canvas_store_v1'
+const STORAGE_KEY = 'gcs_canvas_store_v2'
 
 let memoryState: CanvasStoreState | null = null
 
 function getLocalState(): CanvasStoreState {
   if (memoryState) return memoryState
 
+  const fresh = getStaticArchitectureStore()
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw =
+      localStorage.getItem(STORAGE_KEY) ??
+      localStorage.getItem('gcs_canvas_store_v1')
+
     if (raw) {
       const parsed = JSON.parse(raw) as CanvasStoreState
       if (parsed && Array.isArray(parsed.canvases) && parsed.canvases.length > 0) {
-        memoryState = parsed
+        const existingMap = new Map(parsed.canvases.map((c) => [c.id, c]))
+
+        // Merge fresh static architecture files with cached visual state
+        const mergedArchitecture = fresh.canvases.map((freshCanvas) => {
+          const existing = existingMap.get(freshCanvas.id)
+          if (!existing) return freshCanvas
+          return {
+            ...existing,
+            name: freshCanvas.name || existing.name,
+            diagram: existing.diagram ?? freshCanvas.diagram,
+          }
+        })
+
+        // Retain any user-created custom canvases (such as Canvas 13 or custom scratchpads)
+        const customCanvases = parsed.canvases.filter(
+          (c) => !fresh.canvases.some((f) => f.id === c.id),
+        )
+
+        memoryState = {
+          canvases: [...mergedArchitecture, ...customCanvases],
+          activeId: existingMap.has(parsed.activeId)
+            ? parsed.activeId
+            : fresh.activeId,
+          manifest: fresh.manifest || parsed.manifest,
+        }
+        persistLocalState(memoryState)
         return memoryState
       }
     }
@@ -35,7 +65,7 @@ function getLocalState(): CanvasStoreState {
     // Ignore localStorage read errors
   }
 
-  memoryState = getStaticArchitectureStore()
+  memoryState = fresh
   persistLocalState(memoryState)
   return memoryState
 }
@@ -75,6 +105,7 @@ export async function reloadArchitectureFiles(): Promise<CanvasStoreState> {
     persistLocalState(remote)
     return remote
   } catch {
+    memoryState = null
     const fresh = getStaticArchitectureStore()
     const current = getLocalState()
     // Retain user's custom canvases (such as scratchpad or custom canvases)
