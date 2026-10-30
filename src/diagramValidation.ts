@@ -311,11 +311,11 @@ function validateDocument(
 
   // V-014: Every node.groupId references a valid group.id or is null (Per file)
   const groupIds = new Set(document.groups.map((group) => group.id))
-  check('V-014', document.nodes.filter((node) => node.groupId !== null && !groupIds.has(node.groupId)).map((node) => node.id),
+  check('V-014', document.nodes.filter((node) => node.groupId !== null && node.groupId !== undefined && !groupIds.has(node.groupId)).map((node) => node.id),
     'Every node group resolves.', 'One or more nodes reference an invalid group.')
 
   // V-015: Every group.parentGroupId references a valid group or null (Per file)
-  check('V-015', document.groups.filter((group) => group.parentGroupId !== null && !groupIds.has(group.parentGroupId)).map((group) => group.id),
+  check('V-015', document.groups.filter((group) => group.parentGroupId !== null && group.parentGroupId !== undefined && !groupIds.has(group.parentGroupId)).map((group) => group.id),
     'Every parent group resolves.', 'One or more groups reference an invalid parent.')
 
   // V-016: Every externalRef.sourceDocumentId exists in manifest (Global)
@@ -345,8 +345,11 @@ function validateDocument(
     'Cross-reference engine IDs exist in canonical engine registry.', 'Unregistered cross-reference engine IDs found.')
 
   // V-019: Every node.metadata.engineId exists in engine registry (Global)
-  check('V-019', document.nodes.filter((node) => node.metadata?.engineId && !engineSet.has(node.metadata.engineId)).map((node) => node.id),
-    'Node engine IDs exist in canonical engine registry.', 'Unregistered node engine IDs found.')
+  check('V-019', document.nodes.filter((node) => {
+    const eng = node.metadata?.engineId ?? node.engineId
+    return eng && !engineSet.has(eng)
+  }).map((node) => node.id),
+  'Node engine IDs exist in canonical engine registry.', 'Unregistered node engine IDs found.')
 
   // V-020: Every requirement ID in requirementsCoverage is registered (Global)
   const registeredReqs = getRequirementRegistry(manifest)
@@ -358,7 +361,7 @@ function validateDocument(
   // V-021: Every engine appears in at least one file (Global)
   const complete = !!manifest && loaded.length + 1 >= manifest.totalFiles
   const coveredEngines = new Set([
-    ...loaded.flatMap((item) => item.nodes.map((node) => node.metadata?.engineId).filter(Boolean)),
+    ...loaded.flatMap((item) => item.nodes.map((node) => node.metadata?.engineId ?? node.engineId).filter(Boolean)),
     ...loaded.flatMap((item) => item.crossReferences.map((cross) => cross.canonicalEngineId)),
     ...loaded.flatMap((item) => item.groups.flatMap((grp) => grp.metadata?.engineIds || [])),
   ])

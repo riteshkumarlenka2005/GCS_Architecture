@@ -12,6 +12,22 @@ interface CanvasRecord {
   diagram: unknown | null
 }
 
+const ORDER_PRIORITY: Record<string, number> = {
+  'doc-master-01': 1,
+  'doc-master-02': 2,
+  'doc-master-03': 3,
+  'doc-core-01': 10,
+  'doc-core-02': 11,
+  'doc-core-03': 12,
+  'doc-core-04': 13,
+  'doc-core-05': 14,
+  'doc-comm-01': 20,
+  'doc-comm-02': 21,
+  'doc-comm-03': 22,
+  'doc-comm-04': 23,
+  'doc-comm-05': 24,
+}
+
 function loadArchitectureData() {
   const root = process.cwd()
   let loadedManifest: unknown | null = null
@@ -64,20 +80,9 @@ function loadArchitectureData() {
 
   scanDir(hldDir)
 
-  // Desired ordering: Master (L0, L1, Deploy), then Core (01..05), then others
-  const orderPriority: Record<string, number> = {
-    'doc-master-01': 1,
-    'doc-master-02': 2,
-    'doc-master-03': 3,
-    'doc-core-01': 10,
-    'doc-core-02': 11,
-    'doc-core-03': 12,
-    'doc-core-04': 13,
-    'doc-core-05': 14,
-  }
   loadedCanvases.sort((a, b) => {
-    const prioA = orderPriority[a.id] ?? 999
-    const prioB = orderPriority[b.id] ?? 999
+    const prioA = ORDER_PRIORITY[a.id] ?? 999
+    const prioB = ORDER_PRIORITY[b.id] ?? 999
     if (prioA !== prioB) return prioA - prioB
     return a.id.localeCompare(b.id)
   })
@@ -137,21 +142,11 @@ function handleCanvasApi(req: IncomingMessage, res: ServerResponse) {
       else canvases.push(c)
     }
     // Sort canvases to maintain order
-    const orderPriority: Record<string, number> = {
-      'doc-master-01': 1,
-      'doc-master-02': 2,
-      'doc-master-03': 3,
-      'doc-core-01': 10,
-      'doc-core-02': 11,
-      'doc-core-03': 12,
-      'doc-core-04': 13,
-      'doc-core-05': 14,
-    }
     canvases.sort((a, b) => {
       if (a.id === 'scratchpad') return 1
       if (b.id === 'scratchpad') return -1
-      const prioA = orderPriority[a.id] ?? 999
-      const prioB = orderPriority[b.id] ?? 999
+      const prioA = ORDER_PRIORITY[a.id] ?? 999
+      const prioB = ORDER_PRIORITY[b.id] ?? 999
       if (prioA !== prioB) return prioA - prioB
       return a.id.localeCompare(b.id)
     })

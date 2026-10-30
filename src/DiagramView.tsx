@@ -3,6 +3,7 @@ import type { MouseEvent as ReactMouseEvent, PointerEvent as ReactPointerEvent, 
 import {
   buildEdgeRoute,
   calculateResizedBounds,
+  getGroupBounds,
   getGroupDescendantIds,
   getPortPoint,
   getRenderNodes,
@@ -366,8 +367,14 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
     [document.groups],
   )
   const sortedGroups = useMemo(
-    () => [...document.groups].sort((a, b) => groupDepth(a, groupsById) - groupDepth(b, groupsById)),
-    [document.groups, groupsById],
+    () =>
+      document.groups
+        .map((group) => ({
+          ...group,
+          bounds: getGroupBounds(group, document.nodes),
+        }))
+        .sort((a, b) => groupDepth(a, groupsById) - groupDepth(b, groupsById)),
+    [document.groups, document.nodes, groupsById],
   )
   const routes = useMemo(
     () => new Map(document.edges.map((edge) => [edge.id, buildEdgeRoute(edge, nodesById)])),
@@ -437,7 +444,7 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
     const originNestedGroupBounds = new Map<string, Bounds>()
     for (const g of document.groups) {
       if (groupIds.has(g.id)) {
-        originNestedGroupBounds.set(g.id, { ...g.bounds })
+        originNestedGroupBounds.set(g.id, { ...getGroupBounds(g, document.nodes) })
       }
     }
 
@@ -449,12 +456,14 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
       }
     }
 
+    const currentBounds = getGroupBounds(group, document.nodes)
+
     startDrag({
       kind: 'group-move',
       id: group.id,
       startX: event.clientX,
       startY: event.clientY,
-      originBounds: { ...group.bounds },
+      originBounds: { ...currentBounds },
       originChildPositions,
       originNestedGroupBounds,
       originEdgeWaypoints,
@@ -468,13 +477,14 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
   ) => {
     event.stopPropagation()
     if (locked || event.button !== 0) return
+    const currentBounds = getGroupBounds(group, document.nodes)
     startDrag({
       kind: 'group-resize',
       id: group.id,
       handle,
       startX: event.clientX,
       startY: event.clientY,
-      originBounds: { ...group.bounds },
+      originBounds: { ...currentBounds },
     })
   }
 
@@ -765,7 +775,9 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
           const cx = node.position.x + node.size.width / 2
           const cy = node.position.y + node.size.height / 2
           const isSelected = selectedNodeId === node.id
-          const detail = ghost ? external?.sourceDocumentId : node.metadata?.engineId
+          const detail = ghost
+            ? external?.sourceDocumentId
+            : (node.metadata?.engineId ?? node.engineId)
           const maxCharacters = Math.max(
             8,
             Math.floor((node.size.width - 24) / (style.fontSize * 0.56)),
@@ -913,8 +925,8 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
               {/* Ports */}
               {node.ports.map((port) => {
                 const anchor = getPortPoint(node, port)
-                const labelLeft = port.side === 'left'
-                const labelRight = port.side === 'right'
+                const labelLeft = anchor.side === 'left'
+                const labelRight = anchor.side === 'right'
                 return (
                   <g key={port.id} className="diagram-port" data-port-id={port.id}>
                     <circle
@@ -930,7 +942,7 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
                       x={anchor.point.x + (labelLeft ? -8 : labelRight ? 8 : 0)}
                       y={
                         anchor.point.y +
-                        (port.side === 'top' ? -9 : port.side === 'bottom' ? 15 : 3)
+                        (anchor.side === 'top' ? -9 : anchor.side === 'bottom' ? 15 : 3)
                       }
                       textAnchor={labelLeft ? 'end' : labelRight ? 'start' : 'middle'}
                       fontSize="9"

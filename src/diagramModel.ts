@@ -72,10 +72,10 @@ export interface DiagramViewport extends Point {
 
 export interface DiagramPort {
   id: string
-  direction: 'in' | 'out' | 'inout'
-  side: 'top' | 'right' | 'bottom' | 'left'
+  direction: 'in' | 'out' | 'inout' | string
+  side?: 'top' | 'right' | 'bottom' | 'left'
   label: string
-  dataType:
+  dataType?:
     | 'telemetry'
     | 'command'
     | 'event'
@@ -83,8 +83,9 @@ export interface DiagramPort {
     | 'stream'
     | 'config'
     | 'auth'
+    | string
     | null
-  position: { offset: number }
+  position?: { offset: number } | string
   [key: string]: unknown
 }
 
@@ -122,12 +123,13 @@ export interface DiagramNode {
   type: DiagramNodeType
   label: string
   description: string
-  groupId: string | null
+  groupId?: string | null
   position: Point
   size: Size
   style: DiagramNodeStyle
   ports: DiagramPort[]
-  metadata: DiagramNodeMetadata
+  metadata?: DiagramNodeMetadata
+  engineId?: string
   attributes?: unknown[]
   [key: string]: unknown
 }
@@ -135,25 +137,28 @@ export interface DiagramNode {
 export interface DiagramGroup {
   id: string
   label: string
-  description: string
-  parentGroupId: string | null
-  style: {
-    backgroundColor: string
-    borderColor: string
-    borderWidth: number
-    borderStyle: 'solid' | 'dashed'
-    opacity: number
-    padding: number
-    labelPosition: 'top-left' | 'top-center'
-    fontSize: number
-    textColor: string
+  description?: string
+  parentGroupId?: string | null
+  type?: string
+  nodeIds?: string[]
+  style?: {
+    backgroundColor?: string
+    borderColor?: string
+    borderWidth?: number
+    borderStyle?: 'solid' | 'dashed' | 'dotted' | string
+    opacity?: number
+    padding?: number
+    labelPosition?: 'top-left' | 'top-center' | string
+    fontSize?: number
+    textColor?: string
+    cornerRadius?: number
     [key: string]: unknown
   }
-  bounds: Bounds
-  metadata: {
-    category: string
-    engineIds: string[]
-    notes: string
+  bounds?: Bounds
+  metadata?: {
+    category?: string
+    engineIds?: string[]
+    notes?: string
     [key: string]: unknown
   }
   [key: string]: unknown

@@ -1111,7 +1111,7 @@ function App() {
                 role="menuitem"
                 className="canvas-item-new"
                 onClick={() => void handleReloadBatch1()}
-                title="Reload all architecture files from disk (Batches 1 & 2)"
+                title="Reload all architecture files from disk"
               >
                 <RotateCcw size={15} />
                 Reload Architecture Files

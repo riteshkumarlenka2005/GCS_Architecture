@@ -1,0 +1,1178 @@
+{
+    "schemaVersion": "1.0.0",
+    "documentId": "doc-comm-04",
+    "title": "Secure Communications Architecture",
+    "diagramType": "subsystem-architecture",
+    "description": "Internal architecture of the Secure Communications Engine (eng-comm-secure-comms). Details secure session lifecycle management, cryptographic operations, endpoint authentication, key and certificate lifecycle, and security policy enforcement. Shows integration boundaries with the Transport Abstraction layer, the Security subsystem, the Connection Recovery engine, and the Core event bus.",
+    "category": "comm",
+    "coordinateSystem": {
+        "type": "cartesian",
+        "unit": "px",
+        "origin": "top-left"
+    },
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "width": 1400,
+        "height": 900,
+        "zoom": 1.0
+    },
+    "groups": [
+        {
+            "id": "grp-comm04-secure-boundary",
+            "label": "Secure Communications Boundary",
+            "type": "security-boundary",
+            "nodeIds": [
+                "node-comm04-session-manager",
+                "node-comm04-crypto-engine",
+                "node-comm04-endpoint-authenticator",
+                "node-comm04-key-lifecycle",
+                "node-comm04-policy-enforcer"
+            ],
+            "style": {
+                "backgroundColor": "rgba(239, 68, 68, 0.04)",
+                "borderColor": "#ef4444",
+                "borderWidth": 2,
+                "borderStyle": "dashed",
+                "cornerRadius": 12,
+                "padding": 30
+            }
+        },
+        {
+            "id": "grp-comm04-crypto-core",
+            "label": "Cryptographic Services",
+            "type": "functional-group",
+            "nodeIds": [
+                "node-comm04-crypto-engine",
+                "node-comm04-key-lifecycle"
+            ],
+            "style": {
+                "backgroundColor": "rgba(6, 182, 212, 0.06)",
+                "borderColor": "#06b6d4",
+                "borderWidth": 1,
+                "borderStyle": "dotted",
+                "cornerRadius": 8,
+                "padding": 20
+            }
+        }
+    ],
+    "nodes": [
+        {
+            "id": "node-comm04-session-manager",
+            "label": "Secure Session Manager",
+            "type": "component",
+            "engineId": "eng-comm-secure-comms",
+            "description": "Orchestrates the full secure session lifecycle: establishment, negotiation, maintenance, suspension, resumption, and termination. Coordinates with the Crypto Engine for encrypt/decrypt operations, delegates endpoint authentication, enforces security policy before session creation, and publishes security-relevant events. Acts as the primary integration point with the Transport Abstraction layer below and the Connection Recovery engine for session continuity across network transitions. Inbound frames must not be released to downstream consumers until decryption, integrity/authentication verification, and replay-window checks have succeeded. Outbound frames must be protected before they are handed to Transport.",
+            "position": {
+                "x": 240,
+                "y": 260
+            },
+            "size": {
+                "width": 230,
+                "height": 170
+            },
+            "style": {
+                "backgroundColor": "#0e3a4f",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "shield-check"
+            },
+            "ports": [
+                {
+                    "id": "port-comm04-sm-in-raw",
+                    "label": "Raw Transport In",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm04-sm-out-encrypted",
+                    "label": "Encrypted Frames Out",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm04-sm-out-crypto-req",
+                    "label": "Crypto Request",
+                    "direction": "out",
+                    "dataType": "control",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm04-sm-in-crypto-resp",
+                    "label": "Crypto Response",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm04-sm-out-auth-req",
+                    "label": "Auth Delegation",
+                    "direction": "out",
+                    "dataType": "control",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm04-sm-out-policy-req",
+                    "label": "Policy Check",
+                    "direction": "out",
+                    "dataType": "control",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm04-sm-in-policy-resp",
+                    "label": "Policy Decision",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm04-sm-out-reconnect-sig",
+                    "label": "Session State Signal",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm04-sm-out-session-evt",
+                    "label": "Security Events",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm04-sm-in-reconnect",
+                    "label": "Recovery / Resume Instruction",
+                    "direction": "in",
+                    "dataType": "control",
+                    "position": "left"
+                }
+            ]
+        },
+        {
+            "id": "node-comm04-crypto-engine",
+            "label": "Cryptographic Engine",
+            "type": "component",
+            "engineId": "eng-comm-secure-comms",
+            "description": "Performs all cryptographic operations on data in transit: symmetric encryption and decryption, message authentication code generation and verification, replay-window tracking, and nonce/sequence management. Retrieves active session keys from the Key Lifecycle Manager and reacts to key-rotation events. Abstracts algorithm selection behind a configurable interface so that specific cipher suites are deployment decisions, not architectural ones. A failed integrity check, authentication-code verification, or replay-window check must reject the frame and return a failure result; it must never be treated as valid plaintext.",
+            "position": {
+                "x": 600,
+                "y": 140
+            },
+            "size": {
+                "width": 210,
+                "height": 150
+            },
+            "style": {
+                "backgroundColor": "#0c3547",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "lock"
+            },
+            "ports": [
+                {
+                    "id": "port-comm04-ce-in-req",
+                    "label": "Crypto Request In",
+                    "direction": "in",
+                    "dataType": "control",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm04-ce-out-resp",
+                    "label": "Crypto Response Out",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm04-ce-out-key-req",
+                    "label": "Key Request",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm04-ce-in-key-rotate",
+                    "label": "Key Rotation Event",
+                    "direction": "in",
+                    "dataType": "event",
+                    "position": "right"
+                }
+            ]
+        },
+        {
+            "id": "node-comm04-endpoint-authenticator",
+            "label": "Endpoint Authenticator",
+            "type": "component",
+            "engineId": "eng-comm-secure-comms",
+            "description": "Authenticates remote endpoints (vehicles, ground stations, peer GCS instances) during session establishment and re-authentication events. Validates presented credentials against the Key Lifecycle Manager and delegates identity verification to the Security subsystem's Authentication engine. Enforces authorization policy rules received from the Policy Enforcer to determine whether an authenticated endpoint is permitted to establish or continue a session.",
+            "position": {
+                "x": 600,
+                "y": 460
+            },
+            "size": {
+                "width": 230,
+                "height": 150
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "fingerprint"
+            },
+            "ports": [
+                {
+                    "id": "port-comm04-ea-in-auth-req",
+                    "label": "Auth Request In",
+                    "direction": "in",
+                    "dataType": "control",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm04-ea-out-key-req",
+                    "label": "Cert/Key Validation",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm04-ea-out-ext-auth",
+                    "label": "Identity Verification Req",
+                    "direction": "out",
+                    "dataType": "auth",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm04-ea-in-ext-auth",
+                    "label": "Identity Verification Resp",
+                    "direction": "in",
+                    "dataType": "auth",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm04-ea-in-policy",
+                    "label": "Auth Policy Rules",
+                    "direction": "in",
+                    "dataType": "control",
+                    "position": "left"
+                }
+            ]
+        },
+        {
+            "id": "node-comm04-key-lifecycle",
+            "label": "Key & Certificate Lifecycle Manager",
+            "type": "component",
+            "engineId": "eng-comm-secure-comms",
+            "description": "Manages the full lifecycle of cryptographic keys and certificates used for secure communications: generation, secure storage, distribution to active sessions, periodic rotation, and revocation. Provides key material to the Cryptographic Engine on demand and pushes rotation events when keys are refreshed. Validates certificate chains and credential material on behalf of the Endpoint Authenticator. The underlying key-storage mechanism and PKI infrastructure are deployment-specific and abstracted behind this component's interface. Key rotation must define an activation point, overlap/grace handling for in-flight frames, retirement of superseded keys, and failure reporting so active sessions are not silently left in an indeterminate key state.",
+            "position": {
+                "x": 930,
+                "y": 140
+            },
+            "size": {
+                "width": 220,
+                "height": 150
+            },
+            "style": {
+                "backgroundColor": "#0c3547",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "key"
+            },
+            "ports": [
+                {
+                    "id": "port-comm04-kl-in-key-req",
+                    "label": "Key/Cert Request In",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm04-kl-out-key-rotate",
+                    "label": "Key Rotation Out",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "left"
+                }
+            ]
+        },
+        {
+            "id": "node-comm04-policy-enforcer",
+            "label": "Security Policy Enforcer",
+            "type": "component",
+            "engineId": "eng-comm-secure-comms",
+            "description": "Evaluates security policy rules governing secure communications: permitted session parameters, acceptable authentication methods, minimum security levels for different data classifications, and communication-path restrictions. Receives policy-check requests from the Secure Session Manager before session establishment and pushes authentication policy rules to the Endpoint Authenticator. Policy rules are sourced from the GCS configuration layer and may be updated at runtime.",
+            "position": {
+                "x": 240,
+                "y": 560
+            },
+            "size": {
+                "width": 210,
+                "height": 130
+            },
+            "style": {
+                "backgroundColor": "#1e1b2e",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "scale"
+            },
+            "ports": [
+                {
+                    "id": "port-comm04-pe-in-check",
+                    "label": "Policy Check In",
+                    "direction": "in",
+                    "dataType": "control",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm04-pe-out-decision",
+                    "label": "Policy Decision Out",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm04-pe-out-auth-policy",
+                    "label": "Auth Policy Rules",
+                    "direction": "out",
+                    "dataType": "control",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm04-pe-in-config",
+                    "label": "Security Policy Configuration",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "id": "edge-comm04-sm-to-ce",
+            "source": "node-comm04-session-manager",
+            "target": "node-comm04-crypto-engine",
+            "sourcePort": "port-comm04-sm-out-crypto-req",
+            "targetPort": "port-comm04-ce-in-req",
+            "semantic": {
+                "type": "control-flow",
+                "label": "Encrypt / Decrypt Request",
+                "description": "Session Manager delegates cryptographic operations to the Crypto Engine for each data frame requiring protection.",
+                "protocol": null,
+                "dataType": "control",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#8b5cf6",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-ce-to-sm",
+            "source": "node-comm04-crypto-engine",
+            "target": "node-comm04-session-manager",
+            "sourcePort": "port-comm04-ce-out-resp",
+            "targetPort": "port-comm04-sm-in-crypto-resp",
+            "semantic": {
+                "type": "data-flow",
+                "label": "Crypto Result / Integrity Status",
+                "description": "Crypto Engine returns encrypted/decrypted payloads and message-integrity verification results to the Session Manager.",
+                "protocol": null,
+                "dataType": "data",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#64748b",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-sm-to-ea",
+            "source": "node-comm04-session-manager",
+            "target": "node-comm04-endpoint-authenticator",
+            "sourcePort": "port-comm04-sm-out-auth-req",
+            "targetPort": "port-comm04-ea-in-auth-req",
+            "semantic": {
+                "type": "control-flow",
+                "label": "Authenticate Endpoint",
+                "description": "Session Manager delegates endpoint identity verification to the Authenticator during session handshake and periodic re-authentication.",
+                "protocol": null,
+                "dataType": "control",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#8b5cf6",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-ea-to-kl",
+            "source": "node-comm04-endpoint-authenticator",
+            "target": "node-comm04-key-lifecycle",
+            "sourcePort": "port-comm04-ea-out-key-req",
+            "targetPort": "port-comm04-kl-in-key-req",
+            "semantic": {
+                "type": "data-flow",
+                "label": "Validate Certificate / Key",
+                "description": "Authenticator requests certificate-chain validation and key-material lookup from the Key Lifecycle Manager during endpoint authentication.",
+                "protocol": null,
+                "dataType": "data",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#64748b",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-ce-to-kl",
+            "source": "node-comm04-crypto-engine",
+            "target": "node-comm04-key-lifecycle",
+            "sourcePort": "port-comm04-ce-out-key-req",
+            "targetPort": "port-comm04-kl-in-key-req",
+            "semantic": {
+                "type": "data-flow",
+                "label": "Retrieve Session Key",
+                "description": "Crypto Engine fetches the active session key for the current secure channel from the Key Lifecycle Manager.",
+                "protocol": null,
+                "dataType": "data",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#64748b",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-kl-to-ce",
+            "source": "node-comm04-key-lifecycle",
+            "target": "node-comm04-crypto-engine",
+            "sourcePort": "port-comm04-kl-out-key-rotate",
+            "targetPort": "port-comm04-ce-in-key-rotate",
+            "semantic": {
+                "type": "event",
+                "label": "Key Rotation Event",
+                "description": "Key Lifecycle Manager notifies the Crypto Engine that a key rotation has occurred, triggering re-keying of active sessions.",
+                "protocol": null,
+                "dataType": "event",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#fbbf24",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-sm-to-pe",
+            "source": "node-comm04-session-manager",
+            "target": "node-comm04-policy-enforcer",
+            "sourcePort": "port-comm04-sm-out-policy-req",
+            "targetPort": "port-comm04-pe-in-check",
+            "semantic": {
+                "type": "control-flow",
+                "label": "Evaluate Session Policy",
+                "description": "Session Manager requests a policy decision before establishing or modifying a secure session.",
+                "protocol": null,
+                "dataType": "control",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#8b5cf6",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-pe-to-sm",
+            "source": "node-comm04-policy-enforcer",
+            "target": "node-comm04-session-manager",
+            "sourcePort": "port-comm04-pe-out-decision",
+            "targetPort": "port-comm04-sm-in-policy-resp",
+            "semantic": {
+                "type": "data-flow",
+                "label": "Policy Allow / Deny",
+                "description": "Policy Enforcer returns the authorization decision (allow, deny, or conditional) for the requested session parameters.",
+                "protocol": null,
+                "dataType": "data",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#64748b",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-pe-to-ea",
+            "source": "node-comm04-policy-enforcer",
+            "target": "node-comm04-endpoint-authenticator",
+            "sourcePort": "port-comm04-pe-out-auth-policy",
+            "targetPort": "port-comm04-ea-in-policy",
+            "semantic": {
+                "type": "control-flow",
+                "label": "Push Auth Policy Rules",
+                "description": "Policy Enforcer distributes current authentication and authorization rules to the Endpoint Authenticator for local enforcement.",
+                "protocol": null,
+                "dataType": "control",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#8b5cf6",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-transport-to-sm",
+            "source": "ext-comm04-transport",
+            "target": "node-comm04-session-manager",
+            "sourcePort": null,
+            "targetPort": "port-comm04-sm-in-raw",
+            "semantic": {
+                "type": "data-flow",
+                "label": "Raw Transport Frames",
+                "description": "Transport delivers inbound frames to the Session Manager, which coordinates decryption, integrity/authenticity verification, and replay protection before any downstream release.",
+                "protocol": null,
+                "dataType": "data",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#64748b",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-sm-to-transport",
+            "source": "node-comm04-session-manager",
+            "target": "ext-comm04-transport",
+            "sourcePort": "port-comm04-sm-out-encrypted",
+            "targetPort": null,
+            "semantic": {
+                "type": "data-flow",
+                "label": "Encrypted Outbound Frames",
+                "description": "The Session Manager hands only encrypted and integrity-protected outbound frames to Transport for network transmission.",
+                "protocol": null,
+                "dataType": "data",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#64748b",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-ea-to-auth",
+            "source": "node-comm04-endpoint-authenticator",
+            "target": "ext-comm04-auth",
+            "sourcePort": "port-comm04-ea-out-ext-auth",
+            "targetPort": null,
+            "semantic": {
+                "type": "auth-flow",
+                "label": "Credential Validation Request",
+                "description": "Endpoint Authenticator delegates identity verification to the Security subsystem's Authentication engine for credential validation beyond local key material.",
+                "protocol": null,
+                "dataType": "auth",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dashed",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#ef4444",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-auth-to-ea",
+            "source": "ext-comm04-auth",
+            "target": "node-comm04-endpoint-authenticator",
+            "sourcePort": null,
+            "targetPort": "port-comm04-ea-in-ext-auth",
+            "semantic": {
+                "type": "auth-flow",
+                "label": "Credential Validation Response",
+                "description": "Security subsystem returns the identity verification result (authenticated identity, trust level, revocation status) to the Endpoint Authenticator.",
+                "protocol": null,
+                "dataType": "auth",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dashed",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#ef4444",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-sm-to-reconnect",
+            "source": "node-comm04-session-manager",
+            "target": "ext-comm04-reconnect",
+            "sourcePort": "port-comm04-sm-out-reconnect-sig",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "label": "Secure Session State Change",
+                "description": "Session Manager signals the Connection Recovery engine when a secure session is suspended, resumed, or terminated due to network transition, enabling coordinated re-establishment.",
+                "protocol": null,
+                "dataType": "event",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#fbbf24",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-sm-to-events",
+            "source": "node-comm04-session-manager",
+            "target": "ext-comm04-event-bus",
+            "sourcePort": "port-comm04-sm-out-session-evt",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "label": "Security Audit Events",
+                "description": "Session Manager publishes security-relevant events (session established, authentication failure, key rotation, policy violation) to the Core event bus for audit logging and monitoring.",
+                "protocol": null,
+                "dataType": "event",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": null,
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#fbbf24",
+                "arrow": "end",
+                "waypoints": [],
+                "cornerRadius": 8
+            }
+        },
+        {
+            "id": "edge-comm04-config-to-policy",
+            "source": "ext-comm04-platform-config",
+            "target": "node-comm04-policy-enforcer",
+            "sourcePort": null,
+            "targetPort": "port-comm04-pe-in-config",
+            "semantic": {
+                "type": "data-flow",
+                "direction": "unidirectional",
+                "label": "Security Policy Rules & Updates",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": "configuration-load-or-policy-update",
+                "synchronous": false,
+                "description": "Platform configuration supplies initial security policy and runtime policy updates to the Security Policy Enforcer.",
+                "requirementIds": [],
+                "assumptions": [
+                    "Policy configuration is versioned and validated before activation."
+                ]
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dashed",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-comm04-reconnect-to-sm",
+            "source": "ext-comm04-reconnect",
+            "target": "node-comm04-session-manager",
+            "sourcePort": null,
+            "targetPort": "port-comm04-sm-in-reconnect",
+            "semantic": {
+                "type": "control-flow",
+                "direction": "unidirectional",
+                "label": "Recovery Coordination / Resume Instruction",
+                "protocol": null,
+                "dataType": "control",
+                "trigger": "network-recovery-or-route-transition",
+                "synchronous": false,
+                "description": "Connection Recovery coordinates secure-session resumption with the Session Manager after transport recovery or route transition; the Session Manager validates the existing security context before resuming the session.",
+                "requirementIds": [
+                    "req-2.4-11"
+                ],
+                "assumptions": [
+                    "Session resumption is permitted only while the security context remains valid and unexpired."
+                ]
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#8b5cf6",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dashed",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        }
+    ],
+    "externalReferences": [
+        {
+            "nodeId": "ext-comm04-transport",
+            "sourceDocumentId": "doc-comm-01",
+            "engineId": "eng-comm-transport",
+            "label": "Transport Abstraction Engine",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderColor": "#475569",
+                "borderWidth": 2,
+                "borderStyle": "dashed",
+                "opacity": 0.7,
+                "fontSize": 10,
+                "textColor": "#94a3b8"
+            }
+        },
+        {
+            "nodeId": "ext-comm04-auth",
+            "sourceDocumentId": "doc-sec-01",
+            "engineId": "eng-sec-authentication",
+            "label": "Authentication Engine",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderColor": "#ef4444",
+                "borderWidth": 2,
+                "borderStyle": "dashed",
+                "opacity": 0.7,
+                "fontSize": 10,
+                "textColor": "#94a3b8"
+            }
+        },
+        {
+            "nodeId": "ext-comm04-reconnect",
+            "sourceDocumentId": "doc-comm-03",
+            "engineId": "eng-comm-connection-recovery",
+            "label": "Reconnect Orchestrator",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderColor": "#475569",
+                "borderWidth": 2,
+                "borderStyle": "dashed",
+                "opacity": 0.7,
+                "fontSize": 10,
+                "textColor": "#94a3b8"
+            }
+        },
+        {
+            "nodeId": "ext-comm04-event-bus",
+            "sourceDocumentId": "doc-core-04",
+            "engineId": "eng-core-event-processing",
+            "label": "Core Event Bus",
+            "type": "event-bus",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderColor": "#fbbf24",
+                "borderWidth": 2,
+                "borderStyle": "dashed",
+                "opacity": 0.7,
+                "fontSize": 10,
+                "textColor": "#94a3b8"
+            }
+        },
+        {
+            "nodeId": "ext-comm04-platform-config",
+            "sourceDocumentId": "doc-master-03",
+            "engineId": "eng-plat-config-environment",
+            "label": "Platform Configuration Environment",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderColor": "#64748b",
+                "borderWidth": 2,
+                "borderStyle": "dashed",
+                "opacity": 0.7,
+                "fontSize": 10,
+                "textColor": "#94a3b8"
+            }
+        }
+    ],
+    "crossReferences": [],
+    "requirementsCoverage": [
+        {
+            "requirementId": "req-2.4-07",
+            "description": "The system shall establish secure communication channels with authenticated endpoints before exchanging command or telemetry data.",
+            "coveredByNodes": [
+                "node-comm04-session-manager",
+                "node-comm04-endpoint-authenticator"
+            ],
+            "coveredByEdges": [
+                "edge-comm04-sm-to-ea",
+                "edge-comm04-ea-to-auth"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Session Manager orchestrates establishment; Endpoint Authenticator verifies identity before channel is opened."
+        },
+        {
+            "requirementId": "req-2.4-08",
+            "description": "The system shall encrypt all command and telemetry data in transit across all network interfaces.",
+            "coveredByNodes": [
+                "node-comm04-crypto-engine",
+                "node-comm04-session-manager"
+            ],
+            "coveredByEdges": [
+                "edge-comm04-sm-to-ce",
+                "edge-comm04-ce-to-sm",
+                "edge-comm04-sm-to-transport"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Crypto Engine performs encrypt/decrypt; Session Manager ensures all outbound frames pass through encryption before reaching Transport."
+        },
+        {
+            "requirementId": "req-2.4-09",
+            "description": "The system shall verify message integrity and authenticity for all received communications.",
+            "coveredByNodes": [
+                "node-comm04-crypto-engine"
+            ],
+            "coveredByEdges": [
+                "edge-comm04-ce-to-sm"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Crypto Engine generates and verifies message authentication codes; integrity status returned to Session Manager."
+        },
+        {
+            "requirementId": "req-2.4-10",
+            "description": "The system shall protect against replay attacks on all secure communication channels.",
+            "coveredByNodes": [
+                "node-comm04-crypto-engine"
+            ],
+            "coveredByEdges": [
+                "edge-comm04-sm-to-ce"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Crypto Engine maintains replay windows and nonce/sequence tracking as part of its cryptographic operations."
+        },
+        {
+            "requirementId": "req-2.4-11",
+            "description": "The system shall manage the full secure session lifecycle including establishment, maintenance, suspension, resumption, and termination.",
+            "coveredByNodes": [
+                "node-comm04-session-manager"
+            ],
+            "coveredByEdges": [
+                "edge-comm04-sm-to-reconnect"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Session Manager is the lifecycle orchestrator; coordinates with Connection Recovery for suspension/resumption across network transitions."
+        },
+        {
+            "requirementId": "req-2.9-01",
+            "description": "The system shall authenticate all endpoints before permitting communication on any channel.",
+            "coveredByNodes": [
+                "node-comm04-endpoint-authenticator",
+                "node-comm04-policy-enforcer"
+            ],
+            "coveredByEdges": [
+                "edge-comm04-ea-to-auth",
+                "edge-comm04-auth-to-ea",
+                "edge-comm04-pe-to-ea"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Endpoint Authenticator performs authentication; Policy Enforcer provides authorization rules; Security subsystem provides external identity verification."
+        },
+        {
+            "requirementId": "req-2.9-05",
+            "description": "The system shall ensure data integrity across all communication paths between GCS components and remote vehicles.",
+            "coveredByNodes": [
+                "node-comm04-crypto-engine",
+                "node-comm04-session-manager"
+            ],
+            "coveredByEdges": [
+                "edge-comm04-transport-to-sm",
+                "edge-comm04-ce-to-sm"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "All inbound data passes through integrity verification in the Crypto Engine before being delivered to the Session Manager for processing."
+        },
+        {
+            "requirementId": "req-2.9-08",
+            "description": "The system shall log all security-relevant communication events for audit and forensic analysis.",
+            "coveredByNodes": [
+                "node-comm04-session-manager"
+            ],
+            "coveredByEdges": [
+                "edge-comm04-sm-to-events"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Session Manager publishes security events (auth failures, session changes, policy violations) to the Core event bus for downstream audit logging."
+        },
+        {
+            "requirementId": "req-2.9-12",
+            "description": "The system shall manage cryptographic key lifecycle including generation, secure storage, distribution, rotation, and revocation.",
+            "coveredByNodes": [
+                "node-comm04-key-lifecycle"
+            ],
+            "coveredByEdges": [
+                "edge-comm04-kl-to-ce",
+                "edge-comm04-ce-to-kl",
+                "edge-comm04-ea-to-kl"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Key Lifecycle Manager handles all key operations; specific storage mechanism and PKI infrastructure are deployment decisions (see UD-019, UD-020)."
+        }
+    ],
+    "assumptions": [
+        {
+            "id": "AS-013",
+            "description": "Cryptographic algorithm selection is deployment-configurable and abstracted behind the Crypto Engine interface; the architecture does not mandate specific cipher suites.",
+            "rationale": "Requirements specify secure communications but do not prescribe algorithms; deployment environments may have regulatory or certification constraints."
+        },
+        {
+            "id": "AS-014",
+            "description": "Key storage is provided by the host platform's secure storage facilities (e.g., OS keychain, TPM, secure enclave) and accessed through a platform abstraction layer.",
+            "rationale": "Key storage mechanism is platform-dependent; the Key Lifecycle Manager abstracts this behind a uniform interface."
+        },
+        {
+            "id": "AS-015",
+            "description": "Secure session resumption after network reconnection reuses the existing security context where the session has not expired, avoiding full re-authentication overhead.",
+            "rationale": "Performance requirement for rapid reconnection; full re-authentication occurs only when session context is invalidated."
+        },
+        {
+            "id": "AS-016",
+            "description": "The Security subsystem's Authentication engine (doc-sec-01) provides a synchronous or asynchronous identity-verification API that the Endpoint Authenticator can invoke during session handshake.",
+            "rationale": "Cross-subsystem integration pattern; exact API contract is an implementation detail."
+        }
+    ],
+    "unresolvedDecisions": [
+        {
+            "id": "UD-018",
+            "description": "Specific cryptographic algorithms and cipher suites for data-in-transit protection (e.g., AES-256-GCM, ChaCha20-Poly1305, or others).",
+            "impact": "Affects Crypto Engine configuration and performance characteristics; does not change the architectural structure.",
+            "owner": "Security Architecture"
+        },
+        {
+            "id": "UD-019",
+            "description": "Key management infrastructure: hardware security module (HSM), software key store, cloud KMS, or platform-native secure storage.",
+            "impact": "Affects Key Lifecycle Manager's storage backend and key-generation capabilities.",
+            "owner": "Deployment Architecture"
+        },
+        {
+            "id": "UD-020",
+            "description": "Certificate authority and PKI infrastructure for endpoint certificates: self-signed, private CA, or public CA.",
+            "impact": "Affects Endpoint Authenticator's certificate-chain validation logic and Key Lifecycle Manager's certificate provisioning.",
+            "owner": "Security Architecture"
+        },
+        {
+            "id": "UD-021",
+            "description": "Secure session protocol framing: TLS 1.3, DTLS 1.3, or a custom secure framing layer atop the Transport Abstraction.",
+            "impact": "Affects the interface contract between Session Manager and Transport Abstraction Engine.",
+            "owner": "Communications Architecture"
+        },
+        {
+            "id": "UD-022",
+            "description": "Key rotation interval, trigger conditions, and re-keying procedure for active sessions.",
+            "impact": "Affects Key Lifecycle Manager's rotation scheduler and Crypto Engine's re-keying behavior.",
+            "owner": "Security Architecture"
+        }
+    ],
+    "metadata": {
+        "status": "draft",
+        "revision": 1,
+        "createdDate": "2025-01-15",
+        "lastModified": "2025-01-15"
+    }
+}

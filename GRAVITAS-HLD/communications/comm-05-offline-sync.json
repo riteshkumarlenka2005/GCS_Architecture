@@ -1,0 +1,1363 @@
+{
+    "schemaVersion": "1.0.0",
+    "documentId": "doc-comm-05",
+    "title": "Advanced Communication Features Architecture",
+    "diagramType": "subsystem-architecture",
+    "description": "Internal architecture of three advanced communication engines: Offline Sync (eng-comm-offline-sync) for local-first buffering and post-reconnection synchronization; Remote Session (eng-comm-remote-session) for session lifecycle and health monitoring; and Network Topology (eng-comm-network-topology) for topology discovery, graph maintenance, and change notification. Shows cross-engine coordination and integration with Transport, Routing, Diagnostics, Connection Recovery, Persistence, and the Core event bus.",
+    "category": "comm",
+    "coordinateSystem": {
+        "type": "cartesian",
+        "unit": "px",
+        "origin": "top-left"
+    },
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 900,
+        "zoom": 1.0
+    },
+    "groups": [
+        {
+            "id": "grp-comm05-offline-sync",
+            "label": "Offline Sync Engine",
+            "type": "functional-group",
+            "nodeIds": [
+                "node-comm05-sync-buffer",
+                "node-comm05-sync-engine",
+                "node-comm05-sync-store"
+            ],
+            "style": {
+                "backgroundColor": "rgba(6, 182, 212, 0.05)",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 12,
+                "padding": 30
+            }
+        },
+        {
+            "id": "grp-comm05-remote-session",
+            "label": "Remote Session Engine",
+            "type": "functional-group",
+            "nodeIds": [
+                "node-comm05-session-mgr",
+                "node-comm05-session-monitor"
+            ],
+            "style": {
+                "backgroundColor": "rgba(139, 92, 246, 0.05)",
+                "borderColor": "#8b5cf6",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 12,
+                "padding": 30
+            }
+        },
+        {
+            "id": "grp-comm05-network-topology",
+            "label": "Network Topology Engine",
+            "type": "functional-group",
+            "nodeIds": [
+                "node-comm05-topo-discovery",
+                "node-comm05-topo-graph",
+                "node-comm05-topo-events"
+            ],
+            "style": {
+                "backgroundColor": "rgba(16, 185, 129, 0.05)",
+                "borderColor": "#10b981",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 12,
+                "padding": 30
+            }
+        }
+    ],
+    "nodes": [
+        {
+            "id": "node-comm05-sync-buffer",
+            "label": "Local Message Buffer",
+            "type": "component",
+            "engineId": "eng-comm-offline-sync",
+            "description": "In-memory and disk-backed buffer that queues outbound commands and telemetry when the network is unavailable and holds inbound messages pending processing after reconnection. Accepts messages from the Transport Abstraction layer and from upstream GCS components, persists them via the Local Sync Persistence store, and flushes the queue to the Sync Orchestration Engine when connectivity is restored.",
+            "position": {
+                "x": 100,
+                "y": 100
+            },
+            "size": {
+                "width": 210,
+                "height": 140
+            },
+            "style": {
+                "backgroundColor": "#0e3a4f",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "inbox"
+            },
+            "ports": [
+                {
+                    "id": "port-comm05-sb-in-queue",
+                    "label": "Queue Message",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm05-sb-out-flush",
+                    "label": "Flush to Sync",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm05-sb-in-ack",
+                    "label": "Sync Ack",
+                    "direction": "in",
+                    "dataType": "control",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm05-sb-out-disk",
+                    "label": "Persist Buffer",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "left"
+                }
+            ]
+        },
+        {
+            "id": "node-comm05-sync-engine",
+            "label": "Sync Orchestration Engine",
+            "type": "component",
+            "engineId": "eng-comm-offline-sync",
+            "description": "Orchestrates the synchronization lifecycle: detects connectivity restoration via topology events, flushes the pending message queue through the Transport layer, performs conflict detection when multiple data sources have updated the same state during disconnection, applies conflict-resolution policies, and manages retry logic for failed sync attempts. Publishes sync-status events for operator visibility.",
+            "position": {
+                "x": 100,
+                "y": 340
+            },
+            "size": {
+                "width": 230,
+                "height": 170
+            },
+            "style": {
+                "backgroundColor": "#0e3a4f",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "arrows-rotate"
+            },
+            "ports": [
+                {
+                    "id": "port-comm05-se-in-pending",
+                    "label": "Pending Messages",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm05-se-out-ack",
+                    "label": "Ack Synced",
+                    "direction": "out",
+                    "dataType": "control",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm05-se-out-state",
+                    "label": "Persist Sync State",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm05-se-in-restore",
+                    "label": "Restore State",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm05-se-in-connectivity",
+                    "label": "Connectivity Event",
+                    "direction": "in",
+                    "dataType": "event",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm05-se-in-session-lost",
+                    "label": "Session Lost",
+                    "direction": "in",
+                    "dataType": "event",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm05-se-out-deliver",
+                    "label": "Deliver Synced",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "left"
+                }
+            ]
+        },
+        {
+            "id": "node-comm05-sync-store",
+            "label": "Local Sync Persistence",
+            "type": "database",
+            "engineId": "eng-comm-offline-sync",
+            "description": "Durable local storage for buffered messages and synchronization state. Ensures that pending outbound commands and telemetry survive GCS restarts and prolonged disconnections. Provides read-back of the pending queue and sync metadata when the Sync Orchestration Engine initiates a sync cycle after reconnection.",
+            "position": {
+                "x": 100,
+                "y": 620
+            },
+            "size": {
+                "width": 210,
+                "height": 120
+            },
+            "style": {
+                "backgroundColor": "#0a2e3d",
+                "borderColor": "#0d9488",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "database"
+            },
+            "ports": [
+                {
+                    "id": "port-comm05-ss-in-buf",
+                    "label": "Buffer Write",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm05-ss-in-state",
+                    "label": "State Write",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm05-ss-out-restore",
+                    "label": "Restore Read",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "left"
+                }
+            ]
+        },
+        {
+            "id": "node-comm05-session-mgr",
+            "label": "Remote Session Manager",
+            "type": "component",
+            "engineId": "eng-comm-remote-session",
+            "description": "Manages the full lifecycle of remote sessions with vehicles and peer GCS instances: establishment, parameter negotiation, state tracking, suspension, resumption, and graceful termination. Coordinates with the Connection Recovery engine for session continuity across network transitions and queries the Network Topology engine for current path availability before initiating new sessions.",
+            "position": {
+                "x": 520,
+                "y": 160
+            },
+            "size": {
+                "width": 240,
+                "height": 170
+            },
+            "style": {
+                "backgroundColor": "#1a1a3e",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "satellite-dish"
+            },
+            "ports": [
+                {
+                    "id": "port-comm05-rsm-in-cmd",
+                    "label": "Session Command",
+                    "direction": "in",
+                    "dataType": "control",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm05-rsm-out-state",
+                    "label": "Session State Update",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm05-rsm-in-recovery",
+                    "label": "Recovery Trigger",
+                    "direction": "in",
+                    "dataType": "control",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm05-rsm-in-topo-evt",
+                    "label": "Topology Event",
+                    "direction": "in",
+                    "dataType": "event",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm05-rsm-out-recovery",
+                    "label": "Recovery Request",
+                    "direction": "out",
+                    "dataType": "control",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm05-rsm-out-topo-query",
+                    "label": "Topology Query Request",
+                    "direction": "out",
+                    "dataType": "control",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm05-rsm-in-recovery-result",
+                    "label": "Recovery Result / Status",
+                    "direction": "in",
+                    "dataType": "event",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm05-rsm-in-topo-query-response",
+                    "label": "Topology Query Response",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "right"
+                }
+            ]
+        },
+        {
+            "id": "node-comm05-session-monitor",
+            "label": "Session Health Monitor",
+            "type": "component",
+            "engineId": "eng-comm-remote-session",
+            "description": "Continuously monitors the health and liveness of active remote sessions using heartbeat analysis, latency tracking, and throughput sampling. Detects session degradation and loss, triggers recovery procedures through the Remote Session Manager, and notifies the Sync Orchestration Engine when a session is lost so that outbound messages are buffered.",
+            "position": {
+                "x": 520,
+                "y": 460
+            },
+            "size": {
+                "width": 230,
+                "height": 140
+            },
+            "style": {
+                "backgroundColor": "#1a1a3e",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "heartbeat"
+            },
+            "ports": [
+                {
+                    "id": "port-comm05-mon-in-state",
+                    "label": "Session State",
+                    "direction": "in",
+                    "dataType": "event",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm05-mon-out-recovery",
+                    "label": "Recovery Trigger",
+                    "direction": "out",
+                    "dataType": "control",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm05-mon-out-alert",
+                    "label": "Session Lost Alert",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "left"
+                }
+            ]
+        },
+        {
+            "id": "node-comm05-topo-discovery",
+            "label": "Topology Discovery Service",
+            "type": "component",
+            "engineId": "eng-comm-network-topology",
+            "description": "Actively discovers and identifies network nodes (vehicles, ground stations, relay nodes, peer GCS instances) and the communication links between them. Uses probe messages, neighbor advertisements, and link-state information from the Transport Abstraction layer to build and refresh the network topology graph.",
+            "position": {
+                "x": 940,
+                "y": 100
+            },
+            "size": {
+                "width": 220,
+                "height": 130
+            },
+            "style": {
+                "backgroundColor": "#0e3a3a",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "radar"
+            },
+            "ports": [
+                {
+                    "id": "port-comm05-td-in-trigger",
+                    "label": "Discovery Trigger",
+                    "direction": "in",
+                    "dataType": "control",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm05-td-out-update",
+                    "label": "Topology Update",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm05-td-in-link-state",
+                    "label": "Transport Link-State Input",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                }
+            ]
+        },
+        {
+            "id": "node-comm05-topo-graph",
+            "label": "Topology Graph Store",
+            "type": "component",
+            "engineId": "eng-comm-network-topology",
+            "description": "Maintains the in-memory representation of the current network topology as a directed graph of nodes and weighted links. Accepts incremental updates from the Discovery Service, computes topology diffs to detect changes (node additions/removals, link state transitions), and serves topology queries from the Remote Session Manager and other consumers.",
+            "position": {
+                "x": 940,
+                "y": 320
+            },
+            "size": {
+                "width": 220,
+                "height": 140
+            },
+            "style": {
+                "backgroundColor": "#0e3a3a",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "project-diagram"
+            },
+            "ports": [
+                {
+                    "id": "port-comm05-tg-in-update",
+                    "label": "Graph Update",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm05-tg-out-query",
+                    "label": "Query Response",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm05-tg-out-change",
+                    "label": "Change Detected",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-comm05-tg-in-query",
+                    "label": "Topology Query Request",
+                    "direction": "in",
+                    "dataType": "control",
+                    "position": "left"
+                }
+            ]
+        },
+        {
+            "id": "node-comm05-topo-events",
+            "label": "Topology Change Notifier",
+            "type": "component",
+            "engineId": "eng-comm-network-topology",
+            "description": "Receives topology change events from the Graph Store and fans them out to all dependent subsystems: notifies the Sync Orchestration Engine of connectivity restoration, alerts the Remote Session Manager of path changes, feeds the Routing Engine with updated topology for route recomputation, supplies the Network Diagnostics engine with structural change context, and publishes events to the Core event bus for operator visibility.",
+            "position": {
+                "x": 940,
+                "y": 560
+            },
+            "size": {
+                "width": 240,
+                "height": 170
+            },
+            "style": {
+                "backgroundColor": "#0e3a3a",
+                "borderColor": "#06b6d4",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "bell"
+            },
+            "ports": [
+                {
+                    "id": "port-comm05-te-in-change",
+                    "label": "Change In",
+                    "direction": "in",
+                    "dataType": "event",
+                    "position": "top"
+                },
+                {
+                    "id": "port-comm05-te-out-sync",
+                    "label": "Connectivity Event",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm05-te-out-session",
+                    "label": "Path Change Event",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "left"
+                },
+                {
+                    "id": "port-comm05-te-out-routing",
+                    "label": "Topology to Routing",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm05-te-out-diag",
+                    "label": "Topology to Diagnostics",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "right"
+                },
+                {
+                    "id": "port-comm05-te-out-bus",
+                    "label": "Publish Events",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "bottom"
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "id": "edge-comm05-sb-to-se-flush",
+            "source": "node-comm05-sync-buffer",
+            "target": "node-comm05-sync-engine",
+            "sourcePort": "port-comm05-sb-out-flush",
+            "targetPort": "port-comm05-se-in-pending",
+            "semantic": {
+                "type": "data-flow",
+                "label": "Flush Pending Messages",
+                "description": "Local Message Buffer delivers the queued outbound messages to the Sync Orchestration Engine when connectivity is restored.",
+                "protocol": null,
+                "dataType": "data"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#64748b",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-se-to-sb-ack",
+            "source": "node-comm05-sync-engine",
+            "target": "node-comm05-sync-buffer",
+            "sourcePort": "port-comm05-se-out-ack",
+            "targetPort": "port-comm05-sb-in-ack",
+            "semantic": {
+                "type": "control-flow",
+                "label": "Acknowledge Synced",
+                "description": "Sync Orchestration Engine confirms successful delivery of buffered messages, allowing the buffer to release them.",
+                "protocol": null,
+                "dataType": "control"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#8b5cf6",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-sb-to-ss-persist",
+            "source": "node-comm05-sync-buffer",
+            "target": "node-comm05-sync-store",
+            "sourcePort": "port-comm05-sb-out-disk",
+            "targetPort": "port-comm05-ss-in-buf",
+            "semantic": {
+                "type": "persistence",
+                "label": "Persist Buffered Messages",
+                "description": "Local Message Buffer writes queued messages to durable storage to survive restarts and prolonged disconnections.",
+                "protocol": null,
+                "dataType": "data"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dashed",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#0d9488",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-se-to-ss-state",
+            "source": "node-comm05-sync-engine",
+            "target": "node-comm05-sync-store",
+            "sourcePort": "port-comm05-se-out-state",
+            "targetPort": "port-comm05-ss-in-state",
+            "semantic": {
+                "type": "persistence",
+                "label": "Persist Sync State",
+                "description": "Sync Orchestration Engine writes current sync metadata (last-synced sequence, conflict resolution log, retry counters) to durable storage.",
+                "protocol": null,
+                "dataType": "data"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dashed",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#0d9488",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-ss-to-se-restore",
+            "source": "node-comm05-sync-store",
+            "target": "node-comm05-sync-engine",
+            "sourcePort": "port-comm05-ss-out-restore",
+            "targetPort": "port-comm05-se-in-restore",
+            "semantic": {
+                "type": "data-flow",
+                "label": "Restore Pending Queue",
+                "description": "Local Sync Persistence provides the pending message queue and sync state to the Sync Orchestration Engine on startup or after reconnection.",
+                "protocol": null,
+                "dataType": "data"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#64748b",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-rsm-to-mon-state",
+            "source": "node-comm05-session-mgr",
+            "target": "node-comm05-session-monitor",
+            "sourcePort": "port-comm05-rsm-out-state",
+            "targetPort": "port-comm05-mon-in-state",
+            "semantic": {
+                "type": "event",
+                "label": "Session State Update",
+                "description": "Remote Session Manager publishes session lifecycle events (established, degraded, suspended, resumed, terminated) to the Session Health Monitor.",
+                "protocol": null,
+                "dataType": "event"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#fbbf24",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-mon-to-rsm-recovery",
+            "source": "node-comm05-session-monitor",
+            "target": "node-comm05-session-mgr",
+            "sourcePort": "port-comm05-mon-out-recovery",
+            "targetPort": "port-comm05-rsm-in-recovery",
+            "semantic": {
+                "type": "control-flow",
+                "label": "Trigger Session Recovery",
+                "description": "Session Health Monitor signals the Remote Session Manager to initiate recovery when session degradation or loss is detected.",
+                "protocol": null,
+                "dataType": "control"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#8b5cf6",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-td-to-tg-update",
+            "source": "node-comm05-topo-discovery",
+            "target": "node-comm05-topo-graph",
+            "sourcePort": "port-comm05-td-out-update",
+            "targetPort": "port-comm05-tg-in-update",
+            "semantic": {
+                "type": "data-flow",
+                "label": "Update Topology Graph",
+                "description": "Topology Discovery Service pushes discovered nodes, links, and link-state changes to the Topology Graph Store for incremental graph update.",
+                "protocol": null,
+                "dataType": "data"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#64748b",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-tg-to-te-change",
+            "source": "node-comm05-topo-graph",
+            "target": "node-comm05-topo-events",
+            "sourcePort": "port-comm05-tg-out-change",
+            "targetPort": "port-comm05-te-in-change",
+            "semantic": {
+                "type": "event",
+                "label": "Topology Change Detected",
+                "description": "Topology Graph Store emits a change event when the computed diff reveals a structural topology change (node/link addition, removal, or state transition).",
+                "protocol": null,
+                "dataType": "event"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 10,
+                "stroke": "#fbbf24",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-te-to-se-connectivity",
+            "source": "node-comm05-topo-events",
+            "target": "node-comm05-sync-engine",
+            "sourcePort": "port-comm05-te-out-sync",
+            "targetPort": "port-comm05-se-in-connectivity",
+            "semantic": {
+                "type": "event",
+                "label": "Connectivity Restored",
+                "description": "Topology Change Notifier signals the Sync Orchestration Engine that network connectivity has been restored, triggering a sync cycle.",
+                "protocol": null,
+                "dataType": "event"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 8,
+                "stroke": "#fbbf24",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-te-to-rsm-path",
+            "source": "node-comm05-topo-events",
+            "target": "node-comm05-session-mgr",
+            "sourcePort": "port-comm05-te-out-session",
+            "targetPort": "port-comm05-rsm-in-topo-evt",
+            "semantic": {
+                "type": "event",
+                "label": "Network Path Change",
+                "description": "Topology Change Notifier alerts the Remote Session Manager of path availability changes that may affect active or pending sessions.",
+                "protocol": null,
+                "dataType": "event"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 8,
+                "stroke": "#fbbf24",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-mon-to-se-lost",
+            "source": "node-comm05-session-monitor",
+            "target": "node-comm05-sync-engine",
+            "sourcePort": "port-comm05-mon-out-alert",
+            "targetPort": "port-comm05-se-in-session-lost",
+            "semantic": {
+                "type": "event",
+                "label": "Session Lost Alert",
+                "description": "Session Health Monitor notifies the Sync Orchestration Engine that a remote session has been lost, triggering outbound message buffering.",
+                "protocol": null,
+                "dataType": "event"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 8,
+                "stroke": "#fbbf24",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-transport-to-sb",
+            "source": "node-comm01-transport",
+            "target": "node-comm05-sync-buffer",
+            "sourcePort": null,
+            "targetPort": "port-comm05-sb-in-queue",
+            "semantic": {
+                "type": "data-flow",
+                "label": "Inbound Transport Data",
+                "description": "Transport Abstraction layer delivers inbound data to the Local Message Buffer for queuing when the session is offline or for direct processing when online.",
+                "protocol": null,
+                "dataType": "data"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#64748b",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-se-to-transport",
+            "source": "node-comm05-sync-engine",
+            "target": "node-comm01-transport",
+            "sourcePort": "port-comm05-se-out-deliver",
+            "targetPort": null,
+            "semantic": {
+                "type": "data-flow",
+                "label": "Deliver Synced Messages",
+                "description": "Sync Orchestration Engine passes successfully synchronized outbound messages to the Transport Abstraction layer for network delivery.",
+                "protocol": null,
+                "dataType": "data"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#64748b",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-te-to-routing",
+            "source": "node-comm05-topo-events",
+            "target": "node-comm03-routing-engine",
+            "sourcePort": "port-comm05-te-out-routing",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "label": "Topology Update to Routing",
+                "description": "Topology Change Notifier feeds structural topology changes to the Routing Engine for route table recomputation.",
+                "protocol": null,
+                "dataType": "event"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#fbbf24",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-te-to-diagnostics",
+            "source": "node-comm05-topo-events",
+            "target": "node-comm02-diagnostics",
+            "sourcePort": "port-comm05-te-out-diag",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "label": "Topology Change to Diagnostics",
+                "description": "Topology Change Notifier supplies structural change context to the Network Diagnostics engine for root-cause correlation.",
+                "protocol": null,
+                "dataType": "event"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#fbbf24",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-te-to-event-bus",
+            "source": "node-comm05-topo-events",
+            "target": "node-core04-event-bus",
+            "sourcePort": "port-comm05-te-out-bus",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "label": "Publish Topology Events",
+                "description": "Topology Change Notifier publishes topology change events to the Core event bus for operator dashboards, audit logging, and downstream consumers.",
+                "protocol": null,
+                "dataType": "event"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#fbbf24",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-rsm-to-reconnect",
+            "source": "node-comm05-session-mgr",
+            "target": "node-comm03-reconnect-orchestrator",
+            "sourcePort": "port-comm05-rsm-out-recovery",
+            "targetPort": null,
+            "semantic": {
+                "type": "control-flow",
+                "label": "Session Recovery Request",
+                "description": "Remote Session Manager delegates network-level reconnection to the Connection Recovery engine when a session cannot be restored on the current path.",
+                "protocol": null,
+                "dataType": "control"
+            },
+            "visual": {
+                "strokeWidth": 2,
+                "dash": "solid",
+                "labelPosition": "center",
+                "routing": "orthogonal",
+                "zIndex": 5,
+                "stroke": "#8b5cf6",
+                "arrow": "end"
+            }
+        },
+        {
+            "id": "edge-comm05-rsm-to-tg-query",
+            "source": "node-comm05-session-mgr",
+            "target": "node-comm05-topo-graph",
+            "sourcePort": "port-comm05-rsm-out-topo-query",
+            "targetPort": "port-comm05-tg-in-query",
+            "semantic": {
+                "type": "control-flow",
+                "direction": "forward",
+                "label": "Topology Query Request",
+                "protocol": null,
+                "dataType": "control",
+                "description": "Remote Session Manager requests current path and node availability from the Topology Graph Store."
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#8b5cf6",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 8
+            }
+        },
+        {
+            "id": "edge-comm05-tg-to-rsm-query-response",
+            "source": "node-comm05-topo-graph",
+            "target": "node-comm05-session-mgr",
+            "sourcePort": "port-comm05-tg-out-query",
+            "targetPort": "port-comm05-rsm-in-topo-query-response",
+            "semantic": {
+                "type": "data-flow",
+                "direction": "forward",
+                "label": "Topology Query Response",
+                "protocol": null,
+                "dataType": "data",
+                "description": "Topology Graph Store returns the current topology/path availability result to the Remote Session Manager."
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 8
+            }
+        },
+        {
+            "id": "edge-comm05-transport-to-topology-discovery",
+            "source": "node-comm01-transport",
+            "target": "node-comm05-topo-discovery",
+            "sourcePort": null,
+            "targetPort": "port-comm05-td-in-link-state",
+            "semantic": {
+                "type": "data-flow",
+                "direction": "forward",
+                "label": "Transport Link-State Updates",
+                "protocol": null,
+                "dataType": "data",
+                "description": "Transport Abstraction supplies observed interface and link-state information to support event-driven topology discovery."
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 8
+            }
+        },
+        {
+            "id": "edge-comm05-reconnect-to-rsm-result",
+            "source": "node-comm03-reconnect-orchestrator",
+            "target": "node-comm05-session-mgr",
+            "sourcePort": null,
+            "targetPort": "port-comm05-rsm-in-recovery-result",
+            "semantic": {
+                "type": "event",
+                "direction": "forward",
+                "label": "Recovery Result / Status",
+                "protocol": null,
+                "dataType": "event",
+                "description": "Connection Recovery reports reconnection progress and outcome so Remote Session Manager can resume, retain, or terminate the remote session appropriately."
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dotted",
+                "labelPosition": "center",
+                "zIndex": 8
+            }
+        }
+    ],
+    "externalReferences": [
+        {
+            "nodeId": "node-comm01-transport",
+            "sourceDocumentId": "doc-comm-01",
+            "engineId": "eng-comm-transport",
+            "label": "Transport Abstraction Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-comm03-routing-engine",
+            "sourceDocumentId": "doc-comm-03",
+            "engineId": "eng-comm-routing",
+            "label": "Routing Engine",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-comm02-diagnostics",
+            "sourceDocumentId": "doc-comm-02",
+            "engineId": "eng-comm-network-diagnostics",
+            "label": "Network Diagnostics Engine",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-comm03-reconnect-orchestrator",
+            "sourceDocumentId": "doc-comm-03",
+            "engineId": "eng-comm-connection-recovery",
+            "label": "Reconnect Orchestrator",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-core04-event-bus",
+            "sourceDocumentId": "doc-core-04",
+            "engineId": "eng-core-event-processing",
+            "label": "Core Event Bus",
+            "type": "event-bus",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#fbbf24",
+                "borderStyle": "dashed"
+            }
+        }
+    ],
+    "crossReferences": [],
+    "requirementsCoverage": [
+        {
+            "requirementId": "req-2.4-12",
+            "description": "The system shall support local-first operation with automatic synchronization when connectivity is restored.",
+            "coveredByNodes": [
+                "node-comm05-sync-buffer",
+                "node-comm05-sync-engine",
+                "node-comm05-sync-store"
+            ],
+            "coveredByEdges": [
+                "edge-comm05-sb-to-se-flush",
+                "edge-comm05-te-to-se-connectivity",
+                "edge-comm05-ss-to-se-restore"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Local Message Buffer queues data offline; Sync Orchestration Engine triggers sync on connectivity-restored event from Topology Change Notifier."
+        },
+        {
+            "requirementId": "req-2.4-13",
+            "description": "The system shall buffer outbound commands and telemetry during network disconnection and deliver them upon reconnection.",
+            "coveredByNodes": [
+                "node-comm05-sync-buffer",
+                "node-comm05-sync-engine"
+            ],
+            "coveredByEdges": [
+                "edge-comm05-sb-to-ss-persist",
+                "edge-comm05-sb-to-se-flush",
+                "edge-comm05-se-to-transport"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Buffer persists messages to disk during disconnection; flushes through Sync Engine to Transport on reconnection."
+        },
+        {
+            "requirementId": "req-2.4-14",
+            "description": "The system shall detect and resolve synchronization conflicts when multiple data sources update the same state during disconnection.",
+            "coveredByNodes": [
+                "node-comm05-sync-engine"
+            ],
+            "coveredByEdges": [
+                "edge-comm05-sb-to-se-flush",
+                "edge-comm05-se-to-ss-state"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Sync Orchestration Engine performs conflict detection and resolution as part of the sync cycle; resolution policies are configuration-driven."
+        },
+        {
+            "requirementId": "req-2.4-15",
+            "description": "The system shall manage remote session lifecycle including establishment, maintenance, and graceful termination.",
+            "coveredByNodes": [
+                "node-comm05-session-mgr"
+            ],
+            "coveredByEdges": [
+                "edge-comm05-rsm-to-mon-state",
+                "edge-comm05-te-to-rsm-path",
+                "edge-comm05-rsm-to-tg-query",
+                "edge-comm05-tg-to-rsm-query-response"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Remote Session Manager handles full lifecycle; topology events inform path-aware session decisions."
+        },
+        {
+            "requirementId": "req-2.4-16",
+            "description": "The system shall monitor remote session health and initiate recovery procedures upon session degradation.",
+            "coveredByNodes": [
+                "node-comm05-session-monitor",
+                "node-comm05-session-mgr"
+            ],
+            "coveredByEdges": [
+                "edge-comm05-mon-to-rsm-recovery",
+                "edge-comm05-rsm-to-reconnect"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Session Health Monitor detects degradation and triggers recovery; Session Manager coordinates with Connection Recovery engine."
+        },
+        {
+            "requirementId": "req-2.4-17",
+            "description": "The system shall discover and maintain a representation of the current network topology including all connected nodes and links.",
+            "coveredByNodes": [
+                "node-comm05-topo-discovery",
+                "node-comm05-topo-graph"
+            ],
+            "coveredByEdges": [
+                "edge-comm05-td-to-tg-update",
+                "edge-comm05-transport-to-topology-discovery"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Discovery Service probes the network; Graph Store maintains the in-memory topology representation."
+        },
+        {
+            "requirementId": "req-2.4-18",
+            "description": "The system shall detect topology changes and propagate notifications to dependent subsystems including routing and diagnostics.",
+            "coveredByNodes": [
+                "node-comm05-topo-graph",
+                "node-comm05-topo-events"
+            ],
+            "coveredByEdges": [
+                "edge-comm05-tg-to-te-change",
+                "edge-comm05-te-to-routing",
+                "edge-comm05-te-to-diagnostics",
+                "edge-comm05-te-to-event-bus"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Graph Store computes diffs; Change Notifier fans out to Routing, Diagnostics, Sync, Session, and Event Bus."
+        },
+        {
+            "requirementId": "req-2.10-01",
+            "description": "The system shall maintain operational continuity during network transitions and temporary disconnections.",
+            "coveredByNodes": [
+                "node-comm05-sync-buffer",
+                "node-comm05-sync-engine",
+                "node-comm05-session-mgr",
+                "node-comm05-session-monitor"
+            ],
+            "coveredByEdges": [
+                "edge-comm05-mon-to-se-lost",
+                "edge-comm05-mon-to-rsm-recovery",
+                "edge-comm05-rsm-to-reconnect",
+                "edge-comm05-reconnect-to-rsm-result"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Cross-engine coordination: session loss triggers buffering; session monitor triggers recovery; sync resumes on reconnection. Recovery outcome is returned to the Remote Session Manager for explicit session-state coordination."
+        },
+        {
+            "requirementId": "req-2.10-04",
+            "description": "The system shall provide visibility into network path availability and quality for mission planning and operator awareness.",
+            "coveredByNodes": [
+                "node-comm05-topo-graph",
+                "node-comm05-topo-events"
+            ],
+            "coveredByEdges": [
+                "edge-comm05-te-to-event-bus",
+                "edge-comm05-te-to-routing"
+            ],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Topology engine provides structural path visibility; link quality metrics are supplied by the Link Quality Monitor (doc-comm-02). Full visibility requires integration across both documents."
+        }
+    ],
+    "assumptions": [
+        {
+            "id": "AS-017",
+            "description": "The Local Sync Persistence store uses the same underlying storage mechanism as the Data Persistence Engine (doc-data-01) but maintains a separate namespace for sync-specific data.",
+            "rationale": "Avoids duplicating storage infrastructure; sync data has different lifecycle and access patterns from general telemetry."
+        },
+        {
+            "id": "AS-018",
+            "description": "Conflict resolution policies (e.g., last-writer-wins, source priority, manual merge) are configured externally and loaded by the Sync Orchestration Engine at startup.",
+            "rationale": "Conflict resolution strategy is mission-dependent and should not be hardcoded."
+        },
+        {
+            "id": "AS-019",
+            "description": "Topology discovery operates on a periodic polling cycle supplemented by event-driven updates from the Transport Abstraction layer when link state changes.",
+            "rationale": "Pure polling is too slow for dynamic networks; pure event-driven may miss silent failures."
+        },
+        {
+            "id": "AS-020",
+            "description": "The Topology Graph Store is an in-memory data structure with optional snapshot persistence; it is rebuilt from discovery on GCS restart.",
+            "rationale": "Topology is inherently transient; stale persisted topology could mislead routing decisions."
+        },
+        {
+            "id": "AS-021",
+            "description": "Remote session health monitoring uses configurable thresholds for heartbeat timeout, latency, and throughput that are appropriate for the vehicle type and link characteristics.",
+            "rationale": "UAV over cellular has different latency expectations than UGV over WiFi."
+        }
+    ],
+    "unresolvedDecisions": [
+        {
+            "id": "UD-023",
+            "description": "Specific conflict resolution algorithm and priority rules for offline sync (e.g., vector clocks, CRDTs, last-writer-wins with timestamps).",
+            "impact": "Affects Sync Orchestration Engine's conflict detection and resolution logic.",
+            "owner": "Communications Architecture"
+        },
+        {
+            "id": "UD-024",
+            "description": "Topology discovery protocol and probe mechanism (e.g., link-state advertisements, neighbor discovery via transport layer, or active ping-based probing).",
+            "impact": "Affects Topology Discovery Service's implementation and network overhead.",
+            "owner": "Communications Architecture"
+        },
+        {
+            "id": "UD-025",
+            "description": "Maximum buffer size and retention period for offline message queuing.",
+            "impact": "Affects Local Message Buffer memory/disk allocation and data-loss risk during prolonged disconnections.",
+            "owner": "Deployment Architecture"
+        },
+        {
+            "id": "UD-026",
+            "description": "Session heartbeat interval and degradation detection thresholds per vehicle type and link type.",
+            "impact": "Affects Session Health Monitor's sensitivity and false-positive rate.",
+            "owner": "Operations Architecture"
+        },
+        {
+            "id": "UD-027",
+            "description": "Confirm the canonical Data Persistence Engine document, engine ID, and integration contract for the Local Sync Persistence storage backend.",
+            "impact": "Determines whether local sync persistence uses a shared persistence service, a local embedded store, or a hybrid adapter while preserving the sync-specific namespace.",
+            "owner": "Data Architecture"
+        }
+    ],
+    "metadata": {
+        "status": "draft",
+        "revision": 1,
+        "createdDate": "2025-01-15",
+        "lastModified": "2025-01-15"
+    }
+}

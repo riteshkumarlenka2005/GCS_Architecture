@@ -53,16 +53,77 @@ export function getNodeCenter(node: DiagramNode): Point {
   }
 }
 
+export function getGroupBounds(
+  group: DiagramGroup,
+  nodes: DiagramNode[] = [],
+): Bounds {
+  if (
+    group.bounds &&
+    typeof group.bounds.x === 'number' &&
+    typeof group.bounds.y === 'number' &&
+    typeof group.bounds.width === 'number' &&
+    typeof group.bounds.height === 'number' &&
+    !isNaN(group.bounds.x)
+  ) {
+    return group.bounds
+  }
+
+  // Derive bounds from member nodes (matching group.nodeIds or node.groupId)
+  const nodeIds = new Set<string>(
+    Array.isArray(group.nodeIds) ? group.nodeIds : [],
+  )
+  const memberNodes = nodes.filter(
+    (n) => nodeIds.has(n.id) || n.groupId === group.id,
+  )
+
+  if (memberNodes.length > 0) {
+    const xs = memberNodes.map((n) => n.position.x)
+    const ys = memberNodes.map((n) => n.position.y)
+    const rights = memberNodes.map((n) => n.position.x + n.size.width)
+    const bottoms = memberNodes.map((n) => n.position.y + n.size.height)
+    const minX = Math.min(...xs)
+    const minY = Math.min(...ys)
+    const maxX = Math.max(...rights)
+    const maxY = Math.max(...bottoms)
+    const padding =
+      typeof group.style?.padding === 'number' ? group.style.padding : 30
+    const headerHeight = 28
+    return {
+      x: Math.max(10, minX - padding),
+      y: Math.max(10, minY - padding - headerHeight),
+      width: maxX - minX + padding * 2,
+      height: maxY - minY + padding * 2 + headerHeight,
+    }
+  }
+
+  return { x: 50, y: 50, width: 400, height: 300 }
+}
+
 export function getDiagramBounds(document: DiagramDocument): Bounds {
-  const boxes: Bounds[] = [
-    ...document.groups.map((group) => group.bounds),
-    ...document.nodes.map((node) => ({
+  const groupBoxes: Bounds[] = (document.groups || [])
+    .map((group) => getGroupBounds(group, document.nodes))
+    .filter(
+      (box): box is Bounds =>
+        Boolean(box && typeof box.x === 'number' && !isNaN(box.x)),
+    )
+
+  const nodeBoxes: Bounds[] = (document.nodes || [])
+    .filter(
+      (node) =>
+        node &&
+        node.position &&
+        typeof node.position.x === 'number' &&
+        !isNaN(node.position.x) &&
+        node.size,
+    )
+    .map((node) => ({
       x: node.position.x,
       y: node.position.y,
       width: node.size.width,
       height: node.size.height,
-    })),
-  ]
+    }))
+
+  const boxes: Bounds[] = [...groupBoxes, ...nodeBoxes]
   if (!boxes.length) return { x: 0, y: 0, width: 0, height: 0 }
   const minX = Math.min(...boxes.map((box) => box.x))
   const minY = Math.min(...boxes.map((box) => box.y))
@@ -91,6 +152,14 @@ export function getGroupDescendantIds(
   for (const n of nodes) {
     if (n.groupId && groupIds.has(n.groupId)) {
       nodeIds.add(n.id)
+    }
+  }
+  // Also include nodes directly listed in group.nodeIds
+  for (const g of groups) {
+    if (groupIds.has(g.id) && Array.isArray(g.nodeIds)) {
+      for (const id of g.nodeIds) {
+        nodeIds.add(id)
+      }
     }
   }
   return { nodeIds, groupIds }
@@ -206,8 +275,30 @@ export function getRenderNodes(document: DiagramDocument): RenderNode[] {
 export function getPortPoint(node: DiagramNode, port: DiagramPort): EdgeAnchor {
   const { x, y } = node.position
   const { width, height } = node.size
-  const offset = Math.min(1, Math.max(0, port.position.offset))
-  switch (port.side) {
+
+  // Support both schema variations:
+  // Variant A: { side: 'left', position: { offset: 0.5 } }
+  // Variant B: { position: 'left' }
+  const rawSide =
+    port.side || (typeof port.position === 'string' ? port.position : undefined)
+  const side: NonNullable<DiagramPort['side']> =
+    rawSide === 'left' ||
+    rawSide === 'right' ||
+    rawSide === 'top' ||
+    rawSide === 'bottom'
+      ? rawSide
+      : 'right'
+
+  const rawOffset =
+    typeof port.position === 'object' && port.position !== null
+      ? (port.position as { offset?: number }).offset
+      : 0.5
+  const offset =
+    typeof rawOffset === 'number' && !isNaN(rawOffset)
+      ? Math.min(1, Math.max(0, rawOffset))
+      : 0.5
+
+  switch (side) {
     case 'left':
       return { point: { x, y: y + height * offset }, side: 'left' }
     case 'right':

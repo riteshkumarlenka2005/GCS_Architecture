@@ -16,6 +16,7 @@ import {
   Shield,
   X,
 } from 'lucide-react'
+import { getGroupBounds } from '../diagramGeometry'
 import {
   CANONICAL_ENGINES,
   CANONICAL_PALETTE,
@@ -23,7 +24,6 @@ import {
   type Bounds,
   type DiagramDocument,
   type DiagramEdge,
-  type DiagramGroup,
   type DiagramNode,
   type ExternalReference,
   type Point,
@@ -71,8 +71,26 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   if (!document) return null
 
   // Resolve selected element
-  const selectedNode = selectedNodeId
+  const rawNode = selectedNodeId
     ? document.nodes.find((n) => n.id === selectedNodeId) ?? null
+    : null
+  const selectedNode = rawNode
+    ? {
+        ...rawNode,
+        metadata: rawNode.metadata ?? {
+          engineId: rawNode.engineId ?? null,
+          requirementIds: [],
+          responsibilities: [],
+          inputs: [],
+          outputs: [],
+          constraints: [],
+          failureModes: [],
+          technologyNotes: null,
+          assumptions: [],
+          unresolvedDecisions: [],
+          notes: '',
+        },
+      }
     : null
 
   const selectedExternalRef: ExternalReference | null =
@@ -84,8 +102,22 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     ? document.edges.find((e) => e.id === selectedEdgeId) ?? null
     : null
 
-  const selectedGroup: DiagramGroup | null = selectedGroupId
-    ? document.groups.find((g) => g.id === selectedGroupId) ?? null
+  const rawGroup = selectedGroupId
+    ? document.groups.find((grp) => grp.id === selectedGroupId) ?? null
+    : null
+  const selectedGroup = rawGroup
+    ? {
+        ...rawGroup,
+        bounds: getGroupBounds(rawGroup, document.nodes),
+        description: rawGroup.description ?? '',
+        metadata: {
+          category: rawGroup.metadata?.category ?? 'subsystem',
+          engineIds: Array.isArray(rawGroup.metadata?.engineIds)
+            ? rawGroup.metadata.engineIds
+            : [],
+          notes: rawGroup.metadata?.notes ?? '',
+        },
+      }
     : null
 
   // Nodes lookup map for resolving edge endpoints
@@ -98,7 +130,8 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
     const results: Array<{ documentId: string; documentTitle: string; nodeId: string }> = []
     for (const doc of allDocuments) {
       for (const node of doc.nodes) {
-        if (node.metadata?.engineId === engineId) {
+        const nodeEngId = node.metadata?.engineId ?? node.engineId
+        if (nodeEngId === engineId) {
           results.push({
             documentId: doc.documentId,
             documentTitle: doc.title,
@@ -329,31 +362,29 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             )}
 
             {/* Canonical Engine Identification */}
-            {selectedNode.metadata?.engineId && (
-              <div className="inspector-card">
-                <div className="inspector-card-header">
-                  <Cpu size={14} />
-                  <span>Canonical Engine</span>
-                </div>
-                <div className="inspector-engine-id">
-                  {selectedNode.metadata.engineId}
-                </div>
-                <div className="inspector-engine-name">
-                  {CANONICAL_ENGINES[selectedNode.metadata.engineId]?.name ??
-                    'Canonical Engine Identity'}
-                </div>
+            {(() => {
+              const nodeEngId =
+                selectedNode.metadata?.engineId ?? selectedNode.engineId
+              if (!nodeEngId) return null
+              const occurrences = findEngineOccurrences(nodeEngId).filter(
+                (o) =>
+                  o.documentId !== document.documentId ||
+                  o.nodeId !== selectedNode.id,
+              )
+              return (
+                <div className="inspector-card">
+                  <div className="inspector-card-header">
+                    <Cpu size={14} />
+                    <span>Canonical Engine</span>
+                  </div>
+                  <div className="inspector-engine-id">{nodeEngId}</div>
+                  <div className="inspector-engine-name">
+                    {CANONICAL_ENGINES[nodeEngId]?.name ??
+                      'Canonical Engine Identity'}
+                  </div>
 
-                {/* Cross-diagram occurrences */}
-                {(() => {
-                  const occurrences = findEngineOccurrences(
-                    selectedNode.metadata.engineId,
-                  ).filter(
-                    (o) =>
-                      o.documentId !== document.documentId ||
-                      o.nodeId !== selectedNode.id,
-                  )
-                  if (!occurrences.length) return null
-                  return (
+                  {/* Cross-diagram occurrences */}
+                  {occurrences.length > 0 && (
                     <div className="inspector-occurrences">
                       <div className="inspector-sublabel">
                         Occurrences in Other Diagrams:
@@ -374,10 +405,10 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         ))}
                       </div>
                     </div>
-                  )
-                })()}
-              </div>
-            )}
+                  )}
+                </div>
+              )
+            })()}
 
             {/* Responsibilities */}
             {selectedNode.metadata?.responsibilities?.length > 0 && (
@@ -893,7 +924,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
             )}
 
             {/* Engine IDs in group */}
-            {selectedGroup.metadata?.engineIds?.length > 0 && (
+            {selectedGroup.metadata.engineIds.length > 0 && (
               <div className="inspector-card">
                 <div className="inspector-card-header">
                   <Cpu size={14} />
