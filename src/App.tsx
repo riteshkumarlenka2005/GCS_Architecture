@@ -116,20 +116,25 @@ function calculateFitTransform(
   viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800,
   inspectorOpen = false,
 ): Transform {
+  const isMobile = viewportWidth < 768
+  const isTablet = viewportWidth >= 768 && viewportWidth < 1024
+
+  // Responsive margins: on mobile, inspector is an overlay/drawer and toolbar is bottom dock
+  const leftMargin = isMobile ? 16 : isTablet ? 72 : 96
+  const rightMargin = isMobile ? 16 : (inspectorOpen ? (isTablet ? 360 : 430) : 48)
+  const topMargin = isMobile ? 64 : 72
+  const bottomMargin = isMobile ? 76 : 48
+
+  const availableW = Math.max(200, viewportWidth - leftMargin - rightMargin)
+  const availableH = Math.max(200, viewportHeight - topMargin - bottomMargin)
+
   // 1. Center architecture diagram
   if (document && document.nodes && document.nodes.length > 0) {
     const bounds = getDiagramBounds(document)
     if (bounds.width > 0 && bounds.height > 0) {
-      const leftMargin = 96
-      const rightMargin = inspectorOpen ? 430 : 48
-      const topMargin = 72
-      const bottomMargin = 48
-
-      const availableW = Math.max(300, viewportWidth - leftMargin - rightMargin)
-      const availableH = Math.max(300, viewportHeight - topMargin - bottomMargin)
-
-      const scaleX = availableW / (bounds.width + 60)
-      const scaleY = availableH / (bounds.height + 60)
+      const padding = isMobile ? 30 : 60
+      const scaleX = availableW / (bounds.width + padding)
+      const scaleY = availableH / (bounds.height + padding)
       let scale = Math.min(scaleX, scaleY)
 
       const docZoom =
@@ -180,13 +185,8 @@ function calculateFitTransform(
     if (minX !== Infinity && maxX > minX) {
       const w = maxX - minX
       const h = maxY - minY
-      const leftMargin = 96
-      const rightMargin = inspectorOpen ? 430 : 48
-      const topMargin = 72
-      const bottomMargin = 48
-      const availableW = Math.max(300, viewportWidth - leftMargin - rightMargin)
-      const availableH = Math.max(300, viewportHeight - topMargin - bottomMargin)
-      const scale = clampScale(Math.min(1, availableW / (w + 60), availableH / (h + 60)))
+      const padding = isMobile ? 30 : 60
+      const scale = clampScale(Math.min(1, availableW / (w + padding), availableH / (h + padding)))
       const centerScreenX = leftMargin + availableW / 2
       const centerScreenY = topMargin + availableH / 2
       const shapeCenterX = minX + w / 2
@@ -200,14 +200,10 @@ function calculateFitTransform(
   }
 
   // 3. Default empty canvas centering
-  const leftMargin = 96
-  const rightMargin = inspectorOpen ? 430 : 48
-  const availableW = Math.max(300, viewportWidth - leftMargin - rightMargin)
-  const availableH = Math.max(300, viewportHeight - 120)
   return {
     scale: 1,
     x: Math.round(leftMargin + availableW / 2 - 200),
-    y: Math.round(72 + availableH / 2 - 150),
+    y: Math.round(topMargin + availableH / 2 - 150),
   }
 }
 
@@ -227,12 +223,22 @@ function App() {
   const [editingId, setEditingId] = useState<string | null>(null)
 
   // Inspector & Selection State
-  const [inspectorOpen, setInspectorOpen] = useState(true)
+  const [inspectorOpen, setInspectorOpen] = useState(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return false
+    }
+    return true
+  })
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
   const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null)
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null)
 
-  const [toolbarMode, setToolbarMode] = useState<ToolbarMode>('vertical')
+  const [toolbarMode, setToolbarMode] = useState<ToolbarMode>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      return 'bottom'
+    }
+    return 'vertical'
+  })
   const [toolbarPos, setToolbarPos] = useState({ x: 16, y: 16 })
   const [posMenuOpen, setPosMenuOpen] = useState(false)
 
@@ -278,6 +284,33 @@ function App() {
 
   const viewsRef = useRef<Record<string, Transform>>({})
   const renameCommittedRef = useRef(false)
+
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map())
+  const pinchStartDistRef = useRef<number | null>(null)
+  const pinchStartScaleRef = useRef<number>(1)
+
+  // Adjust responsive positions when window resizes
+  useEffect(() => {
+    let timer: number
+    const handleResize = () => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        setToolbarPos((pos) => {
+          const maxX = Math.max(8, window.innerWidth - 60)
+          const maxY = Math.max(8, window.innerHeight - 60)
+          return {
+            x: Math.min(maxX, Math.max(8, pos.x)),
+            y: Math.min(maxY, Math.max(8, pos.y)),
+          }
+        })
+      }, 150)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.clearTimeout(timer)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -412,6 +445,12 @@ function App() {
         setSelectedEdgeId(null)
         setSelectedGroupId(null)
       }
+      activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+      if (activePointersRef.current.size === 2) {
+        const pts = Array.from(activePointersRef.current.values())
+        pinchStartDistRef.current = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y)
+        pinchStartScaleRef.current = transform.scale
+      }
       if (locked || !panMode || event.button !== 0) return
       dragRef.current = {
         startX: event.clientX,
@@ -426,6 +465,21 @@ function App() {
 
   const handlePointerMove = useCallback(
     (event: ReactPointerEvent<HTMLDivElement>) => {
+      activePointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
+      // Multi-touch pinch-to-zoom on tablets and mobile devices
+      if (activePointersRef.current.size === 2 && pinchStartDistRef.current) {
+        const pts = Array.from(activePointersRef.current.values())
+        const currentDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y)
+        if (currentDist > 5 && pinchStartDistRef.current > 5) {
+          const ratio = currentDist / pinchStartDistRef.current
+          const midX = (pts[0].x + pts[1].x) / 2
+          const midY = (pts[0].y + pts[1].y) / 2
+          const newScale = clampScale(pinchStartScaleRef.current * ratio)
+          zoomAt(newScale / transform.scale, { x: midX, y: midY })
+          return
+        }
+      }
+
       const drag = dragRef.current
       if (!drag) return
       setTransform((t) => ({
@@ -434,10 +488,14 @@ function App() {
         y: drag.originY + (event.clientY - drag.startY),
       }))
     },
-    [],
+    [zoomAt, transform.scale],
   )
 
-  const handlePointerUp = useCallback(() => {
+  const handlePointerUp = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    activePointersRef.current.delete(event.pointerId)
+    if (activePointersRef.current.size < 2) {
+      pinchStartDistRef.current = null
+    }
     dragRef.current = null
   }, [])
 

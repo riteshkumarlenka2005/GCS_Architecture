@@ -1718,3 +1718,246 @@
   background: #f87171;
   color: #ffffff;
 }
+
+/* ==========================================================================
+   RESPONSIVE LAYOUT & MEDIA QUERIES (Monitors, Laptops, Tablets, Mobile Phones)
+   ========================================================================== */
+
+/* 1. Laptops and Shorter Vertical Viewports (e.g. 1366x768, 1280x720, 1440x900) */
+@media (max-height: 860px) and (min-width: 769px) {
+  .toolbar.mode-vertical {
+    gap: 3px;
+    padding: 6px;
+    top: 12px;
+    left: 12px;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .toolbar.mode-vertical::-webkit-scrollbar {
+    display: none;
+  }
+  .tool {
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+  }
+  .tool svg {
+    width: 17px;
+    height: 17px;
+  }
+  .toolbar-sep {
+    margin: 2px 4px;
+  }
+  .toolbar-grip {
+    height: 14px;
+  }
+  .canvas-header-bar {
+    left: 72px;
+    top: 12px;
+  }
+}
+
+@media (max-height: 720px) and (min-width: 769px) {
+  .toolbar.mode-vertical {
+    gap: 2px;
+    padding: 4px;
+    top: 8px;
+    left: 8px;
+    max-height: calc(100vh - 16px);
+  }
+  .tool {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+  }
+  .tool svg {
+    width: 15px;
+    height: 15px;
+  }
+  .toolbar-sep {
+    margin: 1px 3px;
+  }
+  .toolbar-grip {
+    height: 10px;
+  }
+  .canvas-header-bar {
+    left: 56px;
+    top: 8px;
+    padding: 5px 10px;
+    gap: 8px;
+  }
+  .canvas-header-title {
+    font-size: 13px;
+  }
+}
+
+/* 2. Tablets and Medium Desktops (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .inspector-panel {
+    width: min(340px, calc(100vw - 32px));
+  }
+  .canvas-header-bar {
+    max-width: calc(100vw - 440px);
+  }
+  .canvas-header-title {
+    max-width: 240px;
+  }
+}
+
+/* 3. Mobile Phones and Small Tablets (< 768px width) */
+@media (max-width: 768px) {
+  /* Toolbar Bottom Floating Dock on Mobile */
+  .toolbar.mode-bottom {
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: calc(100vw - 16px);
+    padding: 4px 6px;
+    gap: 2px;
+    border-radius: 14px;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .toolbar.mode-bottom::-webkit-scrollbar {
+    display: none;
+  }
+
+  .toolbar.mode-vertical {
+    top: 58px;
+    left: 8px;
+    padding: 4px;
+    gap: 2px;
+    border-radius: 12px;
+    max-height: calc(100vh - 72px);
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .toolbar.mode-vertical::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tool {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .tool svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .toolbar-sep {
+    margin: 2px;
+  }
+
+  /* Top-Left Canvas Header Bar on Mobile */
+  .canvas-header-bar {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    max-width: calc(100vw - 16px);
+    padding: 6px 10px;
+    gap: 8px;
+    border-radius: 10px;
+  }
+
+  .canvas-header-title {
+    font-size: 13px;
+    max-width: 170px;
+  }
+
+  .canvas-header-sub {
+    display: none; /* Hide subtitle on mobile to keep single-line header */
+  }
+
+  .canvas-header-badge {
+    padding: 2px 6px;
+    font-size: 10px;
+  }
+
+  .canvas-header-reload-btn {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+
+  .canvas-header-reload-btn span {
+    display: none; /* Icon-only on mobile */
+  }
+
+  /* Canvas Layers Menu as Native Mobile Modal Sheet */
+  .canvas-menu {
+    position: fixed !important;
+    top: 56px !important;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: auto !important;
+    width: auto !important;
+    max-height: calc(100vh - 130px) !important;
+    border-radius: 14px !important;
+    z-index: 1500 !important;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75) !important;
+    transform: none !important;
+  }
+
+  /* Inspector Panel as Full-Screen Mobile Drawer */
+  .inspector-panel {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+    z-index: 2000;
+    box-shadow: none;
+    animation: slideInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .inspector-header {
+    padding: 14px 16px;
+  }
+
+  .inspector-header-title {
+    font-size: 14px;
+  }
+
+  .inspector-close-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Validation Panel on Mobile */
+  .validation-panel {
+    position: fixed;
+    right: 10px;
+    bottom: 64px;
+    left: 10px;
+    width: auto;
+    max-height: calc(100vh - 140px);
+    z-index: 1200;
+  }
+}
+
+/* 4. Ultra-wide and 4K Monitors (>= 1920px) */
+@media (min-width: 1920px) {
+  .canvas-header-bar {
+    max-width: calc(100vw - 580px);
+  }
+  .inspector-panel {
+    width: 430px;
+  }
+}
