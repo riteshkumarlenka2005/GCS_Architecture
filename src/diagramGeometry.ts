@@ -96,7 +96,7 @@ export function normalizeDiagramDocument(raw: DiagramDocument): DiagramDocument 
         direction: (rawPort.direction as DiagramPort['direction']) || 'inout',
         side,
         position: rawPort.position ?? { offset: typeof rawPort.offset === 'number' ? rawPort.offset : 0.5 },
-      } as DiagramPort
+      } as unknown as DiagramPort
     })
 
     const rawMeta = (node.metadata as Record<string, unknown>) || {}
@@ -117,7 +117,7 @@ export function normalizeDiagramDocument(raw: DiagramDocument): DiagramDocument 
       style,
       ports,
       metadata,
-    } as DiagramNode
+    } as unknown as DiagramNode
   })
 
   const groups: DiagramGroup[] = ((raw.groups as Array<Record<string, unknown>>) || []).map((rawGroup) => {
@@ -142,7 +142,7 @@ export function normalizeDiagramDocument(raw: DiagramDocument): DiagramDocument 
       groupId,
       nodeIds: Array.isArray(rawGroup.nodeIds) ? ([...rawGroup.nodeIds] as string[]) : [],
       style,
-    } as DiagramGroup
+    } as unknown as DiagramGroup
   })
 
   const edges: DiagramEdge[] = ((raw.edges as Array<Record<string, unknown>>) || []).map((rawEdge) => {
@@ -180,7 +180,7 @@ export function normalizeDiagramDocument(raw: DiagramDocument): DiagramDocument 
       targetPort: (rawEdge.targetPort as string) || null,
       semantic,
       visual,
-    } as DiagramEdge
+    } as unknown as DiagramEdge
   })
 
   const externalReferences: ExternalReference[] = ((raw.externalReferences as Array<Record<string, unknown>>) || []).map((rawRef) => {
@@ -206,7 +206,7 @@ export function normalizeDiagramDocument(raw: DiagramDocument): DiagramDocument 
       ...rawRef,
       nodeId,
       style,
-    } as ExternalReference
+    } as unknown as ExternalReference
   })
 
   return {
