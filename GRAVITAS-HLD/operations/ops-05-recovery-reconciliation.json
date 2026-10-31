@@ -1,0 +1,1411 @@
+{
+    "schemaVersion": "1.0.0",
+    "documentId": "doc-ops-05",
+    "title": "Operations Subsystem Integration & End-to-End Lifecycle Pipeline",
+    "diagramType": "subsystem-architecture",
+    "description": "Integration view of the complete Operations subsystem showing the end-to-end operational lifecycle pipeline from mission creation through validation, preflight, execution, command dispatch, monitoring, and recovery. Highlights the four cross-cutting backbone engines that span all operational phases: Mission Execution as the lifecycle orchestrator, Command Control as the unified dispatch hub, Mission Monitoring as the closed-loop feedback engine, and the Unified Dashboard as the single operator surface. Details the integration handoff points between the four Operations documents (ops-01 through ops-04) and the cross-subsystem dependencies on Core, Planning, Communications, and Safety.",
+    "category": "ops",
+    "coordinateSystem": {
+        "type": "cartesian",
+        "unit": "px",
+        "origin": "top-left"
+    },
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "width": 1600,
+        "height": 1000,
+        "zoom": 1.0
+    },
+    "groups": [
+        {
+            "id": "grp-ops05-lifecycle-pipeline",
+            "label": "Mission Lifecycle Pipeline",
+            "type": "functional-group",
+            "nodeIds": [
+                "node-ops05-lifecycle",
+                "node-ops05-monitor"
+            ],
+            "style": {
+                "backgroundColor": "rgba(139, 92, 246, 0.05)",
+                "borderColor": "#8b5cf6",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 12,
+                "padding": 30
+            }
+        },
+        {
+            "id": "grp-ops05-command-feedback",
+            "label": "Command & Feedback Backbone",
+            "type": "functional-group",
+            "nodeIds": [
+                "node-ops05-cmd-backbone",
+                "node-ops05-operator"
+            ],
+            "style": {
+                "backgroundColor": "rgba(59, 130, 246, 0.05)",
+                "borderColor": "#3b82f6",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 12,
+                "padding": 30
+            }
+        }
+    ],
+    "nodes": [
+        {
+            "id": "node-ops05-lifecycle",
+            "label": "Mission Lifecycle Orchestrator",
+            "type": "component",
+            "engineId": "eng-ops-mission-execution",
+            "description": "Integration view of the Mission Execution Engine as the central lifecycle orchestrator spanning all operational phases. Receives validated mission plans from the Planning subsystem (via ops-01 validation and versioning), gates execution on preflight clearance (from ops-03), decomposes plans into command sequences, manages the mission state machine (draft→armed→executing→paused→completed→aborted), and coordinates with the Task Coordination Engine (ops-04) for multi-vehicle missions. This node represents the integration handoff point between the planning pipeline (ops-01), readiness pipeline (ops-03), and active execution pipeline (ops-02/ops-04).",
+            "position": {
+                "x": 120,
+                "y": 150
+            },
+            "size": {
+                "width": 280,
+                "height": 200
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#8b5cf6",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "project-diagram"
+            },
+            "ports": [
+                {
+                    "id": "port-ops05-lc-in-plan",
+                    "label": "Validated Plan",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-ops05-lc-in-preflight",
+                    "label": "Preflight Clearance",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-ops05-lc-in-deviation",
+                    "label": "Deviation Feedback",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-ops05-lc-in-recovery",
+                    "label": "Recovery Status",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-ops05-lc-out-commands",
+                    "label": "Command Sequences",
+                    "direction": "out",
+                    "dataType": "command",
+                    "position": "right"
+                },
+                {
+                    "id": "port-ops05-lc-out-state",
+                    "label": "Lifecycle State",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-ops05-lc-out-tasks",
+                    "label": "Task Definitions",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                }
+            ]
+        },
+        {
+            "id": "node-ops05-monitor",
+            "label": "Closed-Loop Monitoring Engine",
+            "type": "component",
+            "engineId": "eng-ops-mission-monitoring",
+            "description": "Integration view of the Mission Monitoring Engine as the closed-loop feedback provider. It ingests vehicle telemetry and lifecycle state to compute progress, spatial/temporal deviations, and task-completion metrics. It feeds deviation reports to the Lifecycle Orchestrator, publishes operational alerts to the Core Event Bus, sends progress metrics to the Unified Operator Surface, and emits recovery triggers for the Vehicle Recovery Engine when critical deviations or link loss are detected.",
+            "position": {
+                "x": 120,
+                "y": 520
+            },
+            "size": {
+                "width": 280,
+                "height": 200
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#8b5cf6",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "sync-alt"
+            },
+            "ports": [
+                {
+                    "id": "port-ops05-mon-in-state",
+                    "label": "Lifecycle State",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-ops05-mon-in-telemetry",
+                    "label": "Vehicle Telemetry",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-ops05-mon-out-deviation",
+                    "label": "Deviation Report",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-ops05-mon-out-recovery",
+                    "label": "Recovery Trigger",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "right"
+                },
+                {
+                    "id": "port-ops05-mon-out-progress",
+                    "label": "Progress Metrics",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-ops05-mon-out-alerts",
+                    "label": "Operational Alerts",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "right"
+                }
+            ]
+        },
+        {
+            "id": "node-ops05-cmd-backbone",
+            "label": "Command Dispatch Backbone",
+            "type": "component",
+            "engineId": "eng-ops-command-control",
+            "description": "Integration view of the Command Control Engine as the single command dispatch hub. It accepts automated mission command sequences, manual-control commands, task-assignment commands, and recovery commands; submits each command to the Command Validation Engine; applies the returned verdict together with Safety Policy constraints; prioritizes approved commands; and dispatches them to the Communication Transport layer. Dispatch tracking is published to the Unified Operator Surface. A command is not eligible for dispatch merely because it entered the backbone: it must pass validation and applicable safety policy checks.",
+            "position": {
+                "x": 580,
+                "y": 300
+            },
+            "size": {
+                "width": 280,
+                "height": 210
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#3b82f6",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "network-wired"
+            },
+            "ports": [
+                {
+                    "id": "port-ops05-cb-in-commands",
+                    "label": "Mission Commands",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left"
+                },
+                {
+                    "id": "port-ops05-cb-in-manual",
+                    "label": "Manual Commands",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "top"
+                },
+                {
+                    "id": "port-ops05-cb-in-recovery",
+                    "label": "Recovery Commands",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-ops05-cb-in-validation",
+                    "label": "Validation Verdict",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-ops05-cb-out-dispatch",
+                    "label": "Vehicle Dispatch",
+                    "direction": "out",
+                    "dataType": "command",
+                    "position": "right"
+                },
+                {
+                    "id": "port-ops05-cb-out-track",
+                    "label": "Dispatch Tracking",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-ops05-cb-out-validation-request",
+                    "label": "Command Validation Request",
+                    "direction": "out",
+                    "dataType": "command",
+                    "position": "right"
+                },
+                {
+                    "id": "port-ops05-cb-in-safety-policy",
+                    "label": "Safety Policy & Constraints",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-ops05-cb-in-task-commands",
+                    "label": "Task Assignment Commands",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left"
+                }
+            ]
+        },
+        {
+            "id": "node-ops05-operator",
+            "label": "Unified Operator Surface",
+            "type": "component",
+            "engineId": "eng-ops-unified",
+            "description": "Integration view of the Unified Operations Dashboard as the operator interaction surface. It aggregates lifecycle state, monitoring/progress metrics, command-dispatch tracking, readiness/fleet information, and Core Event Bus events. Operator actions are submitted through the Core API Gateway for authentication, authorization, audit, and routing; the gateway then routes each action to its owning subsystem.",
+            "position": {
+                "x": 580,
+                "y": 620
+            },
+            "size": {
+                "width": 280,
+                "height": 200
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#3b82f6",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "desktop"
+            },
+            "ports": [
+                {
+                    "id": "port-ops05-op-in-lifecycle",
+                    "label": "Mission Status",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-ops05-op-in-progress",
+                    "label": "Progress & Fleet",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-ops05-op-in-events",
+                    "label": "System Events",
+                    "direction": "in",
+                    "dataType": "event",
+                    "position": "top"
+                },
+                {
+                    "id": "port-ops05-op-out-actions",
+                    "label": "Operator Actions",
+                    "direction": "out",
+                    "dataType": "command",
+                    "position": "right"
+                },
+                {
+                    "id": "port-ops05-op-in-command-tracking",
+                    "label": "Command Tracking",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "id": "edge-ops05-lc-to-cmd",
+            "source": "node-ops05-lifecycle",
+            "target": "node-ops05-cmd-backbone",
+            "sourcePort": "port-ops05-lc-out-commands",
+            "targetPort": "port-ops05-cb-in-commands",
+            "semantic": {
+                "type": "command",
+                "direction": "unidirectional",
+                "label": "Mission Command Sequences",
+                "protocol": null,
+                "dataType": "command",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Lifecycle Orchestrator dispatches phase-ordered mission command sequences to the Command Backbone for validation, prioritization, and vehicle dispatch. This is the primary automated command flow.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-ops05-lc-to-monitor",
+            "source": "node-ops05-lifecycle",
+            "target": "node-ops05-monitor",
+            "sourcePort": "port-ops05-lc-out-state",
+            "targetPort": "port-ops05-mon-in-state",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Mission State for Monitoring",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Lifecycle Orchestrator provides current mission state (active phase, target waypoint, task queue) to the Monitoring Engine for closed-loop progress tracking and deviation computation.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-ops05-monitor-to-lc",
+            "source": "node-ops05-monitor",
+            "target": "node-ops05-lifecycle",
+            "sourcePort": "port-ops05-mon-out-deviation",
+            "targetPort": "port-ops05-lc-in-deviation",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Deviation Feedback Loop",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Monitoring Engine feeds spatial and temporal deviation reports back to the Lifecycle Orchestrator, closing the control loop and triggering replanning or phase adjustments when thresholds are exceeded.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-ops05-lc-to-operator",
+            "source": "node-ops05-lifecycle",
+            "target": "node-ops05-operator",
+            "sourcePort": "port-ops05-lc-out-state",
+            "targetPort": "port-ops05-op-in-lifecycle",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Mission Status Display",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Lifecycle Orchestrator provides real-time mission status (phase, state, active vehicle) to the Unified Operator Surface for situational awareness.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-monitor-to-operator",
+            "source": "node-ops05-monitor",
+            "target": "node-ops05-operator",
+            "sourcePort": "port-ops05-mon-out-progress",
+            "targetPort": "port-ops05-op-in-progress",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Progress & Fleet Metrics",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Monitoring Engine provides real-time progress metrics, fleet status summaries, and task completion rates to the Unified Operator Surface.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-ext-plan-to-lc",
+            "source": "ext-ops05-plan-pipeline",
+            "target": "node-ops05-lifecycle",
+            "sourcePort": null,
+            "targetPort": "port-ops05-lc-in-plan",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Validated Mission Plan",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Planning pipeline (ops-01 validation + plan-01 route generation) delivers validated and route-optimized mission plans to the Lifecycle Orchestrator for execution.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-ext-preflight-to-lc",
+            "source": "ext-ops05-readiness",
+            "target": "node-ops05-lifecycle",
+            "sourcePort": null,
+            "targetPort": "port-ops05-lc-in-preflight",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Preflight Go/No-Go",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Readiness pipeline (ops-03 preflight, health, config) provides the go/no-go clearance that gates mission arming in the Lifecycle Orchestrator.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-ext-recovery-to-lc",
+            "source": "ext-ops05-recovery",
+            "target": "node-ops05-lifecycle",
+            "sourcePort": null,
+            "targetPort": "port-ops05-lc-in-recovery",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Recovery Status",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Vehicle Recovery Engine (ops-04) provides recovery procedure status to the Lifecycle Orchestrator for mission state transitions during emergency scenarios.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-ext-recovery-to-cmd",
+            "source": "ext-ops05-recovery",
+            "target": "node-ops05-cmd-backbone",
+            "sourcePort": null,
+            "targetPort": "port-ops05-cb-in-recovery",
+            "semantic": {
+                "type": "command",
+                "direction": "unidirectional",
+                "label": "Recovery Commands",
+                "protocol": null,
+                "dataType": "command",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Vehicle Recovery Engine (ops-04) dispatches high-priority recovery commands (RTH, emergency land) to the Command Backbone for immediate vehicle transmission.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-ext-manual-to-cmd",
+            "source": "ext-ops05-manual",
+            "target": "node-ops05-cmd-backbone",
+            "sourcePort": null,
+            "targetPort": "port-ops05-cb-in-manual",
+            "semantic": {
+                "type": "command",
+                "direction": "unidirectional",
+                "label": "Manual Control Commands",
+                "protocol": null,
+                "dataType": "command",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Manual Control Engine (ops-04) dispatches rate-limited, safety-bounded manual commands to the Command Backbone for validation and vehicle transmission.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-cmd-to-transport",
+            "source": "node-ops05-cmd-backbone",
+            "target": "ext-ops05-transport",
+            "sourcePort": "port-ops05-cb-out-dispatch",
+            "targetPort": null,
+            "semantic": {
+                "type": "command",
+                "direction": "unidirectional",
+                "label": "Vehicle Command Dispatch",
+                "protocol": null,
+                "dataType": "command",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Command Backbone dispatches all validated commands to the Communication Transport layer (comm-01) for transmission to target vehicles.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-ext-validation-to-cmd",
+            "source": "ext-ops05-cmd-validation",
+            "target": "node-ops05-cmd-backbone",
+            "sourcePort": null,
+            "targetPort": "port-ops05-cb-in-validation",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Command Validation Verdict",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Command Validation Engine (ops-02) returns approve/reject verdicts to the Command Backbone for every command before dispatch.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-telemetry-to-monitor",
+            "source": "ext-ops05-vehicle-state",
+            "target": "node-ops05-monitor",
+            "sourcePort": null,
+            "targetPort": "port-ops05-mon-in-telemetry",
+            "semantic": {
+                "type": "telemetry",
+                "direction": "unidirectional",
+                "label": "Fleet Vehicle Telemetry",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Core Vehicle State Store provides real-time telemetry for all fleet vehicles to the Monitoring Engine for closed-loop progress tracking.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-monitor-to-recovery",
+            "source": "node-ops05-monitor",
+            "target": "ext-ops05-recovery",
+            "sourcePort": "port-ops05-mon-out-recovery",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "direction": "unidirectional",
+                "label": "Recovery Trigger",
+                "protocol": null,
+                "dataType": "event",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Monitoring Engine triggers the Vehicle Recovery Engine (ops-04) when critical deviations, link loss, or task failures are detected.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dotted",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-bus-to-operator",
+            "source": "ext-ops05-event-bus",
+            "target": "node-ops05-operator",
+            "sourcePort": null,
+            "targetPort": "port-ops05-op-in-events",
+            "semantic": {
+                "type": "event",
+                "direction": "unidirectional",
+                "label": "Cross-Subsystem Events",
+                "protocol": null,
+                "dataType": "event",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Core Event Bus delivers all cross-subsystem events (alerts, state transitions, safety violations, recovery triggers) to the Unified Operator Surface for real-time awareness.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dotted",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-operator-to-api",
+            "source": "node-ops05-operator",
+            "target": "ext-ops05-api-gateway",
+            "sourcePort": "port-ops05-op-out-actions",
+            "targetPort": null,
+            "semantic": {
+                "type": "command",
+                "direction": "unidirectional",
+                "label": "Operator Actions",
+                "protocol": null,
+                "dataType": "command",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Unified Operator Surface dispatches all operator actions (mission commands, manual control, configuration changes, recovery overrides) through the Core API Gateway for authentication and routing.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-lc-to-tasks",
+            "source": "node-ops05-lifecycle",
+            "target": "ext-ops05-task-coord",
+            "sourcePort": "port-ops05-lc-out-tasks",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Task Definitions",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Lifecycle Orchestrator provides mission task definitions to the Task Coordination Engine (ops-04) for multi-vehicle allocation and sequencing.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-safety-to-all",
+            "source": "ext-ops05-safety",
+            "target": "node-ops05-cmd-backbone",
+            "sourcePort": null,
+            "targetPort": "port-ops05-cb-in-safety-policy",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Safety Policy Enforcement",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Safety Policy Engine supplies policy rules and constraints to a dedicated Command Backbone input. The backbone applies these constraints in addition to the per-command validation verdict; this connection is not itself a command approval.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#8b5cf6",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dashed",
+                "labelPosition": "center",
+                "zIndex": 3
+            }
+        },
+        {
+            "id": "edge-ops05-cmd-to-validation-request",
+            "source": "node-ops05-cmd-backbone",
+            "target": "ext-ops05-cmd-validation",
+            "sourcePort": "port-ops05-cb-out-validation-request",
+            "targetPort": null,
+            "semantic": {
+                "type": "command",
+                "direction": "unidirectional",
+                "label": "Command Validation Request",
+                "protocol": null,
+                "dataType": "command",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Command Backbone submits each candidate command and its context to the Command Validation Engine before dispatch. The command remains gated until a corresponding verdict is received.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-task-coord-to-cmd",
+            "source": "ext-ops05-task-coord",
+            "target": "node-ops05-cmd-backbone",
+            "sourcePort": null,
+            "targetPort": "port-ops05-cb-in-task-commands",
+            "semantic": {
+                "type": "command",
+                "direction": "unidirectional",
+                "label": "Task Assignment Commands",
+                "protocol": null,
+                "dataType": "command",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Task Coordination Engine emits vehicle-specific task assignment commands to the Command Backbone. These commands enter the same validation, safety, prioritization, and dispatch pipeline as other command sources.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-cmd-tracking-to-operator",
+            "source": "node-ops05-cmd-backbone",
+            "target": "node-ops05-operator",
+            "sourcePort": "port-ops05-cb-out-track",
+            "targetPort": "port-ops05-op-in-command-tracking",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Command Dispatch Tracking",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Command Backbone publishes dispatch state, validation outcome, target vehicle, and acknowledgment/timeout status to the Unified Operator Surface.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-ops05-monitor-to-event-bus",
+            "source": "node-ops05-monitor",
+            "target": "ext-ops05-event-bus",
+            "sourcePort": "port-ops05-mon-out-alerts",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "direction": "unidirectional",
+                "label": "Operational Alerts",
+                "protocol": null,
+                "dataType": "event",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Monitoring Engine publishes deviation, task-failure, link-quality, and recovery-related alerts to the Core Event Bus for cross-subsystem distribution.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dotted",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        }
+    ],
+    "externalReferences": [
+        {
+            "nodeId": "ext-ops05-plan-pipeline",
+            "sourceDocumentId": "doc-ops-01",
+            "engineId": "eng-ops-mission-planning",
+            "label": "Mission Planning & Validation Pipeline",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-ops05-readiness",
+            "sourceDocumentId": "doc-ops-03",
+            "engineId": "eng-ops-preflight",
+            "label": "Readiness Pipeline (Config/Health/Preflight)",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-ops05-cmd-validation",
+            "sourceDocumentId": "doc-ops-02",
+            "engineId": "eng-ops-command-validation",
+            "label": "Command Validation Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-ops05-recovery",
+            "sourceDocumentId": "doc-ops-04",
+            "engineId": "eng-ops-vehicle-recovery",
+            "label": "Vehicle Recovery Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ef4444",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-ops05-manual",
+            "sourceDocumentId": "doc-ops-04",
+            "engineId": "eng-ops-manual-control",
+            "label": "Manual Control Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ef4444",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-ops05-task-coord",
+            "sourceDocumentId": "doc-ops-04",
+            "engineId": "eng-ops-task-coordination",
+            "label": "Task Coordination Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-ops05-event-bus",
+            "sourceDocumentId": "doc-core-04",
+            "engineId": "eng-core-event-processing",
+            "label": "Core Event Bus",
+            "type": "event-bus",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#fbbf24",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-ops05-api-gateway",
+            "sourceDocumentId": "doc-core-04",
+            "engineId": "eng-core-api-gateway",
+            "label": "Core API Gateway",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-ops05-vehicle-state",
+            "sourceDocumentId": "doc-core-03",
+            "engineId": "eng-core-vehicle-state",
+            "label": "Vehicle State Store",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-ops05-transport",
+            "sourceDocumentId": "doc-comm-01",
+            "engineId": "eng-comm-transport",
+            "label": "Communication Transport",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#06b6d4",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-ops05-safety",
+            "sourceDocumentId": "doc-sec-01",
+            "engineId": "eng-sec-safety-policy",
+            "label": "Safety Policy Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ef4444",
+                "borderStyle": "dashed"
+            }
+        }
+    ],
+    "crossReferences": [
+        {
+            "canonicalEngineId": "eng-ops-mission-execution",
+            "localNodeId": "node-ops05-lifecycle",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-ops-02",
+                    "nodeId": "node-ops02-executor"
+                },
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-ops"
+                }
+            ]
+        },
+        {
+            "canonicalEngineId": "eng-ops-mission-monitoring",
+            "localNodeId": "node-ops05-monitor",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-ops-02",
+                    "nodeId": "node-ops02-monitor"
+                },
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-ops"
+                }
+            ]
+        },
+        {
+            "canonicalEngineId": "eng-ops-command-control",
+            "localNodeId": "node-ops05-cmd-backbone",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-ops-02",
+                    "nodeId": "node-ops02-cmd-control"
+                },
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-ops"
+                }
+            ]
+        },
+        {
+            "canonicalEngineId": "eng-ops-unified",
+            "localNodeId": "node-ops05-operator",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-ops-01",
+                    "nodeId": "node-ops01-dashboard"
+                },
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-ops"
+                }
+            ]
+        }
+    ],
+    "requirementsCoverage": [
+        {
+            "requirementId": "req-GA-01",
+            "description": "The system shall provide an integrated ground control station supporting the complete mission lifecycle from planning through execution and post-mission analysis.",
+            "coveredByNodes": [
+                "node-ops05-lifecycle",
+                "node-ops05-monitor",
+                "node-ops05-cmd-backbone",
+                "node-ops05-operator"
+            ],
+            "coveredByEdges": [
+                "edge-ops05-ext-plan-to-lc",
+                "edge-ops05-lc-to-cmd",
+                "edge-ops05-cmd-to-transport",
+                "edge-ops05-monitor-to-lc",
+                "edge-ops05-lc-to-operator"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "demonstration",
+            "notes": "Integration view demonstrates the complete lifecycle pipeline from planning input through command dispatch to vehicle and closed-loop monitoring feedback."
+        },
+        {
+            "requirementId": "req-GA-03",
+            "description": "The system shall maintain operator situational awareness through real-time status displays and timely alerting across all operational phases.",
+            "coveredByNodes": [
+                "node-ops05-operator",
+                "node-ops05-monitor"
+            ],
+            "coveredByEdges": [
+                "edge-ops05-lc-to-operator",
+                "edge-ops05-monitor-to-operator",
+                "edge-ops05-bus-to-operator"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "demonstration",
+            "notes": "Unified Operator Surface aggregates lifecycle state, progress metrics, and cross-subsystem events into a single real-time display."
+        },
+        {
+            "requirementId": "req-GA-07",
+            "description": "The system shall enforce safety validation at all mission lifecycle stages and prevent unsafe mission execution.",
+            "coveredByNodes": [
+                "node-ops05-cmd-backbone",
+                "node-ops05-lifecycle"
+            ],
+            "coveredByEdges": [
+                "edge-ops05-ext-preflight-to-lc",
+                "edge-ops05-cmd-to-validation-request",
+                "edge-ops05-ext-validation-to-cmd",
+                "edge-ops05-safety-to-all"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "The integration view separates preflight clearance before mission arming, per-command validation request/verdict exchange, and independent Safety Policy constraints applied by the Command Backbone."
+        },
+        {
+            "requirementId": "req-GA-10",
+            "description": "The system shall ensure vehicle readiness through automated checks before every mission execution.",
+            "coveredByNodes": [
+                "node-ops05-lifecycle"
+            ],
+            "coveredByEdges": [
+                "edge-ops05-ext-preflight-to-lc",
+                "edge-ops05-ext-plan-to-lc"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Lifecycle Orchestrator gates execution on both validated plan and preflight clearance, ensuring no mission proceeds without verified readiness."
+        },
+        {
+            "requirementId": "req-GA-11",
+            "description": "The system shall maintain vehicle safety during communication link degradation and loss through automatic recovery procedures.",
+            "coveredByNodes": [
+                "node-ops05-monitor",
+                "node-ops05-cmd-backbone"
+            ],
+            "coveredByEdges": [
+                "edge-ops05-monitor-to-recovery",
+                "edge-ops05-ext-recovery-to-cmd",
+                "edge-ops05-ext-recovery-to-lc"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Integration view shows the complete recovery loop: monitoring detects link loss, triggers recovery engine, which dispatches recovery commands through the command backbone."
+        },
+        {
+            "requirementId": "req-GA-12",
+            "description": "The system shall support closed-loop mission execution with real-time monitoring, deviation detection, and automatic replanning or recovery.",
+            "coveredByNodes": [
+                "node-ops05-lifecycle",
+                "node-ops05-monitor"
+            ],
+            "coveredByEdges": [
+                "edge-ops05-lc-to-monitor",
+                "edge-ops05-monitor-to-lc",
+                "edge-ops05-monitor-to-recovery"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Integration view explicitly shows the closed-loop feedback path between the Lifecycle Orchestrator and Monitoring Engine, with recovery escalation on critical deviations."
+        },
+        {
+            "requirementId": "req-GA-14",
+            "description": "The system shall provide a single command dispatch path ensuring all vehicle commands are validated, prioritized, and tracked regardless of source.",
+            "coveredByNodes": [
+                "node-ops05-cmd-backbone"
+            ],
+            "coveredByEdges": [
+                "edge-ops05-lc-to-cmd",
+                "edge-ops05-ext-manual-to-cmd",
+                "edge-ops05-ext-recovery-to-cmd",
+                "edge-ops05-task-coord-to-cmd",
+                "edge-ops05-cmd-to-validation-request",
+                "edge-ops05-ext-validation-to-cmd",
+                "edge-ops05-cmd-to-transport",
+                "edge-ops05-cmd-tracking-to-operator"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "analysis",
+            "notes": "The integration view shows automated, manual, recovery, and task-assignment command sources entering one backbone; candidate commands are submitted for validation, approved commands are dispatched through Communications, and dispatch tracking is returned to the operator surface."
+        }
+    ],
+    "assumptions": [
+        {
+            "id": "AS-077",
+            "description": "The four Operations documents (ops-01 through ops-04) collectively cover all 17 Operations engines; this integration document (ops-05) provides the cross-cutting lifecycle view without duplicating internal engine architectures.",
+            "rationale": "Separating internal architecture from integration architecture avoids redundancy while providing both detailed and holistic views."
+        },
+        {
+            "id": "AS-078",
+            "description": "The closed-loop monitoring-to-execution feedback cycle operates at a configurable rate (default 1 Hz) with bounded latency to ensure timely deviation response.",
+            "rationale": "The feedback loop must be fast enough to detect and respond to deviations before they become safety-critical."
+        },
+        {
+            "id": "AS-079",
+            "description": "The Command Backbone enforces a strict priority hierarchy: emergency recovery > manual override > automated mission commands, with preemption of lower-priority commands when higher-priority commands arrive.",
+            "rationale": "Safety-critical commands must always take precedence over routine mission commands."
+        },
+        {
+            "id": "AS-080",
+            "description": "The Unified Operator Surface is the sole human-machine interface for all operational functions; no operational commands bypass the dashboard and API Gateway.",
+            "rationale": "A single operator surface ensures consistent authentication, authorization, audit logging, and situational awareness."
+        },
+        {
+            "id": "AS-081",
+            "description": "Every candidate command is correlated with its validation verdict using a stable command or request identifier before dispatch.",
+            "rationale": "The integration diagram models request and verdict as separate edges; correlation and stale-verdict rejection are required to prevent one command from being approved using another command's result."
+        }
+    ],
+    "unresolvedDecisions": [
+        {
+            "id": "UD-078",
+            "description": "Whether the integration lifecycle pipeline supports concurrent multi-mission execution (multiple missions active simultaneously on different vehicle groups) or only sequential single-mission execution.",
+            "impact": "Affects Lifecycle Orchestrator state machine complexity and Command Backbone queuing architecture.",
+            "owner": "Operations Architecture"
+        },
+        {
+            "id": "UD-079",
+            "description": "Cross-subsystem event propagation latency budget: the maximum acceptable delay from event generation in any subsystem to display on the Unified Operator Surface.",
+            "impact": "Affects Event Bus configuration, dashboard update rate, and operator situational awareness timeliness.",
+            "owner": "Platform Architecture"
+        },
+        {
+            "id": "UD-080",
+            "description": "Whether the Command Backbone supports command batching for bandwidth-constrained links or requires individual command dispatch with per-command acknowledgment.",
+            "impact": "Affects command throughput on low-bandwidth links and Command Tracking Engine complexity.",
+            "owner": "Communications Architecture"
+        },
+        {
+            "id": "UD-081",
+            "description": "Define the command-validation transaction contract, including correlation identifiers, verdict expiry, timeout behavior, rejection reason propagation, and revalidation after command mutation.",
+            "impact": "Affects safe dispatch gating, command queue behavior, retry semantics, and auditability.",
+            "owner": "Operations Architecture"
+        }
+    ],
+    "metadata": {
+        "status": "draft",
+        "revision": 2,
+        "createdDate": "2025-01-17",
+        "lastModified": "2026-10-31"
+    }
+}

@@ -1,0 +1,1302 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-ops-03",
+  "title": "Vehicle Configuration, Preflight, Health Assessment & Navigation Geospatial Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of four Operations subsystem engines supporting vehicle readiness and geospatial operations: Vehicle Configuration (eng-ops-vehicle-config) for managing vehicle profiles, parameter sets, payload assignments, and calibration data; Preflight (eng-ops-preflight) for automated pre-mission readiness checks and go/no-go gating; Health Assessment (eng-ops-health-assessment) for real-time and pre-mission vehicle health evaluation, degradation tracking, and maintenance alerting; and Navigation Geospatial (eng-ops-nav-geospatial) for coordinate reference management, datum transforms, waypoint validation, and operational geospatial calculations. Details the readiness pipeline from configuration through health assessment to preflight clearance, and the geospatial services supporting all operations functions.",
+  "category": "ops",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1400,
+    "height": 950,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-ops03-readiness",
+      "label": "Vehicle Readiness Pipeline",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-ops03-vehicle-config",
+        "node-ops03-health",
+        "node-ops03-preflight"
+      ],
+      "style": {
+        "backgroundColor": "rgba(139, 92, 246, 0.05)",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-ops03-geospatial",
+      "label": "Geospatial Services",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-ops03-nav-geo"
+      ],
+      "style": {
+        "backgroundColor": "rgba(16, 185, 129, 0.05)",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-ops03-vehicle-config",
+      "label": "Vehicle Configuration Manager",
+      "type": "component",
+      "engineId": "eng-ops-vehicle-config",
+      "description": "Manages vehicle-specific configuration profiles including flight/drive parameters, payload assignments, sensor calibrations, communication settings, and operational limits. Maintains a library of configuration templates per vehicle type sourced from the Vehicle Registry, and supports per-vehicle customization with version tracking. Provides configuration data to the Preflight Engine for parameter verification, to the Health Assessment Engine for baseline thresholds, and to the Navigation Geospatial Engine for vehicle-specific navigation parameters. Publishes configuration change events for audit and cross-subsystem awareness.",
+      "position": {
+        "x": 80,
+        "y": 120
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "sliders"
+      },
+      "ports": [
+        {
+          "id": "port-ops03-vc-in-templates",
+          "label": "Vehicle Type Templates",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops03-vc-in-operator",
+          "label": "Operator Config Changes",
+          "direction": "in",
+          "dataType": "command",
+          "position": "top"
+        },
+        {
+          "id": "port-ops03-vc-out-config",
+          "label": "Active Configuration",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops03-vc-out-nav-params",
+          "label": "Nav Parameters",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops03-vc-out-status",
+          "label": "Config Status",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops03-vc-out-events",
+          "label": "Config Change Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops03-health",
+      "label": "Health Assessment Engine",
+      "type": "component",
+      "engineId": "eng-ops-health-assessment",
+      "description": "Evaluates vehicle health status in real time and during pre-mission checks by comparing live telemetry against configured baselines and degradation models. Monitors subsystem health indicators (battery, motors, sensors, communication links, structural integrity), computes aggregate health scores, and tracks degradation trends over time. Produces health verdicts (nominal, degraded, critical, failed) consumed by the Preflight Engine for go/no-go decisions. Publishes health alerts to the Core Event Bus when degradation exceeds thresholds and provides health dashboards to the Unified Dashboard for operator awareness.",
+      "position": {
+        "x": 80,
+        "y": 460
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "heartbeat"
+      },
+      "ports": [
+        {
+          "id": "port-ops03-ha-in-telemetry",
+          "label": "Vehicle Telemetry",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops03-ha-in-config",
+          "label": "Health Baselines",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops03-ha-in-safety",
+          "label": "Health Thresholds",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-ops03-ha-out-assessment",
+          "label": "Health Verdict",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops03-ha-out-status",
+          "label": "Health Status",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops03-ha-out-alerts",
+          "label": "Health Alerts",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops03-preflight",
+      "label": "Preflight Check Engine",
+      "type": "component",
+      "engineId": "eng-ops-preflight",
+      "description": "Automated pre-mission readiness verification engine that executes a comprehensive checklist before mission execution is permitted. Aggregates inputs from Vehicle Configuration (parameter verification), Health Assessment (system readiness), Navigation Geospatial (home position, waypoint reachability), and Safety Policy (operational limits) to produce a unified go/no-go verdict. Supports configurable checklist profiles per vehicle type and mission class, mandatory vs. advisory check items, and operator override with audit logging for advisory failures. The preflight gate is a hard prerequisite for mission arming in the Mission Execution Engine.",
+      "position": {
+        "x": 480,
+        "y": 280
+      },
+      "size": {
+        "width": 270,
+        "height": 210
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "clipboard-list"
+      },
+      "ports": [
+        {
+          "id": "port-ops03-pf-in-config",
+          "label": "Vehicle Config",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops03-pf-in-health",
+          "label": "Health Verdict",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops03-pf-in-nav",
+          "label": "Nav Readiness",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops03-pf-in-safety",
+          "label": "Safety Rules",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-ops03-pf-in-trigger",
+          "label": "Preflight Trigger",
+          "direction": "in",
+          "dataType": "command",
+          "position": "top"
+        },
+        {
+          "id": "port-ops03-pf-out-result",
+          "label": "Go/No-Go Verdict",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops03-pf-out-status",
+          "label": "Preflight Status",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops03-pf-out-events",
+          "label": "Preflight Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops03-nav-geo",
+      "label": "Navigation Geospatial Engine",
+      "type": "component",
+      "engineId": "eng-ops-nav-geospatial",
+      "description": "Provides geospatial computation services for the Operations subsystem including coordinate reference system management, datum transformations, waypoint coordinate validation, distance and bearing calculations, and home position verification. Ensures all operational coordinates are consistently referenced and transformed between vehicle-native, map-display, and planning coordinate frames. Validates waypoint reachability against vehicle range and terrain during preflight. Supplies geospatial reference data to the COP subsystem for display alignment and to the Planning subsystem for coordinate consistency.",
+      "position": {
+        "x": 480,
+        "y": 620
+      },
+      "size": {
+        "width": 260,
+        "height": 190
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "globe"
+      },
+      "ports": [
+        {
+          "id": "port-ops03-ng-in-params",
+          "label": "Nav Parameters",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops03-ng-in-geo-ref",
+          "label": "Geospatial Reference",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops03-ng-out-readiness",
+          "label": "Nav Readiness",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops03-ng-out-status",
+          "label": "Nav Status",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-ops03-vc-to-pf",
+      "source": "node-ops03-vehicle-config",
+      "target": "node-ops03-preflight",
+      "sourcePort": "port-ops03-vc-out-config",
+      "targetPort": "port-ops03-pf-in-config",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Active Configuration",
+        "description": "Vehicle Configuration Manager provides the active vehicle configuration profile to the Preflight Engine for parameter verification and completeness checking.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-01",
+          "req-2.13-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops03-vc-to-ha",
+      "source": "node-ops03-vehicle-config",
+      "target": "node-ops03-health",
+      "sourcePort": "port-ops03-vc-out-config",
+      "targetPort": "port-ops03-ha-in-config",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Health Baselines",
+        "description": "Vehicle Configuration Manager provides health baseline parameters (nominal ranges, degradation thresholds) to the Health Assessment Engine for telemetry comparison.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-01",
+          "req-2.14-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops03-vc-to-ng",
+      "source": "node-ops03-vehicle-config",
+      "target": "node-ops03-nav-geo",
+      "sourcePort": "port-ops03-vc-out-nav-params",
+      "targetPort": "port-ops03-ng-in-params",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Navigation Parameters",
+        "description": "Vehicle Configuration Manager provides vehicle-specific navigation parameters (preferred datum, coordinate frame, GPS antenna offset) to the Navigation Geospatial Engine.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-01",
+          "req-2.15-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops03-ha-to-pf",
+      "source": "node-ops03-health",
+      "target": "node-ops03-preflight",
+      "sourcePort": "port-ops03-ha-out-assessment",
+      "targetPort": "port-ops03-pf-in-health",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Health Verdict",
+        "description": "Health Assessment Engine provides the aggregate vehicle health verdict (nominal, degraded, critical) to the Preflight Engine as a mandatory readiness input.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-01",
+          "req-GA-10"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops03-ng-to-pf",
+      "source": "node-ops03-nav-geo",
+      "target": "node-ops03-preflight",
+      "sourcePort": "port-ops03-ng-out-readiness",
+      "targetPort": "port-ops03-pf-in-nav",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Navigation Readiness",
+        "description": "Navigation Geospatial Engine provides navigation readiness status (GPS lock quality, home position validity, waypoint coordinate consistency) to the Preflight Engine.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-01",
+          "req-2.15-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops03-registry-to-vc",
+      "source": "ext-ops03-registry",
+      "target": "node-ops03-vehicle-config",
+      "sourcePort": null,
+      "targetPort": "port-ops03-vc-in-templates",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle Type Templates",
+        "description": "Core Vehicle Registry provides vehicle type definitions, capability templates, and default configuration profiles to the Vehicle Configuration Manager for per-vehicle customization.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-01",
+          "req-2.12-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-state-to-ha",
+      "source": "ext-ops03-vehicle-state",
+      "target": "node-ops03-health",
+      "sourcePort": null,
+      "targetPort": "port-ops03-ha-in-telemetry",
+      "semantic": {
+        "type": "telemetry",
+        "label": "Vehicle Telemetry",
+        "description": "Vehicle State Store provides real-time subsystem telemetry (battery voltage, motor temperatures, sensor status, link quality) to the Health Assessment Engine for continuous health evaluation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.14-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-safety-to-pf",
+      "source": "ext-ops03-safety",
+      "target": "node-ops03-preflight",
+      "sourcePort": null,
+      "targetPort": "port-ops03-pf-in-safety",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Safety Policy Rules",
+        "description": "Safety Policy Engine provides operational safety rules and mandatory preflight requirements to the Preflight Engine for hard-constraint enforcement during readiness checks.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-01",
+          "req-GA-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-safety-to-ha",
+      "source": "ext-ops03-safety",
+      "target": "node-ops03-health",
+      "sourcePort": null,
+      "targetPort": "port-ops03-ha-in-safety",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Health Thresholds",
+        "description": "Safety Policy Engine provides health degradation thresholds and minimum operational limits to the Health Assessment Engine for safety-bounded health evaluation.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.14-02",
+          "req-GA-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-exec-to-pf",
+      "source": "ext-ops03-executor",
+      "target": "node-ops03-preflight",
+      "sourcePort": null,
+      "targetPort": "port-ops03-pf-in-trigger",
+      "semantic": {
+        "type": "command",
+        "label": "Preflight Trigger",
+        "description": "Mission Execution Engine triggers the preflight check sequence before transitioning a mission from armed to executing state, requesting a go/no-go verdict.",
+        "protocol": null,
+        "dataType": "command",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-01",
+          "req-GA-10"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-pf-to-exec",
+      "source": "node-ops03-preflight",
+      "target": "ext-ops03-executor",
+      "sourcePort": "port-ops03-pf-out-result",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Go/No-Go Verdict",
+        "description": "Preflight Engine returns the aggregated go/no-go verdict to Mission Execution. A go verdict authorizes the executor to proceed with its mission-arming transition; a no-go verdict blocks execution and includes failed mandatory checks. The verdict is a gate result, not an autonomous arm command.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-02",
+          "req-GA-07",
+          "req-GA-10"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-cop-to-ng",
+      "source": "ext-ops03-cop-core",
+      "target": "node-ops03-nav-geo",
+      "sourcePort": null,
+      "targetPort": "port-ops03-ng-in-geo-ref",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Geospatial Reference Data",
+        "description": "COP Core provides geospatial reference data (active CRS, map datum, projection parameters) to the Navigation Geospatial Engine for coordinate alignment between operations and display.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.15-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-pf-to-dash",
+      "source": "node-ops03-preflight",
+      "target": "ext-ops03-dashboard",
+      "sourcePort": "port-ops03-pf-out-status",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Preflight Status",
+        "description": "Preflight Engine provides real-time preflight checklist status (individual check results, overall readiness) to the Unified Dashboard for operator review.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-ha-to-dash",
+      "source": "node-ops03-health",
+      "target": "ext-ops03-dashboard",
+      "sourcePort": "port-ops03-ha-out-status",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Health Status",
+        "description": "Health Assessment Engine provides real-time vehicle health status (subsystem scores, degradation trends, maintenance indicators) to the Unified Dashboard for operator awareness.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.14-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-vc-to-dash",
+      "source": "node-ops03-vehicle-config",
+      "target": "ext-ops03-dashboard",
+      "sourcePort": "port-ops03-vc-out-status",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Configuration Status",
+        "description": "Vehicle Configuration Manager provides active configuration profile status and change notifications to the Unified Dashboard for operator configuration awareness.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-ng-to-dash",
+      "source": "node-ops03-nav-geo",
+      "target": "ext-ops03-dashboard",
+      "sourcePort": "port-ops03-ng-out-status",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Navigation Status",
+        "description": "Navigation Geospatial Engine provides navigation readiness status (GPS quality, coordinate consistency, datum alignment) to the Unified Dashboard for operator situational awareness.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-ha-to-bus",
+      "source": "node-ops03-health",
+      "target": "ext-ops03-event-bus",
+      "sourcePort": "port-ops03-ha-out-alerts",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Health Alerts",
+        "description": "Health Assessment Engine publishes health degradation alerts and critical subsystem warnings to the Core Event Bus for cross-subsystem awareness and operator notification.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.14-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-pf-to-bus",
+      "source": "node-ops03-preflight",
+      "target": "ext-ops03-event-bus",
+      "sourcePort": "port-ops03-pf-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Preflight Events",
+        "description": "Preflight Engine publishes preflight outcome events (passed, failed, overridden) with detailed check results to the Core Event Bus for audit logging.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops03-vc-to-bus",
+      "source": "node-ops03-vehicle-config",
+      "target": "ext-ops03-event-bus",
+      "sourcePort": "port-ops03-vc-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Config Change Events",
+        "description": "Vehicle Configuration Manager publishes configuration change events (profile loaded, parameter modified, payload reassigned) to the Core Event Bus for audit trail and cross-subsystem synchronization.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "ext-ops03-registry",
+      "sourceDocumentId": "doc-core-01",
+      "engineId": "eng-core-vehicle-registry",
+      "label": "Vehicle Registry",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops03-vehicle-state",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-vehicle-state",
+      "label": "Vehicle State Store",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops03-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops03-executor",
+      "sourceDocumentId": "doc-ops-02",
+      "engineId": "eng-ops-mission-execution",
+      "label": "Mission Execution Engine",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#8b5cf6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops03-dashboard",
+      "sourceDocumentId": "doc-ops-01",
+      "engineId": "eng-ops-unified",
+      "label": "Unified Operations Dashboard",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops03-safety",
+      "sourceDocumentId": "doc-sec-01",
+      "engineId": "eng-sec-safety-policy",
+      "label": "Safety Policy Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#ef4444",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops03-cop-core",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-core",
+      "label": "COP Core",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-ops-vehicle-config",
+      "localNodeId": "node-ops03-vehicle-config",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-preflight",
+      "localNodeId": "node-ops03-preflight",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-health-assessment",
+      "localNodeId": "node-ops03-health",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-nav-geospatial",
+      "localNodeId": "node-ops03-nav-geo",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.12-01",
+      "description": "The system shall manage vehicle configuration profiles including flight/drive parameters, payload assignments, sensor calibrations, and operational limits per vehicle.",
+      "coveredByNodes": [
+        "node-ops03-vehicle-config"
+      ],
+      "coveredByEdges": [
+        "edge-ops03-registry-to-vc",
+        "edge-ops03-vc-to-pf",
+        "edge-ops03-vc-to-ha",
+        "edge-ops03-vc-to-ng"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Vehicle Configuration Manager maintains per-vehicle profiles sourced from registry templates and distributes configuration to all readiness engines."
+    },
+    {
+      "requirementId": "req-2.12-02",
+      "description": "The system shall support configuration templates per vehicle type with per-vehicle customization and version tracking.",
+      "coveredByNodes": [
+        "node-ops03-vehicle-config"
+      ],
+      "coveredByEdges": [
+        "edge-ops03-registry-to-vc",
+        "edge-ops03-vc-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Configuration Manager ingests type templates from the Vehicle Registry and publishes change events for version tracking."
+    },
+    {
+      "requirementId": "req-2.13-01",
+      "description": "The system shall automate preflight readiness checks covering vehicle configuration, subsystem health, navigation readiness, and safety compliance.",
+      "coveredByNodes": [
+        "node-ops03-preflight"
+      ],
+      "coveredByEdges": [
+        "edge-ops03-vc-to-pf",
+        "edge-ops03-ha-to-pf",
+        "edge-ops03-ng-to-pf",
+        "edge-ops03-safety-to-pf",
+        "edge-ops03-exec-to-pf"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Preflight Engine aggregates readiness inputs from all four check dimensions before producing a unified verdict."
+    },
+    {
+      "requirementId": "req-2.13-02",
+      "description": "The system shall enforce a preflight go/no-go gate preventing mission execution when mandatory checks fail, with operator override for advisory items only.",
+      "coveredByNodes": [
+        "node-ops03-preflight"
+      ],
+      "coveredByEdges": [
+        "edge-ops03-pf-to-exec",
+        "edge-ops03-pf-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Preflight verdict gates mission arming in the Execution Engine; override events are published to the Event Bus for audit."
+    },
+    {
+      "requirementId": "req-2.14-01",
+      "description": "The system shall assess vehicle health in real time by comparing subsystem telemetry against configured baselines and producing aggregate health scores.",
+      "coveredByNodes": [
+        "node-ops03-health"
+      ],
+      "coveredByEdges": [
+        "edge-ops03-state-to-ha",
+        "edge-ops03-vc-to-ha",
+        "edge-ops03-ha-to-dash"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Health Assessment Engine ingests live telemetry and configuration baselines to compute real-time health scores displayed on the dashboard."
+    },
+    {
+      "requirementId": "req-2.14-02",
+      "description": "The system shall track health degradation trends over time and generate maintenance alerts when degradation exceeds configurable thresholds.",
+      "coveredByNodes": [
+        "node-ops03-health"
+      ],
+      "coveredByEdges": [
+        "edge-ops03-safety-to-ha",
+        "edge-ops03-ha-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Health Engine applies safety-defined thresholds to degradation trends and publishes alerts to the Event Bus for maintenance notification."
+    },
+    {
+      "requirementId": "req-2.15-01",
+      "description": "The system shall manage coordinate reference systems and datum transformations for all operational geospatial data, ensuring consistency across subsystems.",
+      "coveredByNodes": [
+        "node-ops03-nav-geo"
+      ],
+      "coveredByEdges": [
+        "edge-ops03-cop-to-ng",
+        "edge-ops03-vc-to-ng"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Navigation Geospatial Engine ingests reference data from COP and vehicle-specific nav parameters to maintain consistent coordinate frames."
+    },
+    {
+      "requirementId": "req-2.15-02",
+      "description": "The system shall validate waypoint coordinates and home position during preflight, verifying reachability and coordinate consistency.",
+      "coveredByNodes": [
+        "node-ops03-nav-geo"
+      ],
+      "coveredByEdges": [
+        "edge-ops03-ng-to-pf"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Navigation Geospatial Engine validates coordinates and feeds readiness status to the Preflight Engine for go/no-go evaluation."
+    },
+    {
+      "requirementId": "req-GA-07",
+      "description": "The system shall enforce safety validation at all mission lifecycle stages and prevent unsafe mission execution.",
+      "coveredByNodes": [
+        "node-ops03-preflight",
+        "node-ops03-health"
+      ],
+      "coveredByEdges": [
+        "edge-ops03-safety-to-pf",
+        "edge-ops03-safety-to-ha",
+        "edge-ops03-pf-to-exec"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Preflight and health safety enforcement covered here; full lifecycle safety spans ops-01, ops-02, and sec subsystems."
+    },
+    {
+      "requirementId": "req-GA-10",
+      "description": "The system shall ensure vehicle readiness through automated checks before every mission execution.",
+      "coveredByNodes": [
+        "node-ops03-preflight",
+        "node-ops03-health",
+        "node-ops03-vehicle-config"
+      ],
+      "coveredByEdges": [
+        "edge-ops03-exec-to-pf",
+        "edge-ops03-pf-to-exec",
+        "edge-ops03-ha-to-pf"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "The complete readiness pipeline (config → health → preflight → executor gate) ensures no mission executes without verified readiness."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-069",
+      "description": "Vehicle configuration profiles are loaded at system startup and can be hot-swapped during operation only when the vehicle is in a safe state (landed, disarmed).",
+      "rationale": "Mid-flight configuration changes could destabilize vehicle control parameters and violate safety constraints."
+    },
+    {
+      "id": "AS-070",
+      "description": "Health assessment baselines are derived from vehicle configuration data and can be adjusted per-vehicle to account for individual platform aging and wear.",
+      "rationale": "Identical vehicle types may have different health baselines due to operational history and maintenance status."
+    },
+    {
+      "id": "AS-071",
+      "description": "The preflight check sequence executes synchronously and must complete within a configurable time budget (default 30 seconds) before the mission arming timeout expires.",
+      "rationale": "Excessively long preflight checks would delay time-critical mission launches and frustrate operators."
+    },
+    {
+      "id": "AS-072",
+      "description": "Navigation geospatial transformations use standard geodetic libraries and support at minimum WGS-84 and the locally configured national datum.",
+      "rationale": "WGS-84 is the GPS standard; national datums are required for regulatory compliance in many jurisdictions."
+    },
+    {
+      "id": "AS-073",
+      "description": "Waypoint reachability validation requiring terrain, obstacle, or vehicle-range inputs consumes those services through Planning/COP integration boundaries; these inputs are not expanded in this subsystem diagram.",
+      "rationale": "The engine description includes reachability validation, while the depicted connections focus on coordinate references and vehicle-specific navigation parameters."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-070",
+      "description": "Whether preflight check results are cached for a configurable window to allow rapid re-arming after brief mission pauses without full re-check.",
+      "impact": "Affects mission re-launch latency vs. safety assurance freshness.",
+      "owner": "Safety Architecture"
+    },
+    {
+      "id": "UD-071",
+      "description": "Health degradation model complexity: simple threshold-based, statistical trend analysis, or predictive ML model per subsystem.",
+      "impact": "Affects health assessment accuracy, computational cost, and calibration data requirements.",
+      "owner": "Vehicle Integration Architecture"
+    },
+    {
+      "id": "UD-072",
+      "description": "Coordinate reference system auto-detection vs. mandatory manual configuration per operational area.",
+      "impact": "Affects operator configuration burden and risk of datum mismatch errors.",
+      "owner": "Operations Lead"
+    },
+    {
+      "id": "UD-073",
+      "description": "Whether the preflight engine supports incremental checks (only re-checking items affected by configuration changes) or always performs a full checklist.",
+      "impact": "Affects preflight execution time and implementation complexity.",
+      "owner": "Operations Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-17",
+    "lastModified": "2026-10-31"
+  }
+}

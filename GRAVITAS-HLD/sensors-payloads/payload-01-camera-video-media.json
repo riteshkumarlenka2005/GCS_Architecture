@@ -1,0 +1,1830 @@
+{
+    "schemaVersion": "1.0.0",
+    "documentId": "doc-payload-01",
+    "title": "Payload Management, Camera, Gimbal, Streaming, Recording, Storage, Telemetry, Metadata & Review",
+    "diagramType": "subsystem-architecture",
+    "description": "Complete payload subsystem architecture covering payload lifecycle management, camera and gimbal control, video streaming and recording pipelines, media storage and metadata indexing, payload telemetry reporting, and post-mission media review.",
+    "category": "payload",
+    "coordinateSystem": {
+        "type": "cartesian",
+        "origin": "top-left",
+        "unit": "px"
+    },
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "width": 1400,
+        "height": 800,
+        "zoom": 1.0
+    },
+    "groups": [
+        {
+            "groupId": "grp-p01-capture",
+            "label": "Capture Pipeline",
+            "description": "Real-time camera acquisition, gimbal stabilization, video encoding, streaming, and recording",
+            "style": {
+                "fill": "#f43f5e18",
+                "stroke": "#f43f5e",
+                "strokeWidth": 1,
+                "dash": "dashed",
+                "cornerRadius": 8
+            },
+            "nodeIds": [
+                "node-p01-camera-gimbal",
+                "node-p01-video-recording"
+            ]
+        },
+        {
+            "groupId": "grp-p01-data-lifecycle",
+            "label": "Data Lifecycle & Control",
+            "description": "Payload orchestration, media storage, metadata indexing, telemetry reporting, and post-mission review",
+            "style": {
+                "fill": "#f43f5e10",
+                "stroke": "#e11d48",
+                "strokeWidth": 1,
+                "dash": "dotted",
+                "cornerRadius": 8
+            },
+            "nodeIds": [
+                "node-p01-manager",
+                "node-p01-storage-metadata",
+                "node-p01-telemetry-review"
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "nodeId": "node-p01-manager",
+            "label": "Payload Manager",
+            "type": "component",
+            "description": "Central payload lifecycle orchestrator. Manages payload discovery, configuration, health monitoring, and mode transitions. Coordinates camera, gimbal, streaming, and recording subsystems. Exposes unified payload status to operations and accepts operator commands for payload configuration and mission-specific profiles.",
+            "position": {
+                "x": 80,
+                "y": 280
+            },
+            "size": {
+                "width": 280,
+                "height": 200
+            },
+            "style": {
+                "fill": "#f43f5e",
+                "stroke": "#be123c",
+                "strokeWidth": 2,
+                "cornerRadius": 6,
+                "icon": "settings"
+            },
+            "engines": [
+                "eng-payload-management"
+            ],
+            "ports": [
+                {
+                    "portId": "port-p01-mgr-in-ops-cmd",
+                    "label": "Operator Cmd",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left",
+                    "offset": 0.2
+                },
+                {
+                    "portId": "port-p01-mgr-in-vehicle-cfg",
+                    "label": "Vehicle Config",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.5
+                },
+                {
+                    "portId": "port-p01-mgr-in-sensor-status",
+                    "label": "Sensor Status",
+                    "direction": "in",
+                    "dataType": "telemetry",
+                    "position": "left",
+                    "offset": 0.8
+                },
+                {
+                    "portId": "port-p01-mgr-in-storage-status",
+                    "label": "Storage Status",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "bottom",
+                    "offset": 0.3
+                },
+                {
+                    "portId": "port-p01-mgr-in-health-summary",
+                    "label": "Health Summary",
+                    "direction": "in",
+                    "dataType": "telemetry",
+                    "position": "bottom",
+                    "offset": 0.7
+                },
+                {
+                    "portId": "port-p01-mgr-out-payload-cfg",
+                    "label": "Payload Config",
+                    "direction": "out",
+                    "dataType": "command",
+                    "position": "right",
+                    "offset": 0.2
+                },
+                {
+                    "portId": "port-p01-mgr-out-stream-cfg",
+                    "label": "Stream Config",
+                    "direction": "out",
+                    "dataType": "command",
+                    "position": "right",
+                    "offset": 0.5
+                },
+                {
+                    "portId": "port-p01-mgr-out-storage-policy",
+                    "label": "Storage Policy",
+                    "direction": "out",
+                    "dataType": "command",
+                    "position": "right",
+                    "offset": 0.85
+                },
+                {
+                    "portId": "port-p01-mgr-out-payload-status",
+                    "label": "Payload Status",
+                    "direction": "out",
+                    "dataType": "telemetry",
+                    "position": "top",
+                    "offset": 0.5
+                },
+                {
+                    "portId": "port-p01-mgr-out-recording-cmd",
+                    "label": "Recording Cmd",
+                    "direction": "out",
+                    "dataType": "command",
+                    "position": "right",
+                    "offset": 0.65
+                }
+            ]
+        },
+        {
+            "nodeId": "node-p01-camera-gimbal",
+            "label": "Camera & Gimbal Controller",
+            "type": "component",
+            "description": "Unified camera and gimbal control engine. Manages camera parameters (zoom, focus, exposure, white balance, capture modes), triggers still and burst captures, controls gimbal stabilization and pointing (autonomous tracking, waypoint-oriented, manual joystick), and handles smooth mode handoff between autonomous and manual control. Capture and gimbal outputs should carry sensor/payload identity, synchronized timestamps, coordinate-frame identifiers, calibration version, and capture configuration so downstream geolocation and review are reproducible.",
+            "position": {
+                "x": 480,
+                "y": 80
+            },
+            "size": {
+                "width": 300,
+                "height": 220
+            },
+            "style": {
+                "fill": "#f43f5e",
+                "stroke": "#be123c",
+                "strokeWidth": 2,
+                "cornerRadius": 6,
+                "icon": "camera"
+            },
+            "engines": [
+                "eng-payload-camera",
+                "eng-payload-gimbal"
+            ],
+            "ports": [
+                {
+                    "portId": "port-p01-camgim-in-payload-cfg",
+                    "label": "Payload Config",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left",
+                    "offset": 0.15
+                },
+                {
+                    "portId": "port-p01-camgim-in-manual-ctrl",
+                    "label": "Manual Control",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left",
+                    "offset": 0.4
+                },
+                {
+                    "portId": "port-p01-camgim-in-vehicle-att",
+                    "label": "Vehicle Attitude",
+                    "direction": "in",
+                    "dataType": "telemetry",
+                    "position": "left",
+                    "offset": 0.65
+                },
+                {
+                    "portId": "port-p01-camgim-in-track-target",
+                    "label": "Track Target",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left",
+                    "offset": 0.9
+                },
+                {
+                    "portId": "port-p01-camgim-out-frames",
+                    "label": "Camera Frames",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right",
+                    "offset": 0.2
+                },
+                {
+                    "portId": "port-p01-camgim-out-gimbal-tlm",
+                    "label": "Gimbal Telemetry",
+                    "direction": "out",
+                    "dataType": "telemetry",
+                    "position": "right",
+                    "offset": 0.5
+                },
+                {
+                    "portId": "port-p01-camgim-out-capture-evt",
+                    "label": "Capture Events",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "right",
+                    "offset": 0.8
+                },
+                {
+                    "portId": "port-p01-camgim-out-gimbal-state",
+                    "label": "Gimbal State",
+                    "direction": "out",
+                    "dataType": "telemetry",
+                    "position": "bottom",
+                    "offset": 0.5
+                }
+            ]
+        },
+        {
+            "nodeId": "node-p01-video-recording",
+            "label": "Video & Recording Pipeline",
+            "type": "component",
+            "description": "Video encoding, adaptive-bitrate streaming, and recording engine. Encodes camera frames into configurable codec/container, manages adaptive bitrate based on link quality, streams video to GCS via transport layer, and records to local and remote storage with configurable format, resolution, and frame rate profiles. Recording segments should expose segment IDs, start/end timestamps, codec and profile metadata, integrity status, and explicit local-versus-remote delivery state; interrupted transfers must be resumable without treating partial files as complete.",
+            "position": {
+                "x": 480,
+                "y": 420
+            },
+            "size": {
+                "width": 300,
+                "height": 220
+            },
+            "style": {
+                "fill": "#f43f5e",
+                "stroke": "#be123c",
+                "strokeWidth": 2,
+                "cornerRadius": 6,
+                "icon": "video"
+            },
+            "engines": [
+                "eng-payload-video-streaming",
+                "eng-payload-recording"
+            ],
+            "ports": [
+                {
+                    "portId": "port-p01-vidrec-in-frames",
+                    "label": "Camera Frames",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.15
+                },
+                {
+                    "portId": "port-p01-vidrec-in-stream-cfg",
+                    "label": "Stream Config",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left",
+                    "offset": 0.4
+                },
+                {
+                    "portId": "port-p01-vidrec-in-rec-cmd",
+                    "label": "Recording Cmd",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left",
+                    "offset": 0.65
+                },
+                {
+                    "portId": "port-p01-vidrec-in-link-quality",
+                    "label": "Link Quality",
+                    "direction": "in",
+                    "dataType": "telemetry",
+                    "position": "left",
+                    "offset": 0.9
+                },
+                {
+                    "portId": "port-p01-vidrec-out-stream",
+                    "label": "Video Stream",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right",
+                    "offset": 0.2
+                },
+                {
+                    "portId": "port-p01-vidrec-out-recorded",
+                    "label": "Recorded Files",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right",
+                    "offset": 0.5
+                },
+                {
+                    "portId": "port-p01-vidrec-out-stream-tlm",
+                    "label": "Stream Telemetry",
+                    "direction": "out",
+                    "dataType": "telemetry",
+                    "position": "right",
+                    "offset": 0.8
+                }
+            ]
+        },
+        {
+            "nodeId": "node-p01-storage-metadata",
+            "label": "Media Storage & Metadata",
+            "type": "component",
+            "description": "Media storage management and metadata indexing engine. Manages local and remote storage capacity, file organization, retention policies, and sync between vehicle and GCS. Tags media with geolocation, timestamp, sensor parameters, mission context, and quality scores. Provides searchable media index for review and retrieval. Metadata records should preserve immutable source identifiers and distinguish capture time from ingest/index time; quality annotations must be versioned and linked by stable media/observation identifiers.",
+            "position": {
+                "x": 900,
+                "y": 160
+            },
+            "size": {
+                "width": 300,
+                "height": 220
+            },
+            "style": {
+                "fill": "#f43f5e",
+                "stroke": "#be123c",
+                "strokeWidth": 2,
+                "cornerRadius": 6,
+                "icon": "database"
+            },
+            "engines": [
+                "eng-payload-media-storage",
+                "eng-payload-media-metadata"
+            ],
+            "ports": [
+                {
+                    "portId": "port-p01-stormeta-in-recorded",
+                    "label": "Recorded Files",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.15
+                },
+                {
+                    "portId": "port-p01-stormeta-in-capture-evt",
+                    "label": "Capture Events",
+                    "direction": "in",
+                    "dataType": "event",
+                    "position": "left",
+                    "offset": 0.4
+                },
+                {
+                    "portId": "port-p01-stormeta-in-quality-scores",
+                    "label": "Quality Scores",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.65
+                },
+                {
+                    "portId": "port-p01-stormeta-in-storage-policy",
+                    "label": "Storage Policy",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left",
+                    "offset": 0.9
+                },
+                {
+                    "portId": "port-p01-stormeta-out-media-index",
+                    "label": "Media Index",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right",
+                    "offset": 0.2
+                },
+                {
+                    "portId": "port-p01-stormeta-out-storage-status",
+                    "label": "Storage Status",
+                    "direction": "out",
+                    "dataType": "telemetry",
+                    "position": "right",
+                    "offset": 0.5
+                },
+                {
+                    "portId": "port-p01-stormeta-out-metadata-records",
+                    "label": "Metadata Records",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom",
+                    "offset": 0.3
+                },
+                {
+                    "portId": "port-p01-stormeta-out-media-files",
+                    "label": "Media for QA",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom",
+                    "offset": 0.7
+                }
+            ]
+        },
+        {
+            "nodeId": "node-p01-telemetry-review",
+            "label": "Telemetry & Review",
+            "type": "component",
+            "description": "Payload telemetry reporting and post-mission media review engine. Aggregates payload health, gimbal state, stream quality, and storage metrics into unified telemetry feed. Provides post-mission media browsing, playback, quality filtering, and export capabilities for operator review and analysis. Review and export operations should respect media completeness, integrity checks, access permissions, and the distinction between live stream availability and persisted recording availability.",
+            "position": {
+                "x": 900,
+                "y": 460
+            },
+            "size": {
+                "width": 300,
+                "height": 200
+            },
+            "style": {
+                "fill": "#f43f5e",
+                "stroke": "#be123c",
+                "strokeWidth": 2,
+                "cornerRadius": 6,
+                "icon": "play-circle"
+            },
+            "engines": [
+                "eng-payload-telemetry",
+                "eng-payload-review"
+            ],
+            "ports": [
+                {
+                    "portId": "port-p01-tlmrev-in-gimbal-tlm",
+                    "label": "Gimbal Telemetry",
+                    "direction": "in",
+                    "dataType": "telemetry",
+                    "position": "left",
+                    "offset": 0.15
+                },
+                {
+                    "portId": "port-p01-tlmrev-in-stream-tlm",
+                    "label": "Stream Telemetry",
+                    "direction": "in",
+                    "dataType": "telemetry",
+                    "position": "left",
+                    "offset": 0.4
+                },
+                {
+                    "portId": "port-p01-tlmrev-in-storage-status",
+                    "label": "Storage Status",
+                    "direction": "in",
+                    "dataType": "telemetry",
+                    "position": "left",
+                    "offset": 0.65
+                },
+                {
+                    "portId": "port-p01-tlmrev-in-media-index",
+                    "label": "Media Index",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.9
+                },
+                {
+                    "portId": "port-p01-tlmrev-out-payload-tlm",
+                    "label": "Payload Telemetry",
+                    "direction": "out",
+                    "dataType": "telemetry",
+                    "position": "right",
+                    "offset": 0.3
+                },
+                {
+                    "portId": "port-p01-tlmrev-out-health-summary",
+                    "label": "Health Summary",
+                    "direction": "out",
+                    "dataType": "telemetry",
+                    "position": "right",
+                    "offset": 0.7
+                },
+                {
+                    "portId": "port-p01-tlmrev-out-review-data",
+                    "label": "Review Data",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom",
+                    "offset": 0.5
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "edgeId": "edge-p01-mgr-to-camgim",
+            "source": "node-p01-manager",
+            "target": "node-p01-camera-gimbal",
+            "sourcePort": "port-p01-mgr-out-payload-cfg",
+            "targetPort": "port-p01-camgim-in-payload-cfg",
+            "semantic": {
+                "type": "control",
+                "label": "Payload configuration",
+                "description": "Camera and gimbal configuration profiles including resolution, frame rate, zoom presets, gimbal limits, and stabilization mode",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.01",
+                    "req-8.02",
+                    "req-8.03"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-mgr-to-vidrec",
+            "source": "node-p01-manager",
+            "target": "node-p01-video-recording",
+            "sourcePort": "port-p01-mgr-out-stream-cfg",
+            "targetPort": "port-p01-vidrec-in-stream-cfg",
+            "semantic": {
+                "type": "control",
+                "label": "Stream and recording config",
+                "description": "Video encoding profile, adaptive bitrate parameters, streaming endpoint, and recording format/destination configuration",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.01",
+                    "req-8.04",
+                    "req-8.05"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-mgr-to-stormeta",
+            "source": "node-p01-manager",
+            "target": "node-p01-storage-metadata",
+            "sourcePort": "port-p01-mgr-out-storage-policy",
+            "targetPort": "port-p01-stormeta-in-storage-policy",
+            "semantic": {
+                "type": "control",
+                "label": "Storage policy",
+                "description": "Retention policy, sync schedule, storage quota limits, and file organization rules",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.01",
+                    "req-8.06"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.15,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-camgim-to-vidrec",
+            "source": "node-p01-camera-gimbal",
+            "target": "node-p01-video-recording",
+            "sourcePort": "port-p01-camgim-out-frames",
+            "targetPort": "port-p01-vidrec-in-frames",
+            "semantic": {
+                "type": "data",
+                "label": "Raw camera frames",
+                "description": "Raw or lightly processed camera frames at sensor native resolution and frame rate for encoding and streaming",
+                "protocol": null,
+                "dataType": "raw frames",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.02",
+                    "req-8.04"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.05,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-camgim-to-tlmrev-gimbal",
+            "source": "node-p01-camera-gimbal",
+            "target": "node-p01-telemetry-review",
+            "sourcePort": "port-p01-camgim-out-gimbal-tlm",
+            "targetPort": "port-p01-tlmrev-in-gimbal-tlm",
+            "semantic": {
+                "type": "telemetry",
+                "label": "Gimbal telemetry",
+                "description": "Gimbal pan/tilt/roll angles, stabilization status, tracking lock state, and motor temperatures",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.03",
+                    "req-8.07"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.2,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-vidrec-to-stormeta",
+            "source": "node-p01-video-recording",
+            "target": "node-p01-storage-metadata",
+            "sourcePort": "port-p01-vidrec-out-recorded",
+            "targetPort": "port-p01-stormeta-in-recorded",
+            "semantic": {
+                "type": "data",
+                "label": "Recorded media files",
+                "description": "Completed recording segments with embedded timestamps and sensor metadata for storage indexing; each segment carries a stable segment ID, integrity/completion state, capture time range, and codec/profile metadata.",
+                "protocol": null,
+                "dataType": "binary+metadata",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.05",
+                    "req-8.06"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-vidrec-to-tlmrev",
+            "source": "node-p01-video-recording",
+            "target": "node-p01-telemetry-review",
+            "sourcePort": "port-p01-vidrec-out-stream-tlm",
+            "targetPort": "port-p01-tlmrev-in-stream-tlm",
+            "semantic": {
+                "type": "telemetry",
+                "label": "Stream telemetry",
+                "description": "Video stream bitrate, frame rate, encoding latency, dropped frame count, and buffer utilization",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.04",
+                    "req-8.07"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-stormeta-to-tlmrev",
+            "source": "node-p01-storage-metadata",
+            "target": "node-p01-telemetry-review",
+            "sourcePort": "port-p01-stormeta-out-media-index",
+            "targetPort": "port-p01-tlmrev-in-media-index",
+            "semantic": {
+                "type": "data",
+                "label": "Media index",
+                "description": "Searchable media index with geolocation, timestamps, quality scores, and mission context for review browsing",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.07",
+                    "req-8.08",
+                    "req-8.09"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.05,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-stormeta-to-mgr",
+            "source": "node-p01-storage-metadata",
+            "target": "node-p01-manager",
+            "sourcePort": "port-p01-stormeta-out-storage-status",
+            "targetPort": "port-p01-mgr-in-storage-status",
+            "semantic": {
+                "type": "data",
+                "label": "Storage status",
+                "description": "Storage capacity, utilization, write speed, and sync status reported to payload manager for health monitoring",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.01",
+                    "req-8.06"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.2,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-tlmrev-to-mgr",
+            "source": "node-p01-telemetry-review",
+            "target": "node-p01-manager",
+            "sourcePort": "port-p01-tlmrev-out-health-summary",
+            "targetPort": "port-p01-mgr-in-health-summary",
+            "semantic": {
+                "type": "telemetry",
+                "label": "Payload health summary",
+                "description": "Aggregated payload health metrics including thermal, power, and error rates for manager status reporting",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.01",
+                    "req-8.07"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.2,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-ops-to-mgr",
+            "source": "node-p01-ext-ops-cmd",
+            "target": "node-p01-manager",
+            "sourcePort": null,
+            "targetPort": "port-p01-mgr-in-ops-cmd",
+            "semantic": {
+                "type": "control",
+                "label": "Operator payload commands",
+                "description": "Operator commands for payload mode changes, capture triggers, recording start/stop, and configuration overrides",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.01"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-manual-to-camgim",
+            "source": "node-p01-ext-manual-ctrl",
+            "target": "node-p01-camera-gimbal",
+            "sourcePort": null,
+            "targetPort": "port-p01-camgim-in-manual-ctrl",
+            "semantic": {
+                "type": "control",
+                "label": "Manual gimbal/camera control",
+                "description": "Real-time joystick or touchscreen inputs for manual gimbal pointing and camera zoom/focus control",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.03"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-vehiclecfg-to-mgr",
+            "source": "node-p01-ext-vehicle-config",
+            "target": "node-p01-manager",
+            "sourcePort": null,
+            "targetPort": "port-p01-mgr-in-vehicle-cfg",
+            "semantic": {
+                "type": "data",
+                "label": "Vehicle payload configuration",
+                "description": "Vehicle-specific payload configuration including installed payloads, capabilities, and default profiles",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.01"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-vehicleatt-to-camgim",
+            "source": "node-p01-ext-vehicle-state",
+            "target": "node-p01-camera-gimbal",
+            "sourcePort": null,
+            "targetPort": "port-p01-camgim-in-vehicle-att",
+            "semantic": {
+                "type": "telemetry",
+                "label": "Vehicle attitude",
+                "description": "Vehicle roll, pitch, yaw, and angular rates for gimbal stabilization compensation and geolocation computation; attitude samples must be timestamp-aligned with camera exposure and include frame/reference metadata.",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.03"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-camgim-to-sensor",
+            "source": "node-p01-camera-gimbal",
+            "target": "node-p01-ext-sensor-integration",
+            "sourcePort": "port-p01-camgim-out-capture-evt",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "label": "Capture events",
+                "description": "Still and burst capture events forwarded to sensor integration for observation pipeline processing; capture event includes sensor ID, capture/observation ID, timestamp, calibration version, and payload configuration reference.",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.02"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.15,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-vidrec-to-comm",
+            "source": "node-p01-video-recording",
+            "target": "node-p01-ext-comm-transport",
+            "sourcePort": "port-p01-vidrec-out-stream",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "label": "Encoded video stream",
+                "description": "Encoded video stream sent to communication transport for delivery to GCS operator display",
+                "protocol": null,
+                "dataType": "binary stream",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.04",
+                    "req-GA-04"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-stormeta-to-persistence",
+            "source": "node-p01-storage-metadata",
+            "target": "node-p01-ext-persistence",
+            "sourcePort": "port-p01-stormeta-out-metadata-records",
+            "targetPort": null,
+            "semantic": {
+                "type": "persistence",
+                "label": "Metadata records",
+                "description": "Media metadata records persisted to data layer for long-term indexing, search, and cross-mission analysis; persist schema version, provenance, coordinate reference, capture/ingest timestamps, and annotation revision.",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.06",
+                    "req-8.08"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#0d9488",
+                "strokeWidth": 2,
+                "dash": "dashed",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-stormeta-to-quality",
+            "source": "node-p01-storage-metadata",
+            "target": "node-p01-ext-sensor-quality",
+            "sourcePort": "port-p01-stormeta-out-media-files",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "label": "Media for quality assessment",
+                "description": "Stored media files forwarded to sensor data quality engine for batch quality scoring and degradation analysis; include stable media/segment IDs and distinguish completed media from in-progress recording segments.",
+                "protocol": null,
+                "dataType": "binary+metadata",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.08"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.15,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-tlmrev-to-ingestion",
+            "source": "node-p01-telemetry-review",
+            "target": "node-p01-ext-telemetry-ingestion",
+            "sourcePort": "port-p01-tlmrev-out-payload-tlm",
+            "targetPort": null,
+            "semantic": {
+                "type": "telemetry",
+                "label": "Payload telemetry feed",
+                "description": "Aggregated payload telemetry published to core telemetry ingestion for unified vehicle telemetry stream",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.07"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-mgr-to-ops-monitor",
+            "source": "node-p01-manager",
+            "target": "node-p01-ext-ops-monitor",
+            "sourcePort": "port-p01-mgr-out-payload-status",
+            "targetPort": null,
+            "semantic": {
+                "type": "telemetry",
+                "label": "Payload status",
+                "description": "Unified payload status including health, mode, storage, and active streams for operator dashboard display",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.01",
+                    "req-CL-09"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-tlmrev-to-ops",
+            "source": "node-p01-telemetry-review",
+            "target": "node-p01-ext-ops-monitor",
+            "sourcePort": "port-p01-tlmrev-out-review-data",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "label": "Review data",
+                "description": "Post-mission review data including media browser, playback controls, and quality-filtered results for operator UI",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.09",
+                    "req-CL-09"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.15,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-linkqual-to-vidrec",
+            "source": "node-p01-ext-comm-link",
+            "target": "node-p01-video-recording",
+            "sourcePort": null,
+            "targetPort": "port-p01-vidrec-in-link-quality",
+            "semantic": {
+                "type": "telemetry",
+                "label": "Link quality metrics",
+                "description": "Communication link quality metrics used by adaptive bitrate encoder to adjust stream quality in real-time",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.04",
+                    "req-GA-04"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-sensor-to-mgr",
+            "source": "node-p01-ext-sensor-integration-status",
+            "target": "node-p01-manager",
+            "sourcePort": null,
+            "targetPort": "port-p01-mgr-in-sensor-status",
+            "semantic": {
+                "type": "telemetry",
+                "label": "Sensor integration status",
+                "description": "Sensor integration health and availability status used by payload manager for payload readiness assessment",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.01"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.15,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-quality-to-stormeta",
+            "source": "node-p01-ext-sensor-quality-scores",
+            "target": "node-p01-storage-metadata",
+            "sourcePort": null,
+            "targetPort": "port-p01-stormeta-in-quality-scores",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Per-observation quality scores",
+                "description": "Quality annotations keyed by stable observation and media-segment identifiers; include score, metric breakdown, policy version, timestamp, and provenance for searchable indexing",
+                "protocol": null,
+                "dataType": "JSON",
+                "trigger": "quality assessment completed or revised",
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.08",
+                    "req-8.09"
+                ],
+                "assumptions": [
+                    "AS-095"
+                ]
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 0.1,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-p01-mgr-to-recording",
+            "source": "node-p01-manager",
+            "target": "node-p01-video-recording",
+            "sourcePort": "port-p01-mgr-out-recording-cmd",
+            "targetPort": "port-p01-vidrec-in-rec-cmd",
+            "semantic": {
+                "type": "control",
+                "direction": "unidirectional",
+                "label": "Recording control",
+                "description": "Explicit start, stop, pause, segment, and recording-state control commands derived from operator intent and mission recording policy",
+                "protocol": null,
+                "dataType": "JSON",
+                "trigger": "operator command or configured mission recording policy",
+                "synchronous": false,
+                "requirementIds": [
+                    "req-8.01",
+                    "req-8.05"
+                ],
+                "assumptions": [
+                    "AS-096"
+                ]
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 0.1,
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 0
+            }
+        }
+    ],
+    "externalReferences": [
+        {
+            "nodeId": "node-p01-ext-ops-cmd",
+            "sourceDocumentId": "doc-ops-02",
+            "engineId": "eng-ops-command-control",
+            "label": "Command Control",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-ops-monitor",
+            "sourceDocumentId": "doc-ops-02",
+            "engineId": "eng-ops-mission-monitoring",
+            "label": "Mission Monitor",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-manual-ctrl",
+            "sourceDocumentId": "doc-ops-04",
+            "engineId": "eng-ops-manual-control",
+            "label": "Manual Control",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-vehicle-config",
+            "sourceDocumentId": "doc-ops-03",
+            "engineId": "eng-ops-vehicle-config",
+            "label": "Vehicle Config",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-vehicle-state",
+            "sourceDocumentId": "doc-core-03",
+            "engineId": "eng-core-vehicle-state",
+            "label": "Vehicle State",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-telemetry-ingestion",
+            "sourceDocumentId": "doc-core-03",
+            "engineId": "eng-core-telemetry-ingestion",
+            "label": "Telemetry Ingestion",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-comm-transport",
+            "sourceDocumentId": "doc-comm-01",
+            "engineId": "eng-comm-transport",
+            "label": "Transport Layer",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#06b6d4",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-comm-link",
+            "sourceDocumentId": "doc-comm-02",
+            "engineId": "eng-comm-link-quality",
+            "label": "Link Quality",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#06b6d4",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-sensor-integration",
+            "sourceDocumentId": "doc-sensor-01",
+            "engineId": "eng-sensor-integration",
+            "label": "Sensor Integration",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ec4899",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-sensor-quality",
+            "sourceDocumentId": "doc-sensor-03",
+            "engineId": "eng-sensor-data-quality",
+            "label": "Data Quality",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ec4899",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-persistence",
+            "sourceDocumentId": "doc-data-01",
+            "engineId": "eng-data-persistence",
+            "label": "Data Persistence",
+            "type": "database",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#14b8a6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-sensor-integration-status",
+            "sourceDocumentId": "doc-sensor-01",
+            "engineId": "eng-sensor-integration",
+            "label": "Sensor Integration (status)",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ec4899",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-p01-ext-sensor-quality-scores",
+            "sourceDocumentId": "doc-sensor-03",
+            "engineId": "eng-sensor-data-quality",
+            "label": "Data Quality (scores)",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ec4899",
+                "borderStyle": "dashed"
+            }
+        }
+    ],
+    "crossReferences": [],
+    "requirementsCoverage": [
+        {
+            "requirementId": "req-8.01",
+            "description": "Payload lifecycle management including discovery, configuration, health monitoring, mode transitions, and status reporting",
+            "coveredByNodes": [
+                "node-p01-manager"
+            ],
+            "coveredByEdges": [
+                "edge-p01-ops-to-mgr",
+                "edge-p01-vehiclecfg-to-mgr",
+                "edge-p01-sensor-to-mgr",
+                "edge-p01-mgr-to-camgim",
+                "edge-p01-mgr-to-vidrec",
+                "edge-p01-mgr-to-stormeta",
+                "edge-p01-mgr-to-ops-monitor",
+                "edge-p01-stormeta-to-mgr",
+                "edge-p01-tlmrev-to-mgr"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "Integration test with vehicle config, operations, and all payload subsystems",
+            "notes": "Manager orchestrates all payload subsystems and provides unified status to operations dashboard"
+        },
+        {
+            "requirementId": "req-8.02",
+            "description": "Camera control including zoom, focus, exposure, white balance, capture modes (still, burst, interval), and parameter presets",
+            "coveredByNodes": [
+                "node-p01-camera-gimbal"
+            ],
+            "coveredByEdges": [
+                "edge-p01-mgr-to-camgim",
+                "edge-p01-camgim-to-vidrec",
+                "edge-p01-camgim-to-sensor"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "Hardware-in-the-loop test with camera payload and operator control interface",
+            "notes": "Camera parameters configurable per mission profile with runtime override capability"
+        },
+        {
+            "requirementId": "req-8.03",
+            "description": "Gimbal stabilization, autonomous pointing, target tracking, waypoint-oriented orientation, and manual joystick control with smooth handoff",
+            "coveredByNodes": [
+                "node-p01-camera-gimbal"
+            ],
+            "coveredByEdges": [
+                "edge-p01-manual-to-camgim",
+                "edge-p01-vehicleatt-to-camgim",
+                "edge-p01-camgim-to-tlmrev-gimbal",
+                "edge-p01-mgr-to-camgim"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "HIL test with gimbal hardware under simulated vehicle dynamics",
+            "notes": "Supports autonomous tracking, waypoint-oriented, and manual modes with configurable handoff deadband"
+        },
+        {
+            "requirementId": "req-8.04",
+            "description": "Video streaming with adaptive bitrate encoding, configurable quality profiles, low-latency delivery, and link-aware rate control",
+            "coveredByNodes": [
+                "node-p01-video-recording"
+            ],
+            "coveredByEdges": [
+                "edge-p01-camgim-to-vidrec",
+                "edge-p01-mgr-to-vidrec",
+                "edge-p01-vidrec-to-comm",
+                "edge-p01-linkqual-to-vidrec",
+                "edge-p01-vidrec-to-tlmrev"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "Integration test under varying link quality conditions with latency measurement",
+            "notes": "Adaptive bitrate responds to link quality changes within 2-5 seconds; codec abstracted behind engine interface"
+        },
+        {
+            "requirementId": "req-8.05",
+            "description": "Recording to local and remote storage with configurable format, resolution, frame rate, and segment duration",
+            "coveredByNodes": [
+                "node-p01-video-recording"
+            ],
+            "coveredByEdges": [
+                "edge-p01-vidrec-to-stormeta",
+                "edge-p01-mgr-to-vidrec"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "Integration test with storage subsystem under sustained recording load",
+            "notes": "Supports concurrent local and remote recording with independent format profiles"
+        },
+        {
+            "requirementId": "req-8.06",
+            "description": "Media storage management including capacity monitoring, file organization, retention policies, and vehicle-to-GCS sync",
+            "coveredByNodes": [
+                "node-p01-storage-metadata"
+            ],
+            "coveredByEdges": [
+                "edge-p01-vidrec-to-stormeta",
+                "edge-p01-mgr-to-stormeta",
+                "edge-p01-stormeta-to-mgr",
+                "edge-p01-stormeta-to-persistence"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "Integration test with storage backend under capacity pressure and sync scenarios",
+            "notes": "Storage policies configurable per mission; sync prioritizes high-quality observations"
+        },
+        {
+            "requirementId": "req-8.07",
+            "description": "Payload telemetry reporting including health metrics, thermal status, power consumption, and error rates",
+            "coveredByNodes": [
+                "node-p01-telemetry-review"
+            ],
+            "coveredByEdges": [
+                "edge-p01-camgim-to-tlmrev-gimbal",
+                "edge-p01-vidrec-to-tlmrev",
+                "edge-p01-stormeta-to-tlmrev",
+                "edge-p01-tlmrev-to-ingestion",
+                "edge-p01-tlmrev-to-mgr"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "Integration test verifying telemetry publication rate and content completeness",
+            "notes": "Payload telemetry published at 1-5Hz through core telemetry ingestion pipeline"
+        },
+        {
+            "requirementId": "req-8.08",
+            "description": "Media metadata tagging with geolocation, timestamp, sensor parameters, mission context, and quality scores; searchable index",
+            "coveredByNodes": [
+                "node-p01-storage-metadata"
+            ],
+            "coveredByEdges": [
+                "edge-p01-stormeta-to-tlmrev",
+                "edge-p01-stormeta-to-persistence",
+                "edge-p01-stormeta-to-quality"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "Integration test with metadata query API and quality score correlation",
+            "notes": "Metadata indexed by geolocation, time range, sensor type, mission ID, and quality threshold"
+        },
+        {
+            "requirementId": "req-8.09",
+            "description": "Post-mission media review with browsing, playback, quality filtering, geolocation overlay, and export capabilities",
+            "coveredByNodes": [
+                "node-p01-telemetry-review"
+            ],
+            "coveredByEdges": [
+                "edge-p01-stormeta-to-tlmrev",
+                "edge-p01-tlmrev-to-ops"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "UI test with post-mission review workflow and export validation",
+            "notes": "Review interface supports timeline scrubbing, map overlay, quality filtering, and batch export"
+        },
+        {
+            "requirementId": "req-GA-04",
+            "description": "Real-time performance for time-critical operations",
+            "coveredByNodes": [
+                "node-p01-video-recording",
+                "node-p01-camera-gimbal"
+            ],
+            "coveredByEdges": [
+                "edge-p01-vidrec-to-comm",
+                "edge-p01-linkqual-to-vidrec"
+            ],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "Latency benchmark under maximum video throughput",
+            "notes": "Video streaming end-to-end latency target <500ms; gimbal control loop <20ms"
+        },
+        {
+            "requirementId": "req-GA-07",
+            "description": "Extensibility through plugin architecture and configurable components",
+            "coveredByNodes": [
+                "node-p01-manager"
+            ],
+            "coveredByEdges": [],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "Integration test with custom payload driver plugin",
+            "notes": "New payload types supported via plugin driver interface without core changes"
+        },
+        {
+            "requirementId": "req-CL-09",
+            "description": "Configurable dashboard widgets for operator situational awareness",
+            "coveredByNodes": [
+                "node-p01-manager",
+                "node-p01-telemetry-review"
+            ],
+            "coveredByEdges": [
+                "edge-p01-mgr-to-ops-monitor",
+                "edge-p01-tlmrev-to-ops"
+            ],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "UI test with custom dashboard layout",
+            "notes": "Payload status, video feed, gimbal state, and storage capacity exposed as configurable widgets"
+        }
+    ],
+    "assumptions": [
+        {
+            "assumptionId": "AS-091",
+            "description": "Video streaming uses adaptive bitrate encoding with configurable quality profiles (low/medium/high/ultra). Codec selection is abstracted behind the streaming engine interface to allow substitution without pipeline changes.",
+            "rationale": "Adaptive bitrate is essential for maintaining video quality over variable wireless links; codec abstraction prevents lock-in to a single encoding standard."
+        },
+        {
+            "assumptionId": "AS-092",
+            "description": "Media storage supports both local (on-vehicle) and remote (GCS) storage with configurable sync policies. Local storage is primary during flight operations; sync to GCS occurs opportunistically based on link availability and bandwidth.",
+            "rationale": "Vehicle-borne storage ensures no data loss during link outages; opportunistic sync balances bandwidth usage with data availability at the GCS."
+        },
+        {
+            "assumptionId": "AS-093",
+            "description": "Payload telemetry is published at 1-5Hz through the core telemetry ingestion pipeline, sharing the same transport and timestamp synchronization as vehicle telemetry.",
+            "rationale": "Unified telemetry pipeline simplifies correlation between vehicle state and payload state for post-mission analysis."
+        },
+        {
+            "assumptionId": "AS-094",
+            "description": "Gimbal control supports autonomous (target tracking, waypoint-oriented) and manual (operator joystick) modes with configurable handoff deadband to prevent oscillation during mode transitions.",
+            "rationale": "Operators need both autonomous and manual control depending on mission phase; smooth handoff prevents disruptive gimbal jumps."
+        },
+        {
+            "assumptionId": "AS-095",
+            "description": "Sensor data quality results are returned to media metadata indexing through stable observation/media identifiers; raw media payloads remain immutable and quality assessments are versioned.",
+            "rationale": "The architecture exposes quality assessment as an outbound batch input but needs a defined return path for searchable quality filtering and review."
+        },
+        {
+            "assumptionId": "AS-096",
+            "description": "Payload Manager translates authorized operator and mission-policy intent into explicit recording commands; the video pipeline does not infer start/stop intent solely from stream configuration.",
+            "rationale": "Recording control is a distinct lifecycle operation and should be independently auditable from encoding and stream configuration."
+        },
+        {
+            "assumptionId": "AS-097",
+            "description": "Capture timestamps, vehicle attitude, gimbal pose, and calibration metadata share a defined timebase and coordinate-frame contract, with uncertainty retained where available.",
+            "rationale": "Accurate media geolocation and sensor-data correlation require synchronized pose and capture metadata."
+        },
+        {
+            "assumptionId": "AS-098",
+            "description": "Vehicle-local recording remains authoritative during link loss; remote synchronization is resumable and does not block local capture or mark incomplete transfers as complete.",
+            "rationale": "The source architecture states local storage is primary during flight and remote synchronization is opportunistic."
+        }
+    ],
+    "unresolvedDecisions": [
+        {
+            "decisionId": "UD-091",
+            "description": "Video encoding codec and container format selection. Trade-off between compression efficiency, decode latency, and platform compatibility.",
+            "options": [
+                "H.264/MP4 (universal compatibility, moderate compression)",
+                "H.265/MP4 (high compression, higher decode latency)",
+                "VP9/WebM (open standard, variable hardware support)"
+            ],
+            "impact": "Affects video stream bandwidth requirements, GCS decode latency, and recording file sizes."
+        },
+        {
+            "decisionId": "UD-092",
+            "description": "Media storage file organization scheme for local and remote storage.",
+            "options": [
+                "Flat with metadata index (simple, fast writes)",
+                "Hierarchical by mission/date/vehicle (human-readable, slower writes)",
+                "Content-addressable by hash (deduplication, complex retrieval)"
+            ],
+            "impact": "Affects storage write performance, retrieval speed, and cross-mission media management complexity."
+        },
+        {
+            "decisionId": "UD-093",
+            "description": "Maximum simultaneous video streams per vehicle for multi-sensor payloads.",
+            "options": [
+                "Single primary stream (simple, low bandwidth)",
+                "Dual concurrent streams (primary + secondary sensor)",
+                "Multi-stream per active sensor (flexible, high bandwidth)"
+            ],
+            "impact": "Affects communication bandwidth requirements, encoding compute load, and GCS display complexity."
+        },
+        {
+            "decisionId": "UD-094",
+            "description": "Define the source and contract for autonomous target tracking requests delivered to the Camera & Gimbal Controller.",
+            "options": [
+                "Sensor observation/tracking engine publishes target track commands",
+                "Mission planner publishes target-of-interest commands",
+                "A dedicated payload tracking service arbitrates target selection"
+            ],
+            "impact": "Affects target identity, track confidence, coordinate frame, command authority, and handoff between autonomous and manual pointing."
+        },
+        {
+            "decisionId": "UD-095",
+            "description": "Define the recording and media synchronization failure policy for storage exhaustion, interrupted writes, link loss, and partial remote uploads.",
+            "options": [
+                "Stop recording at configured reserve threshold and alert operator",
+                "Apply prioritized retention/deletion policy with explicit approval rules",
+                "Continue local recording where possible and defer remote synchronization"
+            ],
+            "impact": "Affects data-loss risk, mission continuity, storage safety margins, and operator intervention."
+        },
+        {
+            "decisionId": "UD-096",
+            "description": "Define the media metadata coordinate and time provenance contract, including camera exposure time, gimbal pose, vehicle pose, calibration version, and uncertainty propagation.",
+            "options": [
+                "Single canonical timestamp/frame contract shared with sensor subsystem",
+                "Per-payload time/frame adapters normalized at ingestion",
+                "Preserve source clocks and frames with explicit transform lineage"
+            ],
+            "impact": "Affects geolocation accuracy, cross-sensor correlation, map overlays, and post-mission auditability."
+        },
+        {
+            "decisionId": "UD-097",
+            "description": "Define access-control and export policy for live streams, stored media, metadata, and post-mission review artifacts.",
+            "options": [
+                "Centralized role/policy enforcement at API gateway",
+                "Payload/media service-level authorization with gateway identity propagation",
+                "Hybrid enforcement with signed export capabilities"
+            ],
+            "impact": "Affects data confidentiality, auditability, multi-operator collaboration, and external media export."
+        }
+    ],
+    "metadata": {
+        "status": "draft",
+        "revision": 2,
+        "createdDate": "2025-01-15",
+        "lastModified": "2026-10-31"
+    }
+}

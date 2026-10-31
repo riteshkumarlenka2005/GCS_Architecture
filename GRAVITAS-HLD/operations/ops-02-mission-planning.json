@@ -1,0 +1,1381 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-ops-02",
+  "title": "Mission Execution, Monitoring, Command Control, Validation & Tracking Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of five Operations subsystem engines governing the active mission lifecycle: Mission Execution (eng-ops-mission-execution) for orchestrating validated mission plans into executable command sequences and managing the mission state machine; Mission Monitoring (eng-ops-mission-monitoring) for real-time progress tracking, deviation detection, and timeline adherence; Command Control (eng-ops-command-control) for central command dispatch, queuing, and prioritization; Command Validation (eng-ops-command-validation) for pre-dispatch safety, capability, and parameter checks; and Command Tracking (eng-ops-command-tracking) for end-to-end command lifecycle management from issuance through acknowledgment and completion. Details the command pipeline from mission plan to vehicle dispatch and the feedback loops enabling closed-loop mission execution.",
+  "category": "ops",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1500,
+    "height": 1000,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-ops02-execution",
+      "label": "Mission Execution & Monitoring",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-ops02-executor",
+        "node-ops02-monitor"
+      ],
+      "style": {
+        "backgroundColor": "rgba(139, 92, 246, 0.05)",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-ops02-command-pipeline",
+      "label": "Command Pipeline",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-ops02-cmd-control",
+        "node-ops02-cmd-validator",
+        "node-ops02-cmd-tracker"
+      ],
+      "style": {
+        "backgroundColor": "rgba(239, 68, 68, 0.05)",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-ops02-executor",
+      "label": "Mission Execution Engine",
+      "type": "component",
+      "engineId": "eng-ops-mission-execution",
+      "description": "Orchestrates the execution of validated mission plans by translating them into sequenced command streams and managing the mission state machine (armed, executing, paused, resumed, completed, aborted, failed). Receives validated mission plans from the Hybrid Planning Coordinator, decomposes them into phase-ordered waypoint and task command sequences, and dispatches commands through the Command Control Engine. Monitors mission state transitions, handles conditional branching (e.g., alternate waypoints on weather), and coordinates multi-vehicle execution sequencing. Publishes mission lifecycle events to the Core Event Bus and feeds current mission state to the Mission Monitoring Engine for progress tracking.",
+      "position": {
+        "x": 80,
+        "y": 120
+      },
+      "size": {
+        "width": 270,
+        "height": 210
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "play-circle"
+      },
+      "ports": [
+        {
+          "id": "port-ops02-exec-in-plan",
+          "label": "Mission Plan",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops02-exec-in-deviation",
+          "label": "Deviation Feedback",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops02-exec-out-commands",
+          "label": "Command Sequence",
+          "direction": "out",
+          "dataType": "command",
+          "position": "right"
+        },
+        {
+          "id": "port-ops02-exec-out-state",
+          "label": "Mission State",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops02-exec-out-events",
+          "label": "Mission Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops02-monitor",
+      "label": "Mission Monitoring Engine",
+      "type": "component",
+      "engineId": "eng-ops-mission-monitoring",
+      "description": "Real-time monitoring of active mission progress against the planned trajectory, timeline, and task sequence. Ingests vehicle telemetry from the Vehicle State Store and mission state from the Execution Engine to compute waypoint completion status, task execution progress, timeline adherence, and spatial/temporal deviation metrics. Detects significant deviations from the planned mission and triggers replanning or operator alerts. Publishes progress updates to the Unified Dashboard and deviation alerts to the Core Event Bus. Supports configurable deviation thresholds and monitoring granularity per mission phase.",
+      "position": {
+        "x": 80,
+        "y": 470
+      },
+      "size": {
+        "width": 270,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "chart-line"
+      },
+      "ports": [
+        {
+          "id": "port-ops02-mon-in-state",
+          "label": "Mission State",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops02-mon-in-telemetry",
+          "label": "Vehicle Telemetry",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops02-mon-out-deviation",
+          "label": "Deviation Report",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops02-mon-out-progress",
+          "label": "Progress Update",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops02-mon-out-alerts",
+          "label": "Deviation Alerts",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops02-cmd-control",
+      "label": "Command Control Engine",
+      "type": "component",
+      "engineId": "eng-ops-command-control",
+      "description": "Central command dispatch hub routing both automated mission commands from the Execution Engine and manual operator commands from the API Gateway to the appropriate vehicle via the Communication Transport layer. Manages command queuing with priority levels (emergency, high, normal, low), handles command serialization for bandwidth-constrained links, and coordinates command timing for multi-vehicle synchronized maneuvers. Submits each command to the Command Validation Engine for pre-dispatch checks before forwarding to the transport layer. Reports dispatch status to the Command Tracking Engine.",
+      "position": {
+        "x": 520,
+        "y": 280
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "paper-plane"
+      },
+      "ports": [
+        {
+          "id": "port-ops02-cc-in-sequence",
+          "label": "Command Sequence",
+          "direction": "in",
+          "dataType": "command",
+          "position": "left"
+        },
+        {
+          "id": "port-ops02-cc-in-operator",
+          "label": "Operator Command",
+          "direction": "in",
+          "dataType": "command",
+          "position": "top"
+        },
+        {
+          "id": "port-ops02-cc-in-validation",
+          "label": "Validation Result",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops02-cc-in-retry",
+          "label": "Retry Request",
+          "direction": "in",
+          "dataType": "command",
+          "position": "right"
+        },
+        {
+          "id": "port-ops02-cc-out-validate",
+          "label": "Submit for Validation",
+          "direction": "out",
+          "dataType": "command",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops02-cc-out-dispatch",
+          "label": "Dispatch Command",
+          "direction": "out",
+          "dataType": "command",
+          "position": "right"
+        },
+        {
+          "id": "port-ops02-cc-out-track",
+          "label": "Dispatch Notification",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-ops02-cmd-validator",
+      "label": "Command Validation Engine",
+      "type": "component",
+      "engineId": "eng-ops-command-validation",
+      "description": "Pre-dispatch validation gate for all commands before they reach the vehicle. Validates command syntax and parameter ranges, checks vehicle capability compatibility (e.g., altitude command within vehicle ceiling), enforces safety policy limits (e.g., speed limits, geofence boundaries), and verifies current vehicle state permits the command (e.g., cannot arm if health check failed). Produces approve/reject verdicts with detailed rejection reasons. Rejects are returned to the Command Control Engine for operator notification or automatic correction. Integrates with the Safety Policy Engine for hard-limit enforcement.",
+      "position": {
+        "x": 520,
+        "y": 600
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "shield-check"
+      },
+      "ports": [
+        {
+          "id": "port-ops02-cv-in-command",
+          "label": "Command to Validate",
+          "direction": "in",
+          "dataType": "command",
+          "position": "top"
+        },
+        {
+          "id": "port-ops02-cv-in-vehicle",
+          "label": "Vehicle State & Caps",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops02-cv-in-safety",
+          "label": "Safety Rules",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-ops02-cv-out-result",
+          "label": "Validation Verdict",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops02-cv-out-reject",
+          "label": "Rejection Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops02-cmd-tracker",
+      "label": "Command Tracking Engine",
+      "type": "component",
+      "engineId": "eng-ops-command-tracking",
+      "description": "End-to-end command lifecycle tracker maintaining the state of every command from issuance through dispatch, acknowledgment, execution, and completion. Detects lost commands (no acknowledgment within timeout), triggers automatic retries via the Command Control Engine, and escalates persistent failures to the operator. Maintains a complete command history for audit and post-mission analysis. Provides real-time command status to the Unified Dashboard and publishes command lifecycle events to the Core Event Bus.",
+      "position": {
+        "x": 900,
+        "y": 280
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "list-ol"
+      },
+      "ports": [
+        {
+          "id": "port-ops02-ct-in-dispatch",
+          "label": "Dispatch Notification",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops02-ct-in-ack",
+          "label": "Vehicle Acknowledgment",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops02-ct-out-retry",
+          "label": "Retry Request",
+          "direction": "out",
+          "dataType": "command",
+          "position": "left"
+        },
+        {
+          "id": "port-ops02-ct-out-status",
+          "label": "Command Status",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops02-ct-out-events",
+          "label": "Lifecycle Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "right"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-ops02-hybrid-to-exec",
+      "source": "ext-ops02-hybrid",
+      "target": "node-ops02-executor",
+      "sourcePort": null,
+      "targetPort": "port-ops02-exec-in-plan",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Validated Mission Plan",
+        "description": "Hybrid Planning Coordinator delivers the validated and route-optimized mission plan to the Mission Execution Engine for decomposition into executable command sequences.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.8-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-exec-to-cmdctrl",
+      "source": "node-ops02-executor",
+      "target": "node-ops02-cmd-control",
+      "sourcePort": "port-ops02-exec-out-commands",
+      "targetPort": "port-ops02-cc-in-sequence",
+      "semantic": {
+        "type": "command",
+        "label": "Mission Command Sequence",
+        "description": "Mission Execution Engine dispatches phase-ordered command sequences (waypoint navigation, task activation, parameter changes) to the Command Control Engine for validation and vehicle dispatch.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "command",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.8-01",
+          "req-2.9-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops02-exec-to-monitor",
+      "source": "node-ops02-executor",
+      "target": "node-ops02-monitor",
+      "sourcePort": "port-ops02-exec-out-state",
+      "targetPort": "port-ops02-mon-in-state",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Mission State Updates",
+        "description": "Mission Execution Engine provides current mission state (active phase, target waypoint, task queue) to the Mission Monitoring Engine for progress comparison against the plan.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.8-01",
+          "req-2.11-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops02-monitor-to-exec",
+      "source": "node-ops02-monitor",
+      "target": "node-ops02-executor",
+      "sourcePort": "port-ops02-mon-out-deviation",
+      "targetPort": "port-ops02-exec-in-deviation",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Deviation Feedback",
+        "description": "Mission Monitoring Engine feeds spatial and temporal deviation reports back to the Execution Engine, triggering replanning requests or phase adjustments when thresholds are exceeded.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.11-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops02-cmdctrl-to-cmdval",
+      "source": "node-ops02-cmd-control",
+      "target": "node-ops02-cmd-validator",
+      "sourcePort": "port-ops02-cc-out-validate",
+      "targetPort": "port-ops02-cv-in-command",
+      "semantic": {
+        "type": "command",
+        "label": "Command for Validation",
+        "description": "Command Control Engine submits each command to the Command Validation Engine for pre-dispatch safety, capability, and parameter checks before vehicle transmission.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "command",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.9-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops02-cmdval-to-cmdctrl",
+      "source": "node-ops02-cmd-validator",
+      "target": "node-ops02-cmd-control",
+      "sourcePort": "port-ops02-cv-out-result",
+      "targetPort": "port-ops02-cc-in-validation",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Validation Verdict",
+        "description": "Command Validation Engine returns approve/reject verdict with detailed reasoning to the Command Control Engine; approved commands proceed to dispatch, rejected commands are queued for operator review.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.9-02",
+          "req-GA-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops02-cmdctrl-to-cmdtrack",
+      "source": "node-ops02-cmd-control",
+      "target": "node-ops02-cmd-tracker",
+      "sourcePort": "port-ops02-cc-out-track",
+      "targetPort": "port-ops02-ct-in-dispatch",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Dispatch Notification",
+        "description": "Command Control Engine notifies the Command Tracking Engine when a validated command has been dispatched to the transport layer, initiating the acknowledgment timer.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.9-03",
+          "req-GA-09"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops02-cmdctrl-to-transport",
+      "source": "node-ops02-cmd-control",
+      "target": "ext-ops02-transport",
+      "sourcePort": "port-ops02-cc-out-dispatch",
+      "targetPort": null,
+      "semantic": {
+        "type": "command",
+        "label": "Vehicle Command",
+        "description": "Command Control Engine dispatches validated and approved commands to the Communication Transport layer for transmission to the target vehicle.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "command",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.9-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-transport-to-cmdtrack",
+      "source": "ext-ops02-transport",
+      "target": "node-ops02-cmd-tracker",
+      "sourcePort": null,
+      "targetPort": "port-ops02-ct-in-ack",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle Acknowledgment",
+        "description": "Communication Transport layer relays vehicle command acknowledgments and execution confirmations back to the Command Tracking Engine for lifecycle state updates.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.9-03",
+          "req-GA-09"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-cmdtrack-to-cmdctrl",
+      "source": "node-ops02-cmd-tracker",
+      "target": "node-ops02-cmd-control",
+      "sourcePort": "port-ops02-ct-out-retry",
+      "targetPort": "port-ops02-cc-in-retry",
+      "semantic": {
+        "type": "command",
+        "label": "Command Retry Request",
+        "description": "Command Tracking Engine requests re-dispatch of commands that have not received acknowledgment within the configured timeout, up to the maximum retry limit.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "command",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.9-03"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops02-vehicle-to-monitor",
+      "source": "ext-ops02-vehicle-state",
+      "target": "node-ops02-monitor",
+      "sourcePort": null,
+      "targetPort": "port-ops02-mon-in-telemetry",
+      "semantic": {
+        "type": "telemetry",
+        "label": "Vehicle Telemetry",
+        "description": "Vehicle State Store provides real-time vehicle position, velocity, attitude, and system status telemetry to the Mission Monitoring Engine for progress tracking and deviation computation.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.11-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-vehicle-to-cmdval",
+      "source": "ext-ops02-vehicle-state",
+      "target": "node-ops02-cmd-validator",
+      "sourcePort": null,
+      "targetPort": "port-ops02-cv-in-vehicle",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle State & Capabilities",
+        "description": "Vehicle State Store provides current vehicle state and capability limits to the Command Validation Engine for command compatibility checking (e.g., altitude ceiling, speed limits).",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.9-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-safety-to-cmdval",
+      "source": "ext-ops02-safety",
+      "target": "node-ops02-cmd-validator",
+      "sourcePort": null,
+      "targetPort": "port-ops02-cv-in-safety",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Safety Policy Rules",
+        "description": "Safety Policy Engine provides active safety rules and operational limits to the Command Validation Engine for hard-constraint enforcement on every command.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "control",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.9-02",
+          "req-GA-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-api-to-cmdctrl",
+      "source": "ext-ops02-api-gateway",
+      "target": "node-ops02-cmd-control",
+      "sourcePort": null,
+      "targetPort": "port-ops02-cc-in-operator",
+      "semantic": {
+        "type": "command",
+        "label": "Operator Manual Command",
+        "description": "Core API Gateway delivers authenticated manual operator commands to the Command Control Engine for validation and dispatch, with priority elevation for emergency commands.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "command",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.8-02",
+          "req-2.9-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-monitor-to-dash",
+      "source": "node-ops02-monitor",
+      "target": "ext-ops02-dashboard",
+      "sourcePort": "port-ops02-mon-out-progress",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Mission Progress",
+        "description": "Mission Monitoring Engine delivers real-time progress updates (waypoint completion, task status, timeline adherence) to the Unified Dashboard for operator situational awareness.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.11-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-cmdtrack-to-dash",
+      "source": "node-ops02-cmd-tracker",
+      "target": "ext-ops02-dashboard",
+      "sourcePort": "port-ops02-ct-out-status",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Command Status",
+        "description": "Command Tracking Engine provides real-time command lifecycle status (pending, dispatched, acknowledged, completed, failed) to the Unified Dashboard for operator command awareness.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-exec-to-bus",
+      "source": "node-ops02-executor",
+      "target": "ext-ops02-event-bus",
+      "sourcePort": "port-ops02-exec-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Mission Lifecycle Events",
+        "description": "Mission Execution Engine publishes mission state transition events (armed, executing, paused, completed, aborted) to the Core Event Bus for cross-subsystem awareness and audit.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "event",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.8-01",
+          "req-2.8-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-monitor-to-bus",
+      "source": "node-ops02-monitor",
+      "target": "ext-ops02-event-bus",
+      "sourcePort": "port-ops02-mon-out-alerts",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Deviation Alerts",
+        "description": "Mission Monitoring Engine publishes deviation alerts to the Core Event Bus when spatial, temporal, or task-level deviations exceed configured thresholds.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "event",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.11-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-cmdtrack-to-bus",
+      "source": "node-ops02-cmd-tracker",
+      "target": "ext-ops02-event-bus",
+      "sourcePort": "port-ops02-ct-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Command Lifecycle Events",
+        "description": "Command Tracking Engine publishes command lifecycle events (dispatched, acknowledged, timed-out, retried, completed, failed) to the Core Event Bus for audit and cross-subsystem coordination.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "event",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.9-03",
+          "req-GA-09"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops02-cmdval-to-bus",
+      "source": "node-ops02-cmd-validator",
+      "target": "ext-ops02-event-bus",
+      "sourcePort": "port-ops02-cv-out-reject",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Command Rejection Events",
+        "description": "Command Validation Engine publishes command rejection events with violation details to the Core Event Bus for operator notification and safety audit logging.",
+        "protocol": null,
+        "direction": "source-to-target",
+        "dataType": "event",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-GA-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "ext-ops02-hybrid",
+      "sourceDocumentId": "doc-plan-01",
+      "engineId": "eng-plan-hybrid",
+      "label": "Hybrid Planning Coordinator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops02-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops02-api-gateway",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-api-gateway",
+      "label": "Core API Gateway",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops02-vehicle-state",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-vehicle-state",
+      "label": "Vehicle State Store",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops02-transport",
+      "sourceDocumentId": "doc-comm-01",
+      "engineId": "eng-comm-transport",
+      "label": "Communication Transport",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rectangle",
+        "category": "external",
+        "color": "#06b6d4",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops02-safety",
+      "sourceDocumentId": "doc-sec-01",
+      "engineId": "eng-sec-safety-policy",
+      "label": "Safety Policy Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rectangle",
+        "category": "external",
+        "color": "#ef4444",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops02-dashboard",
+      "sourceDocumentId": "doc-ops-01",
+      "engineId": "eng-ops-unified",
+      "label": "Unified Operations Dashboard",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-ops-mission-execution",
+      "localNodeId": "node-ops02-executor",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-mission-monitoring",
+      "localNodeId": "node-ops02-monitor",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-command-control",
+      "localNodeId": "node-ops02-cmd-control",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-command-validation",
+      "localNodeId": "node-ops02-cmd-validator",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-command-tracking",
+      "localNodeId": "node-ops02-cmd-tracker",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.8-01",
+      "description": "The system shall execute validated mission plans by decomposing them into sequenced vehicle commands and managing the mission state machine through all lifecycle phases.",
+      "coveredByNodes": [
+        "node-ops02-executor"
+      ],
+      "coveredByEdges": [
+        "edge-ops02-hybrid-to-exec",
+        "edge-ops02-exec-to-cmdctrl",
+        "edge-ops02-exec-to-monitor",
+        "edge-ops02-exec-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Execution Engine receives validated plans, decomposes into command sequences, manages state transitions, and publishes lifecycle events."
+    },
+    {
+      "requirementId": "req-2.8-02",
+      "description": "The system shall support mission pause, resume, and abort operations with safe vehicle state preservation during transitions.",
+      "coveredByNodes": [
+        "node-ops02-executor"
+      ],
+      "coveredByEdges": [
+        "edge-ops02-api-to-cmdctrl",
+        "edge-ops02-exec-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Execution Engine state machine handles pause/resume/abort transitions triggered via operator commands through the Command Control pipeline."
+    },
+    {
+      "requirementId": "req-2.11-01",
+      "description": "The system shall monitor active mission progress in real time, tracking waypoint completion, task execution, and timeline adherence against the planned mission.",
+      "coveredByNodes": [
+        "node-ops02-monitor"
+      ],
+      "coveredByEdges": [
+        "edge-ops02-exec-to-monitor",
+        "edge-ops02-vehicle-to-monitor",
+        "edge-ops02-monitor-to-dash"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Monitoring Engine ingests mission state and vehicle telemetry to compute real-time progress metrics displayed on the dashboard."
+    },
+    {
+      "requirementId": "req-2.11-02",
+      "description": "The system shall detect mission deviations exceeding configurable thresholds and trigger replanning or operator alerts.",
+      "coveredByNodes": [
+        "node-ops02-monitor"
+      ],
+      "coveredByEdges": [
+        "edge-ops02-monitor-to-exec",
+        "edge-ops02-monitor-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Monitoring Engine feeds deviation reports back to the Execution Engine for replanning and publishes deviation alerts to the Event Bus."
+    },
+    {
+      "requirementId": "req-2.9-01",
+      "description": "The system shall provide centralized command dispatch with priority queuing, routing both automated mission commands and manual operator commands to the appropriate vehicle.",
+      "coveredByNodes": [
+        "node-ops02-cmd-control"
+      ],
+      "coveredByEdges": [
+        "edge-ops02-exec-to-cmdctrl",
+        "edge-ops02-api-to-cmdctrl",
+        "edge-ops02-cmdctrl-to-transport"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Command Control Engine merges automated and manual command streams with priority queuing and dispatches via the transport layer."
+    },
+    {
+      "requirementId": "req-2.9-02",
+      "description": "The system shall validate all commands before dispatch, checking syntax, parameter ranges, vehicle capability compatibility, and safety policy compliance.",
+      "coveredByNodes": [
+        "node-ops02-cmd-validator"
+      ],
+      "coveredByEdges": [
+        "edge-ops02-cmdctrl-to-cmdval",
+        "edge-ops02-cmdval-to-cmdctrl",
+        "edge-ops02-vehicle-to-cmdval",
+        "edge-ops02-safety-to-cmdval"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Command Validation Engine checks every command against vehicle capabilities and safety policies before approving dispatch."
+    },
+    {
+      "requirementId": "req-2.9-03",
+      "description": "The system shall track command lifecycle from issuance through acknowledgment to completion, detecting lost commands and triggering automatic retries.",
+      "coveredByNodes": [
+        "node-ops02-cmd-tracker"
+      ],
+      "coveredByEdges": [
+        "edge-ops02-cmdctrl-to-cmdtrack",
+        "edge-ops02-transport-to-cmdtrack",
+        "edge-ops02-cmdtrack-to-cmdctrl",
+        "edge-ops02-cmdtrack-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Command Tracking Engine monitors acknowledgment timers, triggers retries on timeout, and publishes lifecycle events for audit."
+    },
+    {
+      "requirementId": "req-GA-07",
+      "description": "The system shall enforce safety validation at all mission lifecycle stages and prevent unsafe command execution.",
+      "coveredByNodes": [
+        "node-ops02-cmd-validator"
+      ],
+      "coveredByEdges": [
+        "edge-ops02-safety-to-cmdval",
+        "edge-ops02-cmdval-to-cmdctrl",
+        "edge-ops02-cmdval-to-bus"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Command-level safety validation covered here; full safety enforcement spans mission validation (ops-01), safety policy (sec), and feasibility (plan-04)."
+    },
+    {
+      "requirementId": "req-GA-09",
+      "description": "The system shall maintain a complete audit trail of all commands issued, validated, dispatched, and acknowledged.",
+      "coveredByNodes": [
+        "node-ops02-cmd-tracker"
+      ],
+      "coveredByEdges": [
+        "edge-ops02-cmdctrl-to-cmdtrack",
+        "edge-ops02-transport-to-cmdtrack",
+        "edge-ops02-cmdtrack-to-bus"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Command audit trail covered here; full system audit spans data logging (data) and security audit (sec)."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-065",
+      "description": "The mission state machine follows a strict transition graph: draft→armed→executing→completed, with pause/resume and abort as orthogonal transitions from executing.",
+      "rationale": "A well-defined state machine prevents invalid transitions that could leave vehicles in unsafe states."
+    },
+    {
+      "id": "AS-066",
+      "description": "Command validation is performed synchronously within the command dispatch pipeline, adding bounded latency to every command.",
+      "rationale": "Asynchronous validation would allow unvalidated commands to reach the vehicle, violating safety requirements."
+    },
+    {
+      "id": "AS-067",
+      "description": "Command acknowledgment timeouts and retry limits are configurable per vehicle type and link quality, with emergency commands exempt from retry limits.",
+      "rationale": "Different communication links have different latency characteristics; fixed timeouts would cause false retries on high-latency links."
+    },
+    {
+      "id": "AS-068",
+      "description": "The Mission Monitoring Engine computes deviations at a configurable rate (default 1 Hz) and applies hysteresis to prevent oscillating alerts near threshold boundaries.",
+      "rationale": "Hysteresis prevents alert storms when a vehicle oscillates near a deviation threshold due to wind or control dynamics."
+    },
+    {
+      "id": "AS-069",
+      "description": "The Communication Transport boundary is represented with role 'target' because command dispatch is its primary interaction in this diagram; the same boundary also returns vehicle acknowledgments to Command Tracking.",
+      "rationale": "The canonical external-reference schema permits one role value, while the transport interaction is bidirectional."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-066",
+      "description": "Maximum command queue depth and overflow policy (drop oldest, reject new, or escalate to operator) during high-command-rate scenarios.",
+      "impact": "Affects command dispatch reliability during complex multi-vehicle maneuvers with rapid command generation.",
+      "owner": "Operations Architecture"
+    },
+    {
+      "id": "UD-067",
+      "description": "Whether the Mission Execution Engine supports conditional mission branching (e.g., if-then-else waypoint sequences) or only linear mission plans.",
+      "impact": "Affects mission planning complexity and the Execution Engine's state machine design.",
+      "owner": "Operations Lead"
+    },
+    {
+      "id": "UD-068",
+      "description": "Command priority preemption policy: whether a high-priority command can interrupt an in-progress lower-priority command on the vehicle.",
+      "impact": "Affects vehicle command execution safety and the Command Control Engine's dispatch logic.",
+      "owner": "Safety Architecture"
+    },
+    {
+      "id": "UD-069",
+      "description": "Mission monitoring deviation threshold defaults and whether they are absolute values or relative to mission phase (e.g., tighter during landing).",
+      "impact": "Affects false-positive alert rate and operator trust in the monitoring system.",
+      "owner": "Operations Lead"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-16",
+    "lastModified": "2026-10-31"
+  }
+}

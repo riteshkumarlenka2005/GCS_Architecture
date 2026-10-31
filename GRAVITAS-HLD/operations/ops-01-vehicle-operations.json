@@ -1,0 +1,1563 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-ops-01",
+  "title": "Unified Operations, Mission Planning, Validation & Versioning Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of the Operations subsystem mission lifecycle: the Unified Operations Dashboard (eng-ops-unified) for the operator workspace; Mission Plan Editor and Mission Plan Store (eng-ops-mission-planning) for mission authoring, templates, working copies, and persistence; Mission Validation (eng-ops-mission-validation) for pre-commit checks against vehicle capabilities, navigation constraints, and planning feasibility; and Mission Version Manager (eng-ops-mission-versioning) for version history, diff, rollback, and collaborative branches. Includes COP context, Planning subsystem feedback and feasibility services, Core Event Bus integration, and Data Persistence integration.",
+  "category": "ops",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1500,
+    "height": 1000,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-ops01-mission-lifecycle",
+      "label": "Mission Lifecycle Pipeline",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-ops01-mission-editor",
+        "node-ops01-mission-store",
+        "node-ops01-validator",
+        "node-ops01-version-mgr"
+      ],
+      "style": {
+        "backgroundColor": "rgba(139, 92, 246, 0.05)",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-ops01-operator-workspace",
+      "label": "Operator Workspace & Situational Awareness",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-ops01-dashboard"
+      ],
+      "style": {
+        "backgroundColor": "rgba(59, 130, 246, 0.05)",
+        "borderColor": "#3b82f6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-ops01-dashboard",
+      "label": "Unified Operations Dashboard",
+      "type": "component",
+      "engineId": "eng-ops-unified",
+      "description": "The operator's primary workspace integrating mission, vehicle, fleet, and alert views into a single configurable interface. Provides real-time situational awareness by aggregating vehicle telemetry from the Core Vehicle State Store, mission status from the Mission Plan Editor, geospatial context from the COP, and system alerts from the Core Event Bus. Supports customizable panel layouts, role-based view profiles, and quick-access controls for common operational actions (launch, abort, return-to-home). Publishes operator interaction events and operational state changes to the Core Event Bus for audit and coordination.",
+      "position": {
+        "x": 100,
+        "y": 80
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1630",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "gauge-high"
+      },
+      "ports": [
+        {
+          "id": "port-ops01-dash-in-map",
+          "label": "Map Context",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops01-dash-in-plan-feedback",
+          "label": "Planning Feedback",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops01-dash-out-display",
+          "label": "Display Commands",
+          "direction": "out",
+          "dataType": "command",
+          "position": "left"
+        },
+        {
+          "id": "port-ops01-dash-out-open",
+          "label": "Open Mission",
+          "direction": "out",
+          "dataType": "control",
+          "position": "right"
+        },
+        {
+          "id": "port-ops01-dash-out-validate",
+          "label": "Trigger Validation",
+          "direction": "out",
+          "dataType": "control",
+          "position": "right"
+        },
+        {
+          "id": "port-ops01-dash-out-version",
+          "label": "Version Operations",
+          "direction": "out",
+          "dataType": "control",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops01-dash-out-events",
+          "label": "Operational Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "top"
+        }
+      ]
+    },
+    {
+      "id": "node-ops01-mission-editor",
+      "label": "Mission Plan Editor",
+      "type": "component",
+      "engineId": "eng-ops-mission-planning",
+      "description": "Interactive mission authoring environment supporting waypoint placement and editing, task definition (survey, inspection, delivery, loiter), timeline construction with temporal constraints, vehicle-to-task assignment, and mission parameter configuration (altitude profiles, speed schedules, payload triggers). Integrates with the COP for map-contextualized waypoint placement and with the Planning subsystem for real-time route feasibility feedback during editing. Supports mission templates for rapid mission creation from pre-defined patterns. Produces structured mission plan documents consumed by the Validation Engine and stored via the Mission Plan Store.",
+      "position": {
+        "x": 520,
+        "y": 80
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1630",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "pen-ruler"
+      },
+      "ports": [
+        {
+          "id": "port-ops01-ed-in-open",
+          "label": "Open Mission Cmd",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-ops01-ed-in-load",
+          "label": "Loaded Plan",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops01-ed-in-val-result",
+          "label": "Validation Results",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops01-ed-in-version",
+          "label": "Version History",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops01-ed-in-plan-fb",
+          "label": "Planning Feedback",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops01-ed-out-save",
+          "label": "Save Plan",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops01-ed-out-validate",
+          "label": "Validate Request",
+          "direction": "out",
+          "dataType": "command",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops01-ed-out-commit",
+          "label": "Commit Version",
+          "direction": "out",
+          "dataType": "command",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops01-ed-out-submit",
+          "label": "Submit to Planning",
+          "direction": "out",
+          "dataType": "command",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-ops01-mission-store",
+      "label": "Mission Plan Store",
+      "type": "component",
+      "engineId": "eng-ops-mission-planning",
+      "description": "Manages in-memory working copies and persistent storage of mission plans, templates, and drafts. Provides CRUD operations for mission plan documents, supports concurrent access by the editor and version manager, and interfaces with the Data Persistence Engine for durable storage. Maintains an index of mission plans by status (draft, validated, active, archived), vehicle assignment, and creation date. Handles mission template library management including built-in templates and operator-created custom templates.",
+      "position": {
+        "x": 520,
+        "y": 420
+      },
+      "size": {
+        "width": 240,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#1a1630",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "database"
+      },
+      "ports": [
+        {
+          "id": "port-ops01-store-in-save",
+          "label": "Save Plan",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops01-store-in-version",
+          "label": "Persist Version",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops01-store-in-persist-read",
+          "label": "Persistence Read",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops01-store-out-load",
+          "label": "Loaded Plan",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops01-store-out-persist-write",
+          "label": "Persistence Write",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops01-validator",
+      "label": "Mission Validation Engine",
+      "type": "component",
+      "engineId": "eng-ops-mission-validation",
+      "description": "Pre-commit validation engine that evaluates mission plans against multiple constraint dimensions before execution approval. Performs vehicle capability checks (range, payload, endurance) by querying the Core Vehicle State Store; navigation constraint compliance by delegating to the Planning Navigation Constraints Engine; feasibility assessment by invoking the Planning Feasibility Checker; and internal consistency checks (timeline conflicts, waypoint reachability, task-vehicle compatibility). Produces structured validation reports with pass/fail/warning classifications and specific remediation suggestions. Supports configurable validation strictness profiles (strict, standard, relaxed) selected by the operator or dictated by mission type.",
+      "position": {
+        "x": 920,
+        "y": 80
+      },
+      "size": {
+        "width": 280,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1630",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "clipboard-check"
+      },
+      "ports": [
+        {
+          "id": "port-ops01-val-in-request",
+          "label": "Validate Request",
+          "direction": "in",
+          "dataType": "command",
+          "position": "left"
+        },
+        {
+          "id": "port-ops01-val-in-trigger",
+          "label": "Dashboard Trigger",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-ops01-val-in-feasibility",
+          "label": "Feasibility Result",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops01-val-in-constraints",
+          "label": "Constraint Result",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops01-val-in-vehicle",
+          "label": "Vehicle Capabilities",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops01-val-out-results",
+          "label": "Validation Report",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops01-val-out-feasibility",
+          "label": "Feasibility Check",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops01-val-out-constraints",
+          "label": "Constraint Check",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops01-val-out-vehicle",
+          "label": "Vehicle Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops01-version-mgr",
+      "label": "Mission Version Manager",
+      "type": "component",
+      "engineId": "eng-ops-mission-versioning",
+      "description": "Version control system for mission plans providing full change history, diff computation, rollback to any prior version, and branch/merge support for collaborative multi-operator editing scenarios. Each version captures the complete mission plan state, the identity of the modifying operator, a timestamp, and an optional change description. Supports version comparison (visual diff of waypoint changes, task modifications, parameter adjustments) and version tagging for milestone marking (e.g., 'validated', 'approved', 'executed'). Integrates with the Mission Plan Store for version persistence and with the Mission Plan Editor for version restoration.",
+      "position": {
+        "x": 920,
+        "y": 420
+      },
+      "size": {
+        "width": 260,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#1a1630",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "code-branch"
+      },
+      "ports": [
+        {
+          "id": "port-ops01-ver-in-commit",
+          "label": "Commit Version",
+          "direction": "in",
+          "dataType": "command",
+          "position": "left"
+        },
+        {
+          "id": "port-ops01-ver-in-ops",
+          "label": "Version Operations",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-ops01-ver-out-history",
+          "label": "Version History",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops01-ver-out-persist",
+          "label": "Persist Version",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-ops01-dash-to-editor",
+      "source": "node-ops01-dashboard",
+      "target": "node-ops01-mission-editor",
+      "sourcePort": "port-ops01-dash-out-open",
+      "targetPort": "port-ops01-ed-in-open",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Open Mission",
+        "description": "Dashboard sends open/edit mission commands to the Mission Plan Editor when the operator selects a mission from the workspace.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.5-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-editor-to-store",
+      "source": "node-ops01-mission-editor",
+      "target": "node-ops01-mission-store",
+      "sourcePort": "port-ops01-ed-out-save",
+      "targetPort": "port-ops01-store-in-save",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Save Mission Plan",
+        "description": "Mission Plan Editor saves the current working mission plan (auto-save and explicit save) to the Mission Plan Store.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.6-01",
+          "req-2.6-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-store-to-editor",
+      "source": "node-ops01-mission-store",
+      "target": "node-ops01-mission-editor",
+      "sourcePort": "port-ops01-store-out-load",
+      "targetPort": "port-ops01-ed-in-load",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Load Mission Plan",
+        "description": "Mission Plan Store delivers the requested mission plan document to the Editor for display and editing.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.6-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-editor-to-validator",
+      "source": "node-ops01-mission-editor",
+      "target": "node-ops01-validator",
+      "sourcePort": "port-ops01-ed-out-validate",
+      "targetPort": "port-ops01-val-in-request",
+      "semantic": {
+        "type": "command",
+        "label": "Validate Mission",
+        "description": "Mission Plan Editor submits the current plan to the Validation Engine for pre-commit validation, triggered by operator action or auto-validation on save.",
+        "protocol": null,
+        "dataType": "command",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.6-01",
+          "req-2.7-02",
+          "req-GA-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#ef4444",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-validator-to-editor",
+      "source": "node-ops01-validator",
+      "target": "node-ops01-mission-editor",
+      "sourcePort": "port-ops01-val-out-results",
+      "targetPort": "port-ops01-ed-in-val-result",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Validation Report",
+        "description": "Validation Engine returns the structured validation report (pass/fail/warning with remediation suggestions) to the Editor for operator display.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.7-02",
+          "req-GA-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-editor-to-version",
+      "source": "node-ops01-mission-editor",
+      "target": "node-ops01-version-mgr",
+      "sourcePort": "port-ops01-ed-out-commit",
+      "targetPort": "port-ops01-ver-in-commit",
+      "semantic": {
+        "type": "command",
+        "label": "Commit Version",
+        "description": "Mission Plan Editor requests a version commit after successful validation or explicit operator save-with-version action.",
+        "protocol": null,
+        "dataType": "command",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.7-02",
+          "req-2.10-01",
+          "req-GA-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#ef4444",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-version-to-store",
+      "source": "node-ops01-version-mgr",
+      "target": "node-ops01-mission-store",
+      "sourcePort": "port-ops01-ver-out-persist",
+      "targetPort": "port-ops01-store-in-version",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Persist Version Snapshot",
+        "description": "Version Manager writes the immutable version snapshot to the Mission Plan Store for durable storage alongside the working copy.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.10-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-version-to-editor",
+      "source": "node-ops01-version-mgr",
+      "target": "node-ops01-mission-editor",
+      "sourcePort": "port-ops01-ver-out-history",
+      "targetPort": "port-ops01-ed-in-version",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Version History & Rollback",
+        "description": "Version Manager provides version history listings, diff data, and restored plan snapshots to the Editor for display and rollback operations.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.10-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-dash-to-validator",
+      "source": "node-ops01-dashboard",
+      "target": "node-ops01-validator",
+      "sourcePort": "port-ops01-dash-out-validate",
+      "targetPort": "port-ops01-val-in-trigger",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Trigger Validation",
+        "description": "Dashboard can directly trigger mission validation from the unified workspace without requiring the editor to be active.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.5-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-dash-to-version",
+      "source": "node-ops01-dashboard",
+      "target": "node-ops01-version-mgr",
+      "sourcePort": "port-ops01-dash-out-version",
+      "targetPort": "port-ops01-ver-in-ops",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Version Operations",
+        "description": "Dashboard provides version management controls (compare, tag, rollback) accessible from the unified workspace.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.5-02",
+          "req-2.10-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-cop-to-dash",
+      "source": "node-cop01-core",
+      "target": "node-ops01-dashboard",
+      "sourcePort": null,
+      "targetPort": "port-ops01-dash-in-map",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Geospatial Context",
+        "description": "COP Core provides real-time geospatial context (map viewport, vehicle positions, geofence overlays) to the Dashboard for situational awareness display.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.5-01",
+          "req-GA-03"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-dash-to-cop",
+      "source": "node-ops01-dashboard",
+      "target": "node-cop01-core",
+      "sourcePort": "port-ops01-dash-out-display",
+      "targetPort": null,
+      "semantic": {
+        "type": "command",
+        "label": "Display Commands",
+        "description": "Dashboard sends display commands to the COP for mission overlay rendering, viewport navigation, and layer activation.",
+        "protocol": null,
+        "dataType": "command",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#ef4444",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-validator-to-feasibility",
+      "source": "node-ops01-validator",
+      "target": "node-plan04-feasibility-checker",
+      "sourcePort": "port-ops01-val-out-feasibility",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Feasibility Check Request",
+        "description": "Validation Engine delegates trajectory and route feasibility assessment to the Planning Feasibility Checker as part of the multi-dimensional validation pipeline.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.7-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-feasibility-to-validator",
+      "source": "node-plan04-feasibility-checker",
+      "target": "node-ops01-validator",
+      "sourcePort": null,
+      "targetPort": "port-ops01-val-in-feasibility",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Feasibility Assessment",
+        "description": "Planning Feasibility Checker returns the feasibility assessment (pass/fail with constraint details) to the Validation Engine for integration into the validation report.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.7-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-validator-to-navcon",
+      "source": "node-ops01-validator",
+      "target": "node-plan05-nav-constraints",
+      "sourcePort": "port-ops01-val-out-constraints",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Nav Constraint Check",
+        "description": "Validation Engine delegates navigation constraint compliance checking to the Planning Navigation Constraints Engine.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.7-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-navcon-to-validator",
+      "source": "node-plan05-nav-constraints",
+      "target": "node-ops01-validator",
+      "sourcePort": null,
+      "targetPort": "port-ops01-val-in-constraints",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Constraint Compliance",
+        "description": "Navigation Constraints Engine returns constraint compliance verdict and violation details to the Validation Engine.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.7-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-validator-to-vstate",
+      "source": "node-ops01-validator",
+      "target": "node-core03-state-store",
+      "sourcePort": "port-ops01-val-out-vehicle",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle Capability Query",
+        "description": "Validation Engine queries the Core Vehicle State Store for vehicle capability data (range, payload capacity, endurance, sensor availability) needed for mission-vehicle compatibility checks.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.7-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-vstate-to-validator",
+      "source": "node-core03-state-store",
+      "target": "node-ops01-validator",
+      "sourcePort": null,
+      "targetPort": "port-ops01-val-in-vehicle",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle Capabilities",
+        "description": "Core Vehicle State Store returns current vehicle capability profiles and health status to the Validation Engine.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.7-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-store-to-persist",
+      "source": "node-ops01-mission-store",
+      "target": "node-data01-persistence",
+      "sourcePort": "port-ops01-store-out-persist-write",
+      "targetPort": null,
+      "semantic": {
+        "type": "persistence",
+        "label": "Persist Mission Data",
+        "description": "Mission Plan Store writes mission plans, templates, and version snapshots to the Data Persistence Engine for durable storage.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.10-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dashed",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#0d9488",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-persist-to-store",
+      "source": "node-data01-persistence",
+      "target": "node-ops01-mission-store",
+      "sourcePort": null,
+      "targetPort": "port-ops01-store-in-persist-read",
+      "semantic": {
+        "type": "persistence",
+        "label": "Load Mission Data",
+        "description": "Mission Plan Store reads mission plans and version history from the Data Persistence Engine on startup and on-demand.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.10-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dashed",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#0d9488",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-dash-to-bus",
+      "source": "node-ops01-dashboard",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-ops01-dash-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Operational Events",
+        "description": "Dashboard publishes operator interaction events, mission state changes, and workspace configuration updates to the Core Event Bus for audit logging and cross-subsystem coordination.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.5-01",
+          "req-GA-03"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-editor-to-hybrid",
+      "source": "node-ops01-mission-editor",
+      "target": "node-plan01-hybrid",
+      "sourcePort": "port-ops01-ed-out-submit",
+      "targetPort": null,
+      "semantic": {
+        "type": "command",
+        "label": "Submit Plan to Planning",
+        "description": "Mission Plan Editor submits the validated mission plan to the Hybrid Planning Coordinator for route generation, trajectory optimization, and execution scheduling.",
+        "protocol": null,
+        "dataType": "command",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.6-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#ef4444",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-hybrid-to-editor",
+      "source": "node-plan01-hybrid",
+      "target": "node-ops01-mission-editor",
+      "sourcePort": null,
+      "targetPort": "port-ops01-ed-in-plan-fb",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Planning Feedback",
+        "description": "Hybrid Planning Coordinator returns planning feedback (route suggestions, feasibility warnings, optimization recommendations) to the Editor for real-time display during mission authoring.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-ops01-hybrid-to-dash",
+      "source": "node-plan01-hybrid",
+      "target": "node-ops01-dashboard",
+      "sourcePort": null,
+      "targetPort": "port-ops01-dash-in-plan-feedback",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Planning Status",
+        "description": "Hybrid Planning Coordinator provides high-level planning status and alerts to the Dashboard for operator situational awareness.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.5-01",
+          "req-GA-03"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-cop01-core",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-core",
+      "label": "COP Core",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan01-hybrid",
+      "sourceDocumentId": "doc-plan-01",
+      "engineId": "eng-plan-hybrid",
+      "label": "Hybrid Planning Coordinator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan04-feasibility-checker",
+      "sourceDocumentId": "doc-plan-04",
+      "engineId": "eng-plan-feasibility",
+      "label": "Feasibility Checker",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan05-nav-constraints",
+      "sourceDocumentId": "doc-plan-05",
+      "engineId": "eng-plan-nav-constraints",
+      "label": "Navigation Constraints Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core03-state-store",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-vehicle-state",
+      "label": "Vehicle State Store",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core04-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-data01-persistence",
+      "sourceDocumentId": "doc-data-01",
+      "engineId": "eng-data-persistence",
+      "label": "Data Persistence Engine",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#14b8a6",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-ops-unified",
+      "localNodeId": "node-ops01-dashboard",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-mission-planning",
+      "localNodeId": "node-ops01-mission-editor",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-mission-validation",
+      "localNodeId": "node-ops01-validator",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-mission-versioning",
+      "localNodeId": "node-ops01-version-mgr",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.5-01",
+      "description": "The system shall provide a unified operations dashboard presenting real-time vehicle states, mission status, alerts, and system health in a single operator view.",
+      "coveredByNodes": [
+        "node-ops01-dashboard"
+      ],
+      "coveredByEdges": [
+        "edge-ops01-dash-to-bus",
+        "edge-ops01-hybrid-to-dash",
+        "edge-ops01-cop-to-dash"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Dashboard aggregates COP context, planning status, and event-bus updates. Direct vehicle-state and mission-store status feeds are not separately modeled."
+    },
+    {
+      "requirementId": "req-2.5-02",
+      "description": "The system shall support configurable dashboard layouts and role-based view filtering for different operator roles.",
+      "coveredByNodes": [
+        "node-ops01-dashboard"
+      ],
+      "coveredByEdges": [
+        "edge-ops01-dash-to-editor",
+        "edge-ops01-dash-to-validator",
+        "edge-ops01-dash-to-version"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Configurable layouts and role-based profiles are stated in the Dashboard description; identity/role authorization integration is not explicitly modeled."
+    },
+    {
+      "requirementId": "req-2.6-01",
+      "description": "The system shall provide interactive mission planning with waypoint definition, task sequencing, timeline creation, and multi-vehicle task assignment.",
+      "coveredByNodes": [
+        "node-ops01-mission-editor",
+        "node-ops01-mission-store"
+      ],
+      "coveredByEdges": [
+        "edge-ops01-editor-to-store",
+        "edge-ops01-editor-to-validator",
+        "edge-ops01-editor-to-hybrid"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Mission Plan Editor authors mission content and submits it for validation and planning; Mission Plan Store persists working plans."
+    },
+    {
+      "requirementId": "req-2.6-02",
+      "description": "The system shall support mission template application and parameterized mission configuration for rapid mission creation.",
+      "coveredByNodes": [
+        "node-ops01-mission-editor",
+        "node-ops01-mission-store"
+      ],
+      "coveredByEdges": [
+        "edge-ops01-editor-to-store",
+        "edge-ops01-store-to-editor"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Editor supports templates and parameterized mission authoring; Mission Plan Store maintains the template library."
+    },
+    {
+      "requirementId": "req-2.7-01",
+      "description": "The system shall validate missions before execution against vehicle capabilities, navigation constraints, energy feasibility, and safety policies.",
+      "coveredByNodes": [
+        "node-ops01-validator"
+      ],
+      "coveredByEdges": [
+        "edge-ops01-validator-to-feasibility",
+        "edge-ops01-feasibility-to-validator",
+        "edge-ops01-validator-to-navcon",
+        "edge-ops01-navcon-to-validator",
+        "edge-ops01-validator-to-vstate",
+        "edge-ops01-vstate-to-validator"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Vehicle capabilities, navigation constraints, and feasibility are integrated. Explicit Safety Policy Engine input is absent from this variant and must be added or mapped in the security/safety subsystem."
+    },
+    {
+      "requirementId": "req-2.7-02",
+      "description": "The system shall produce detailed validation reports with pass/fail/warning classifications per check category and prevent execution of missions failing hard constraints.",
+      "coveredByNodes": [
+        "node-ops01-validator"
+      ],
+      "coveredByEdges": [
+        "edge-ops01-editor-to-validator",
+        "edge-ops01-validator-to-editor",
+        "edge-ops01-editor-to-version"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Validation reports return to the editor. The diagram does not explicitly show a validation-gated commit path from Validator to Version Manager; current commit request originates at the Editor."
+    },
+    {
+      "requirementId": "req-2.10-01",
+      "description": "The system shall maintain version control for all mission definitions including drafts, validated versions, change history, and author attribution.",
+      "coveredByNodes": [
+        "node-ops01-version-mgr",
+        "node-ops01-mission-store"
+      ],
+      "coveredByEdges": [
+        "edge-ops01-editor-to-version",
+        "edge-ops01-version-to-store",
+        "edge-ops01-store-to-persist",
+        "edge-ops01-persist-to-store"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Version Manager writes snapshots to Mission Plan Store, which has explicit durable persistence integration."
+    },
+    {
+      "requirementId": "req-2.10-02",
+      "description": "The system shall support mission version rollback, comparison (diff), and branching for mission variants.",
+      "coveredByNodes": [
+        "node-ops01-version-mgr",
+        "node-ops01-mission-editor"
+      ],
+      "coveredByEdges": [
+        "edge-ops01-version-to-editor",
+        "edge-ops01-dash-to-version"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Version Manager supports diff, rollback, branch/merge, and sends version history/restored snapshots to the Editor."
+    },
+    {
+      "requirementId": "req-GA-03",
+      "description": "The system shall maintain operator situational awareness through real-time status displays and timely alerting.",
+      "coveredByNodes": [
+        "node-ops01-dashboard"
+      ],
+      "coveredByEdges": [
+        "edge-ops01-dash-to-bus",
+        "edge-ops01-hybrid-to-dash",
+        "edge-ops01-cop-to-dash"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Dashboard receives operational events, planning status, and geospatial context. Complete situational awareness also depends on vehicle telemetry and alert feeds not fully detailed here."
+    },
+    {
+      "requirementId": "req-GA-07",
+      "description": "The system shall enforce safety validation at all mission lifecycle stages and prevent unsafe mission execution.",
+      "coveredByNodes": [
+        "node-ops01-validator",
+        "node-ops01-version-mgr"
+      ],
+      "coveredByEdges": [
+        "edge-ops01-editor-to-validator",
+        "edge-ops01-validator-to-editor",
+        "edge-ops01-editor-to-version"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Pre-commit validation is modeled, but explicit safety-policy input and an enforced validator-to-commit authorization edge are missing. Execution-time safety belongs to additional subsystems."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-061",
+      "description": "The Unified Dashboard is the primary operator interaction surface; operator commands are routed to the relevant subsystem through the platform's authenticated API boundary.",
+      "rationale": "Centralized API mediation provides consistent authentication, authorization, and audit logging. The API Gateway edge is not represented in this diagram variant and remains an integration dependency."
+    },
+    {
+      "id": "AS-062",
+      "description": "Mission validation is a synchronous gate: a mission cannot proceed to execution until all hard-constraint checks pass.",
+      "rationale": "Allowing execution of unvalidated missions would violate safety requirements and regulatory compliance."
+    },
+    {
+      "id": "AS-063",
+      "description": "Mission versioning uses an append-only storage model; previous versions are never modified or deleted, only superseded.",
+      "rationale": "Immutable version history is required for audit trail integrity and regulatory compliance."
+    },
+    {
+      "id": "AS-064",
+      "description": "The Mission Validation Engine queries external constraint sources (navigation, safety, feasibility) on each validation request rather than caching constraint data locally.",
+      "rationale": "Constraint data may change between mission planning and validation; fresh queries ensure current compliance."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-062",
+      "description": "Maximum number of concurrent mission versions retained per vehicle and the archival policy for old versions.",
+      "impact": "Affects Mission Versioning Store storage requirements and query performance.",
+      "owner": "Data Architecture"
+    },
+    {
+      "id": "UD-063",
+      "description": "Whether mission validation results are cached for a configurable time window to avoid redundant re-validation of unchanged missions.",
+      "impact": "Affects validation latency vs. constraint freshness trade-off.",
+      "owner": "Operations Architecture"
+    },
+    {
+      "id": "UD-064",
+      "description": "Dashboard update rate and data aggregation strategy for high-vehicle-count scenarios (e.g., 50+ vehicles).",
+      "impact": "Affects Unified Dashboard responsiveness and backend event processing load.",
+      "owner": "UI/UX Architecture"
+    },
+    {
+      "id": "UD-065",
+      "description": "Mission template governance model: who can create, modify, and certify templates for operational use.",
+      "impact": "Affects mission planning efficiency and safety assurance for template-based missions.",
+      "owner": "Operations Lead"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-16",
+    "lastModified": "2026-10-31"
+  }
+}

@@ -1,0 +1,1586 @@
+{
+    "schemaVersion": "1.0.0",
+    "documentId": "doc-sensor-02",
+    "title": "Camera Frustum, Blind Spot Analysis, Sensor Fusion & Observations Architecture",
+    "diagramType": "subsystem-architecture",
+    "description": "Internal architecture of four Sensor subsystem engines forming the advanced sensor geometry and data fusion pipeline: Camera Frustum (eng-sensor-camera-frustum) for specialized camera projection modeling including depth-of-field, resolution-at-distance, and perspective geometry; Blind Spot Analysis (eng-sensor-blind-spot) for computing sensor occlusion zones, structural shadowing, and uncovered angular sectors around the vehicle; Sensor Fusion (eng-sensor-fusion) for multi-sensor data association, spatial-temporal alignment, confidence weighting, and unified situational picture generation; and Observations (eng-sensor-observations) for the full observation lifecycle from detection through classification, geolocation, persistence, and query. Details the pipeline from camera-specific geometric modeling through multi-sensor fusion to persistent observation management.",
+    "category": "sensor",
+    "coordinateSystem": {
+        "type": "cartesian",
+        "unit": "px",
+        "origin": "top-left"
+    },
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "width": 1500,
+        "height": 1050,
+        "zoom": 1.0
+    },
+    "groups": [
+        {
+            "id": "grp-s02-geometry",
+            "label": "Advanced Sensor Geometry",
+            "type": "functional-group",
+            "nodeIds": [
+                "node-s02-frustum",
+                "node-s02-blindspot"
+            ],
+            "style": {
+                "backgroundColor": "rgba(236, 72, 153, 0.05)",
+                "borderColor": "#ec4899",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 12,
+                "padding": 30
+            }
+        },
+        {
+            "id": "grp-s02-fusion-obs",
+            "label": "Fusion & Observation Management",
+            "type": "functional-group",
+            "nodeIds": [
+                "node-s02-fusion",
+                "node-s02-observations"
+            ],
+            "style": {
+                "backgroundColor": "rgba(20, 184, 166, 0.05)",
+                "borderColor": "#14b8a6",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 12,
+                "padding": 30
+            }
+        }
+    ],
+    "nodes": [
+        {
+            "id": "node-s02-frustum",
+            "label": "Camera Frustum Engine",
+            "type": "component",
+            "engineId": "eng-sensor-camera-frustum",
+            "description": "Specialized geometric modeling engine for camera-type sensors providing high-fidelity perspective projection, depth-of-field computation, ground sample distance (GSD) calculation, and resolution-at-distance estimation. Extends the generic FOV Engine with camera-specific parameters: focal length, sensor size, pixel pitch, lens distortion model, and focus distance. Computes per-pixel ground projection maps, viewshed occlusion from terrain and structures, and camera-specific quality metrics (blur circle, motion smear). Provides detailed frustum geometry to the COP for 3D visualization and to the Blind Spot Engine for occlusion analysis. Camera intrinsics and their calibration version are supplied by the Pose Calibration Engine; each output geometry is tagged with sensor identity, capture timestamp, coordinate frame, and calibration version.",
+            "position": {
+                "x": 80,
+                "y": 130
+            },
+            "size": {
+                "width": 270,
+                "height": 210
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#ec4899",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "camera"
+            },
+            "ports": [
+                {
+                    "id": "port-s02-fr-in-frames",
+                    "label": "Camera Frames",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s02-fr-in-pose",
+                    "label": "Camera Pose",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s02-fr-in-terrain",
+                    "label": "Terrain Elevation",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s02-fr-out-geometry",
+                    "label": "Frustum Geometry",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s02-fr-out-gsd",
+                    "label": "GSD & Quality",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s02-fr-out-cop",
+                    "label": "Frustum Overlay",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-s02-fr-in-intrinsics",
+                    "label": "Camera Intrinsic Parameters",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                }
+            ]
+        },
+        {
+            "id": "node-s02-blindspot",
+            "label": "Blind Spot Analysis Engine",
+            "type": "component",
+            "engineId": "eng-sensor-blind-spot",
+            "description": "Computes areas around the vehicle that are not observable by any mounted sensor due to structural occlusion, sensor mounting geometry, or limited field of regard. Ingests frustum geometries from the Camera Frustum Engine and generic FOV data from the FOV Engine, combines them with a vehicle structural model (fuselage, wings, payload pods), and produces a 3D blind spot map. Supports dynamic blind spot updates as gimbaled sensors reorient and as the vehicle maneuvers. Publishes blind spot alerts when objects of interest enter unobservable zones and provides blind spot overlays to the COP for operator awareness. The vehicle structural/payload model is an explicit input sourced from the vehicle configuration registry; blind-spot products are versioned against vehicle configuration, sensor pose, and current gimbal orientation.",
+            "position": {
+                "x": 80,
+                "y": 510
+            },
+            "size": {
+                "width": 270,
+                "height": 210
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#ec4899",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "eye-slash"
+            },
+            "ports": [
+                {
+                    "id": "port-s02-bs-in-frustum",
+                    "label": "Frustum Geometry",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s02-bs-in-fov",
+                    "label": "Generic FOV Data",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s02-bs-in-vehicle",
+                    "label": "Vehicle Structure",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s02-bs-out-map",
+                    "label": "Blind Spot Map",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s02-bs-out-alerts",
+                    "label": "Blind Spot Alerts",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-s02-bs-out-cop",
+                    "label": "Blind Spot Overlay",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-s02-bs-in-structure-model",
+                    "label": "Vehicle Structural Model",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                }
+            ]
+        },
+        {
+            "id": "node-s02-fusion",
+            "label": "Sensor Fusion Engine",
+            "type": "component",
+            "engineId": "eng-sensor-fusion",
+            "description": "Multi-sensor data fusion engine combining observations from heterogeneous sensors (camera, LiDAR, radar, RF, thermal) into a unified situational awareness picture. Performs spatial registration (transforming all sensor observations into a common coordinate frame using calibrated poses), temporal alignment (interpolating observations to a common time base), data association (matching detections across sensors referring to the same real-world entity), and confidence-weighted state estimation. Supports configurable fusion strategies (early fusion at raw data level, late fusion at object level, or hybrid). Produces fused observation tracks consumed by the Observations Engine and provides fused situational overlays to the COP. Fusion inputs must carry sensor identity, capture time, coordinate frame, calibration version, and per-sensor quality metadata. Association outputs should retain provenance, confidence, and uncertainty rather than collapsing source evidence.",
+            "position": {
+                "x": 530,
+                "y": 130
+            },
+            "size": {
+                "width": 280,
+                "height": 220
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#14b8a6",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "object-group"
+            },
+            "ports": [
+                {
+                    "id": "port-s02-fu-in-frames",
+                    "label": "Sensor Frames",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s02-fu-in-gsd",
+                    "label": "GSD & Quality",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s02-fu-in-vehicle",
+                    "label": "Vehicle Pose",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s02-fu-in-config",
+                    "label": "Fusion Config",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s02-fu-out-tracks",
+                    "label": "Fused Tracks",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s02-fu-out-cop",
+                    "label": "Fusion Overlay",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-s02-fu-out-events",
+                    "label": "Fusion Events",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "bottom"
+                }
+            ]
+        },
+        {
+            "id": "node-s02-observations",
+            "label": "Observations Engine",
+            "type": "component",
+            "engineId": "eng-sensor-observations",
+            "description": "Manages the complete lifecycle of sensor observations from initial detection through classification, geolocation, quality assessment, persistence, and query. Ingests fused observation tracks from the Sensor Fusion Engine and raw single-sensor detections when fusion is not applicable. Geolocates observations using vehicle position, sensor pose, and terrain intersection. Assigns classification labels and confidence scores. Persists observations to the Data subsystem for post-mission analysis and evidence chains. Supports spatial, temporal, and classification-based observation queries from the COP and operator dashboard. Publishes high-confidence observation events for cross-subsystem awareness. Geolocation explicitly combines vehicle pose, calibrated sensor-to-body transform, and terrain surface intersection. Observation queries enter through an authorized API boundary; persistence and event publication should preserve provenance, confidence, and audit metadata.",
+            "position": {
+                "x": 530,
+                "y": 510
+            },
+            "size": {
+                "width": 280,
+                "height": 220
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#14b8a6",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "binoculars"
+            },
+            "ports": [
+                {
+                    "id": "port-s02-ob-in-tracks",
+                    "label": "Fused Tracks",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s02-ob-in-blindspot",
+                    "label": "Blind Spot Context",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s02-ob-in-vehicle",
+                    "label": "Vehicle Position",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s02-ob-out-persist",
+                    "label": "Persist Observations",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s02-ob-out-cop",
+                    "label": "Observation Markers",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-s02-ob-out-dash",
+                    "label": "Observation Status",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s02-ob-out-events",
+                    "label": "Observation Events",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-s02-ob-in-sensor-pose",
+                    "label": "Calibrated Sensor Pose",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s02-ob-in-terrain",
+                    "label": "Terrain Surface / Elevation",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s02-ob-in-query",
+                    "label": "Observation Query",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s02-ob-in-single-detections",
+                    "label": "Single-Sensor Detections",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "id": "edge-s02-fr-to-bs",
+            "source": "node-s02-frustum",
+            "target": "node-s02-blindspot",
+            "sourcePort": "port-s02-fr-out-geometry",
+            "targetPort": "port-s02-bs-in-frustum",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Camera Frustum Geometry",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Camera Frustum Engine provides detailed camera frustum geometries to the Blind Spot Analysis Engine for occlusion zone computation against the vehicle structural model.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-s02-fr-to-fu",
+            "source": "node-s02-frustum",
+            "target": "node-s02-fusion",
+            "sourcePort": "port-s02-fr-out-gsd",
+            "targetPort": "port-s02-fu-in-gsd",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "GSD & Quality Metrics",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Camera Frustum Engine provides ground sample distance and image quality metrics to the Sensor Fusion Engine for confidence weighting of camera-derived observations.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-s02-fu-to-ob",
+            "source": "node-s02-fusion",
+            "target": "node-s02-observations",
+            "sourcePort": "port-s02-fu-out-tracks",
+            "targetPort": "port-s02-ob-in-tracks",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Fused Observation Tracks",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Sensor Fusion Engine delivers multi-sensor fused observation tracks with unified state estimates and confidence scores to the Observations Engine for lifecycle management.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-s02-bs-to-ob",
+            "source": "node-s02-blindspot",
+            "target": "node-s02-observations",
+            "sourcePort": "port-s02-bs-out-map",
+            "targetPort": "port-s02-ob-in-blindspot",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Blind Spot Context",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Blind Spot Analysis Engine provides current blind spot geometry to the Observations Engine for observation quality annotation, flagging observations near blind spot boundaries as potentially incomplete.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-s02-si-to-fr",
+            "source": "ext-s02-sensor-integration",
+            "target": "node-s02-frustum",
+            "sourcePort": null,
+            "targetPort": "port-s02-fr-in-frames",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Camera Sensor Frames",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Sensor Integration Engine (sensor-01) delivers normalized camera frames with timestamps to the Camera Frustum Engine for projection modeling.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-si-to-fu",
+            "source": "ext-s02-sensor-integration",
+            "target": "node-s02-fusion",
+            "sourcePort": null,
+            "targetPort": "port-s02-fu-in-frames",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Multi-Sensor Frames",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Sensor Integration Engine (sensor-01) delivers synchronized frames from all sensor types (camera, LiDAR, radar, RF) to the Sensor Fusion Engine for multi-modal data association.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-fov-to-bs",
+            "source": "ext-s02-fov",
+            "target": "node-s02-blindspot",
+            "sourcePort": null,
+            "targetPort": "port-s02-bs-in-fov",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Generic FOV Data",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "FOV Engine (sensor-01) provides generic FOV footprints for non-camera sensors (LiDAR, radar, RF) to the Blind Spot Engine for comprehensive occlusion analysis.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-state-to-fr",
+            "source": "ext-s02-vehicle-state",
+            "target": "node-s02-frustum",
+            "sourcePort": null,
+            "targetPort": "port-s02-fr-in-pose",
+            "semantic": {
+                "type": "telemetry",
+                "direction": "unidirectional",
+                "label": "Vehicle Attitude & Position",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Vehicle State Store provides real-time vehicle attitude and position to the Camera Frustum Engine for body-to-world frustum projection.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-state-to-fu",
+            "source": "ext-s02-vehicle-state",
+            "target": "node-s02-fusion",
+            "sourcePort": null,
+            "targetPort": "port-s02-fu-in-vehicle",
+            "semantic": {
+                "type": "telemetry",
+                "direction": "unidirectional",
+                "label": "Vehicle Pose for Registration",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Vehicle State Store provides vehicle pose to the Sensor Fusion Engine for spatial registration of multi-sensor observations into a common world frame.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-state-to-ob",
+            "source": "ext-s02-vehicle-state",
+            "target": "node-s02-observations",
+            "sourcePort": null,
+            "targetPort": "port-s02-ob-in-vehicle",
+            "semantic": {
+                "type": "telemetry",
+                "direction": "unidirectional",
+                "label": "Vehicle Position for Geolocation",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Vehicle State Store provides vehicle position to the Observations Engine for geolocating sensor detections onto the ground plane.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-terrain-to-fr",
+            "source": "ext-s02-terrain",
+            "target": "node-s02-frustum",
+            "sourcePort": null,
+            "targetPort": "port-s02-fr-in-terrain",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Terrain Elevation",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "COP Terrain Engine provides terrain elevation data to the Camera Frustum Engine for ground-intersection computation and viewshed occlusion analysis.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-api-to-fu",
+            "source": "ext-s02-api-gateway",
+            "target": "node-s02-fusion",
+            "sourcePort": null,
+            "targetPort": "port-s02-fu-in-config",
+            "semantic": {
+                "type": "control",
+                "direction": "unidirectional",
+                "label": "Fusion Configuration",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Core API Gateway delivers operator fusion configuration commands (fusion strategy selection, sensor weighting, association thresholds) to the Sensor Fusion Engine.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#8b5cf6",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-fr-to-cop",
+            "source": "node-s02-frustum",
+            "target": "ext-s02-cop-core",
+            "sourcePort": "port-s02-fr-out-cop",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Camera Frustum Overlay",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Camera Frustum Engine provides 3D frustum visualization data to the COP Core for real-time camera FOV display on the operator map.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-bs-to-cop",
+            "source": "node-s02-blindspot",
+            "target": "ext-s02-cop-core",
+            "sourcePort": "port-s02-bs-out-cop",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Blind Spot Overlay",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Blind Spot Analysis Engine provides blind spot zone visualization data to the COP Core for operator awareness of unobservable areas around the vehicle.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-fu-to-cop",
+            "source": "node-s02-fusion",
+            "target": "ext-s02-cop-core",
+            "sourcePort": "port-s02-fu-out-cop",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Fused Situation Overlay",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Sensor Fusion Engine provides fused situational awareness overlay (combined sensor tracks, confidence heatmaps) to the COP Core for unified display.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-ob-to-cop",
+            "source": "node-s02-observations",
+            "target": "ext-s02-cop-core",
+            "sourcePort": "port-s02-ob-out-cop",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Observation Markers",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Observations Engine provides geolocated observation markers (detections, classifications, tracks) to the COP Core for map-based display.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-ob-to-data",
+            "source": "node-s02-observations",
+            "target": "ext-s02-data-persist",
+            "sourcePort": "port-s02-ob-out-persist",
+            "targetPort": null,
+            "semantic": {
+                "type": "persistence",
+                "direction": "unidirectional",
+                "label": "Persist Observations",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Observations Engine persists geolocated, classified observations to the Data Persistence subsystem for post-mission analysis, evidence chains, and replay.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#0d9488",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dashed",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-ob-to-dash",
+            "source": "node-s02-observations",
+            "target": "ext-s02-dashboard",
+            "sourcePort": "port-s02-ob-out-dash",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Observation Status",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Observations Engine provides observation lifecycle status (count, classification breakdown, quality metrics) to the Unified Dashboard for operator awareness.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-bs-to-bus",
+            "source": "node-s02-blindspot",
+            "target": "ext-s02-event-bus",
+            "sourcePort": "port-s02-bs-out-alerts",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "direction": "unidirectional",
+                "label": "Blind Spot Alerts",
+                "protocol": null,
+                "dataType": "event",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Blind Spot Analysis Engine publishes alerts to the Core Event Bus when objects of interest enter unobservable zones or when blind spot geometry changes significantly.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dotted",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-fu-to-bus",
+            "source": "node-s02-fusion",
+            "target": "ext-s02-event-bus",
+            "sourcePort": "port-s02-fu-out-events",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "direction": "unidirectional",
+                "label": "Fusion Events",
+                "protocol": null,
+                "dataType": "event",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Sensor Fusion Engine publishes fusion lifecycle events (track created, track merged, track lost, confidence threshold crossed) to the Core Event Bus.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dotted",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-ob-to-bus",
+            "source": "node-s02-observations",
+            "target": "ext-s02-event-bus",
+            "sourcePort": "port-s02-ob-out-events",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "direction": "unidirectional",
+                "label": "Observation Events",
+                "protocol": null,
+                "dataType": "event",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Observations Engine publishes high-confidence observation events (new detection, classification confirmed, geolocation verified) to the Core Event Bus for cross-subsystem awareness.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dotted",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-cal-to-fr-intrinsics",
+            "source": "ext-s02-pose-calibration",
+            "target": "node-s02-frustum",
+            "sourcePort": null,
+            "targetPort": "port-s02-fr-in-intrinsics",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Camera Intrinsic Calibration",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Pose Calibration Engine supplies camera focal length, sensor dimensions, pixel pitch, distortion coefficients, and calibration version to Camera Frustum for camera-specific projection and GSD computation.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-cal-to-ob-pose",
+            "source": "ext-s02-pose-calibration",
+            "target": "node-s02-observations",
+            "sourcePort": null,
+            "targetPort": "port-s02-ob-in-sensor-pose",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Calibrated Sensor Pose",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Pose Calibration Engine supplies the sensor-to-vehicle mounting transform and calibration version required to geolocate detections. Vehicle attitude and position are combined with this transform by the Observations Engine.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-registry-to-bs-model",
+            "source": "ext-s02-vehicle-registry",
+            "target": "node-s02-blindspot",
+            "sourcePort": null,
+            "targetPort": "port-s02-bs-in-structure-model",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Vehicle Structural Model",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Vehicle Registry provides the applicable vehicle structural and payload configuration model used by Blind Spot Analysis to calculate structural occlusion and sensor shadowing.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-terrain-to-ob",
+            "source": "ext-s02-terrain",
+            "target": "node-s02-observations",
+            "sourcePort": null,
+            "targetPort": "port-s02-ob-in-terrain",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Terrain Surface for Geolocation",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "COP Terrain Engine supplies terrain elevation or surface data used by Observations to intersect sensor rays and estimate ground geolocation, with uncertainty retained.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s02-api-to-ob-query",
+            "source": "ext-s02-api-gateway",
+            "target": "node-s02-observations",
+            "sourcePort": null,
+            "targetPort": "port-s02-ob-in-query",
+            "semantic": {
+                "type": "command",
+                "direction": "unidirectional",
+                "label": "Observation Query",
+                "protocol": null,
+                "dataType": "command",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Core API Gateway routes authorized spatial, temporal, and classification-based observation queries to the Observations Engine; query results are returned through the API boundary or subscribed COP/dashboard interfaces.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#8b5cf6",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        }
+    ],
+    "externalReferences": [
+        {
+            "nodeId": "ext-s02-sensor-integration",
+            "sourceDocumentId": "doc-sensor-01",
+            "engineId": "eng-sensor-integration",
+            "label": "Sensor Integration Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ec4899",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s02-fov",
+            "sourceDocumentId": "doc-sensor-01",
+            "engineId": "eng-sensor-fov",
+            "label": "Field of View Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ec4899",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s02-vehicle-state",
+            "sourceDocumentId": "doc-core-03",
+            "engineId": "eng-core-vehicle-state",
+            "label": "Vehicle State Store",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s02-event-bus",
+            "sourceDocumentId": "doc-core-04",
+            "engineId": "eng-core-event-processing",
+            "label": "Core Event Bus",
+            "type": "event-bus",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#fbbf24",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s02-api-gateway",
+            "sourceDocumentId": "doc-core-04",
+            "engineId": "eng-core-api-gateway",
+            "label": "Core API Gateway",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s02-terrain",
+            "sourceDocumentId": "doc-cop-02",
+            "engineId": "eng-cop-terrain",
+            "label": "COP Terrain Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#10b981",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s02-cop-core",
+            "sourceDocumentId": "doc-cop-01",
+            "engineId": "eng-cop-core",
+            "label": "COP Core",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#10b981",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s02-data-persist",
+            "sourceDocumentId": "doc-data-01",
+            "engineId": "eng-data-persistence",
+            "label": "Data Persistence",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#14b8a6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s02-dashboard",
+            "sourceDocumentId": "doc-ops-01",
+            "engineId": "eng-ops-unified",
+            "label": "Unified Operations Dashboard",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s02-pose-calibration",
+            "sourceDocumentId": "doc-sensor-01",
+            "engineId": "eng-sensor-pose-calibration",
+            "label": "Pose Calibration Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#64748b",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s02-vehicle-registry",
+            "sourceDocumentId": "doc-core-01",
+            "engineId": "eng-core-vehicle-registry",
+            "label": "Vehicle Registry / Structural Configuration",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#64748b",
+                "borderStyle": "dashed"
+            }
+        }
+    ],
+    "crossReferences": [
+        {
+            "canonicalEngineId": "eng-sensor-camera-frustum",
+            "localNodeId": "node-s02-frustum",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-sensor"
+                }
+            ]
+        },
+        {
+            "canonicalEngineId": "eng-sensor-blind-spot",
+            "localNodeId": "node-s02-blindspot",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-sensor"
+                }
+            ]
+        },
+        {
+            "canonicalEngineId": "eng-sensor-fusion",
+            "localNodeId": "node-s02-fusion",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-sensor"
+                }
+            ]
+        },
+        {
+            "canonicalEngineId": "eng-sensor-observations",
+            "localNodeId": "node-s02-observations",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-sensor"
+                }
+            ]
+        }
+    ],
+    "requirementsCoverage": [
+        {
+            "requirementId": "req-2.20-07",
+            "description": "The system shall compute camera-specific frustum geometry including perspective projection, depth-of-field, and ground sample distance at varying ranges.",
+            "coveredByNodes": [
+                "node-s02-frustum"
+            ],
+            "coveredByEdges": [
+                "edge-s02-si-to-fr",
+                "edge-s02-state-to-fr",
+                "edge-s02-terrain-to-fr",
+                "edge-s02-fr-to-cop",
+                "edge-s02-cal-to-fr-intrinsics"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Camera Frustum receives camera frames, vehicle pose, terrain, and calibrated camera intrinsics before computing camera-specific projection and GSD outputs."
+        },
+        {
+            "requirementId": "req-2.20-08",
+            "description": "The system shall identify and visualize sensor blind spots caused by vehicle structure, payload occlusion, and sensor mounting geometry.",
+            "coveredByNodes": [
+                "node-s02-blindspot"
+            ],
+            "coveredByEdges": [
+                "edge-s02-fr-to-bs",
+                "edge-s02-fov-to-bs",
+                "edge-s02-bs-to-cop",
+                "edge-s02-bs-to-bus",
+                "edge-s02-registry-to-bs-model"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "demonstration",
+            "notes": "Blind Spot Analysis combines camera frustums and generic FOV data with an explicit vehicle structural/payload model to compute and visualize occlusion zones."
+        },
+        {
+            "requirementId": "req-2.20-09",
+            "description": "The system shall perform multi-sensor data fusion combining heterogeneous sensor observations into unified situational awareness tracks.",
+            "coveredByNodes": [
+                "node-s02-fusion"
+            ],
+            "coveredByEdges": [
+                "edge-s02-si-to-fu",
+                "edge-s02-state-to-fu",
+                "edge-s02-fr-to-fu",
+                "edge-s02-fu-to-ob",
+                "edge-s02-fu-to-cop"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Sensor Fusion Engine ingests multi-modal frames, performs spatial-temporal registration and data association, producing fused tracks for the Observations Engine."
+        },
+        {
+            "requirementId": "req-2.20-10",
+            "description": "The system shall support configurable fusion strategies including early, late, and hybrid fusion with per-sensor confidence weighting.",
+            "coveredByNodes": [
+                "node-s02-fusion"
+            ],
+            "coveredByEdges": [
+                "edge-s02-api-to-fu",
+                "edge-s02-fr-to-fu"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "demonstration",
+            "notes": "Fusion Engine accepts operator-configurable fusion strategies and uses GSD/quality metrics for per-sensor confidence weighting."
+        },
+        {
+            "requirementId": "req-2.20-11",
+            "description": "The system shall manage the full observation lifecycle from detection through classification, geolocation, persistence, and query.",
+            "coveredByNodes": [
+                "node-s02-observations"
+            ],
+            "coveredByEdges": [
+                "edge-s02-fu-to-ob",
+                "edge-s02-state-to-ob",
+                "edge-s02-ob-to-data",
+                "edge-s02-ob-to-cop",
+                "edge-s02-ob-to-dash",
+                "edge-s02-api-to-ob-query"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Observations manages fused-track ingestion, geolocation, classification, persistence, COP/dashboard output, and authorized query ingress."
+        },
+        {
+            "requirementId": "req-2.20-12",
+            "description": "The system shall geolocate sensor observations using vehicle position, sensor pose, and terrain intersection for accurate ground truth.",
+            "coveredByNodes": [
+                "node-s02-observations"
+            ],
+            "coveredByEdges": [
+                "edge-s02-state-to-ob",
+                "edge-s02-ob-to-data",
+                "edge-s02-cal-to-ob-pose",
+                "edge-s02-terrain-to-ob"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Geolocation combines vehicle position, calibrated sensor pose, and terrain surface intersection; uncertainty must be retained."
+        },
+        {
+            "requirementId": "req-GA-15",
+            "description": "The system shall provide real-time geospatial visualization of sensor coverage and vehicle situational awareness.",
+            "coveredByNodes": [
+                "node-s02-frustum",
+                "node-s02-blindspot",
+                "node-s02-fusion",
+                "node-s02-observations"
+            ],
+            "coveredByEdges": [
+                "edge-s02-fr-to-cop",
+                "edge-s02-bs-to-cop",
+                "edge-s02-fu-to-cop",
+                "edge-s02-ob-to-cop"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "demonstration",
+            "notes": "All four engines provide visualization overlays to the COP Core for comprehensive sensor situational awareness display."
+        },
+        {
+            "requirementId": "req-GA-09",
+            "description": "The system shall maintain a complete audit trail of all sensor observations for post-mission analysis and evidence chains.",
+            "coveredByNodes": [
+                "node-s02-observations"
+            ],
+            "coveredByEdges": [
+                "edge-s02-ob-to-data",
+                "edge-s02-ob-to-bus"
+            ],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "analysis",
+            "notes": "Observation persistence and event publication are represented here; complete audit retention, immutable evidence handling, and security audit remain cross-subsystem responsibilities in Data and Security documents."
+        }
+    ],
+    "assumptions": [
+        {
+            "id": "AS-085",
+            "description": "Camera intrinsic parameters (focal length, distortion coefficients, pixel pitch) are provided by the Pose Calibration Engine and remain stable between recalibration events.",
+            "rationale": "Camera intrinsics are physical properties of the lens-sensor assembly that change only with temperature or mechanical stress."
+        },
+        {
+            "id": "AS-086",
+            "description": "The vehicle structural model used for blind spot computation is a simplified geometric approximation (bounding volumes) rather than a detailed CAD model.",
+            "rationale": "Detailed CAD models would impose excessive computational cost for real-time blind spot updates; bounding volumes provide sufficient accuracy for occlusion detection."
+        },
+        {
+            "id": "AS-087",
+            "description": "Sensor fusion operates at the object level (late fusion) by default, with early fusion available as a configurable option for tightly coupled sensor pairs.",
+            "rationale": "Object-level fusion is more robust to sensor heterogeneity and timing differences; early fusion requires tight synchronization only achievable with co-located sensors."
+        },
+        {
+            "id": "AS-088",
+            "description": "Observation geolocation accuracy is bounded by the combined uncertainty of vehicle position, sensor pose calibration, and terrain elevation at the observation point.",
+            "rationale": "Geolocation error propagation is a fundamental physical limit; the system reports uncertainty bounds rather than claiming false precision."
+        },
+        {
+            "id": "AS-089",
+            "description": "Camera Frustum and Observations consume calibration records with explicit sensor identity, coordinate-frame identifiers, version, validity interval, and uncertainty.",
+            "rationale": "Projection and geolocation must use a consistent calibration record and must be able to detect stale or mismatched calibration."
+        },
+        {
+            "id": "AS-090",
+            "description": "Vehicle Registry exposes a versioned structural and payload configuration model suitable for runtime blind-spot analysis.",
+            "rationale": "Blind-spot geometry depends on the actual vehicle and installed payload configuration, not a single generic airframe model."
+        }
+    ],
+    "unresolvedDecisions": [
+        {
+            "id": "UD-085",
+            "description": "Data association algorithm for multi-sensor fusion: nearest-neighbor, probabilistic data association (PDA), or joint integrated probabilistic data association (JIPDA).",
+            "impact": "Affects fusion accuracy in cluttered environments and computational complexity for high-detection-rate scenarios.",
+            "owner": "Sensor Architecture"
+        },
+        {
+            "id": "UD-086",
+            "description": "Observation retention policy: maximum observation count, time-to-live, and whether low-confidence observations are pruned before persistence.",
+            "impact": "Affects storage requirements and post-mission analysis data quality.",
+            "owner": "Data Architecture"
+        },
+        {
+            "id": "UD-087",
+            "description": "Blind spot update rate: whether to recompute blind spots continuously at sensor frame rate or only on significant vehicle attitude changes or gimbal repositioning.",
+            "impact": "Affects computational load vs. blind spot freshness for fast-maneuvering vehicles.",
+            "owner": "Sensor Architecture"
+        },
+        {
+            "id": "UD-088",
+            "description": "Whether the Observations Engine supports cross-vehicle observation correlation (fusing observations from multiple vehicles observing the same entity) or only single-vehicle fusion.",
+            "impact": "Affects multi-vehicle situational awareness capability and the Observations Engine's coordination complexity.",
+            "owner": "Operations Architecture"
+        },
+        {
+            "id": "UD-089",
+            "description": "Define the source and schema for single-sensor detections consumed by Observations when multi-sensor fusion is bypassed, including detector ownership, confidence semantics, and duplicate handling.",
+            "impact": "Without a defined producer and contract, the documented non-fusion observation path cannot be integrated or verified.",
+            "owner": "Sensor Architecture"
+        },
+        {
+            "id": "UD-090",
+            "description": "Define the observation query response contract and delivery path, including pagination, spatial indexing, temporal filters, authorization, and streaming updates.",
+            "impact": "Affects COP/dashboard query behavior, API load, and consistency between persisted and live observations.",
+            "owner": "Sensor & Core Architecture"
+        },
+        {
+            "id": "UD-091",
+            "description": "Define cross-engine timestamp, coordinate-frame, calibration-version, and uncertainty propagation rules for fused tracks and geolocated observations.",
+            "impact": "Affects data association correctness, track continuity, geolocation accuracy, and reproducibility of post-mission evidence.",
+            "owner": "Sensor Architecture"
+        }
+    ],
+    "metadata": {
+        "status": "draft",
+        "revision": 2,
+        "createdDate": "2025-01-18",
+        "lastModified": "2026-10-31"
+    }
+}

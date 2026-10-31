@@ -32,6 +32,15 @@ const orderPriority: Record<string, number> = {
   'doc-plan-03': 42,
   'doc-plan-04': 43,
   'doc-plan-05': 44,
+  'doc-ops-01': 50,
+  'doc-ops-02': 51,
+  'doc-ops-03': 52,
+  'doc-ops-04': 53,
+  'doc-ops-05': 54,
+  'doc-sensor-01': 60,
+  'doc-sensor-02': 61,
+  'doc-sensor-03': 62,
+  'doc-payload-01': 63,
 }
 
 // Import all GRAVITAS-HLD JSON files as raw strings so that empty placeholder

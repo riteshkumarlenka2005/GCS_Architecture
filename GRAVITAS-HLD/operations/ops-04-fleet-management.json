@@ -1,0 +1,1391 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-ops-04",
+  "title": "Manual Control, Fleet Management, Task Coordination & Vehicle Recovery Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of four Operations subsystem engines governing active real-time operations: Manual Control (eng-ops-manual-control) for direct operator joystick/gamepad input, RC override, and rate-limited manual command generation with safety envelope enforcement; Fleet Management (eng-ops-fleet-management) for fleet-level vehicle grouping, status aggregation, assignment tracking, and fleet-wide operational awareness; Task Coordination (eng-ops-task-coordination) for multi-vehicle task allocation, sequencing, dependency management, and dynamic reassignment during execution; and Vehicle Recovery (eng-ops-vehicle-recovery) for lost-link procedures, return-to-home orchestration, emergency landing, and vehicle retrieval coordination. Details the real-time control and emergency response pipelines connecting operator input, fleet state, task execution, and recovery actions.",
+  "category": "ops",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1500,
+    "height": 1000,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-ops04-fleet-tasks",
+      "label": "Fleet & Task Coordination",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-ops04-fleet-mgr",
+        "node-ops04-task-coord"
+      ],
+      "style": {
+        "backgroundColor": "rgba(139, 92, 246, 0.05)",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-ops04-direct-control",
+      "label": "Direct Control & Recovery",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-ops04-manual-ctrl",
+        "node-ops04-recovery"
+      ],
+      "style": {
+        "backgroundColor": "rgba(239, 68, 68, 0.05)",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-ops04-manual-ctrl",
+      "label": "Manual Control Engine",
+      "type": "component",
+      "engineId": "eng-ops-manual-control",
+      "description": "Provides direct manual vehicle control through operator input devices (joystick, gamepad, touchscreen, RC transmitter). Translates raw operator input into rate-limited, safety-bounded vehicle commands with configurable control sensitivity and dead-zone filtering. Supports control mode transitions (auto, assisted, manual, emergency override) with smooth handoff between autonomous and manual control. Enforces a safety envelope preventing commands that would exceed vehicle structural limits, geofence boundaries, or altitude ceilings. Integrates with the Command Control Engine for command dispatch and with the Vehicle Recovery Engine for recovery-mode manual takeover.",
+      "position": {
+        "x": 80,
+        "y": 120
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "gamepad"
+      },
+      "ports": [
+        {
+          "id": "port-ops04-mc-in-operator",
+          "label": "Operator Input",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops04-mc-in-envelope",
+          "label": "Control Envelope",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-ops04-mc-in-recovery",
+          "label": "Recovery Mode",
+          "direction": "in",
+          "dataType": "command",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops04-mc-out-commands",
+          "label": "Manual Commands",
+          "direction": "out",
+          "dataType": "command",
+          "position": "right"
+        },
+        {
+          "id": "port-ops04-mc-out-events",
+          "label": "Control Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops04-fleet-mgr",
+      "label": "Fleet Management Engine",
+      "type": "component",
+      "engineId": "eng-ops-fleet-management",
+      "description": "Fleet-level vehicle management providing grouping, status aggregation, assignment tracking, and fleet-wide operational awareness. Ingests real-time vehicle states from the Vehicle State Store and maintains a fleet status model including vehicle availability, current assignments, health summaries, and geographic distribution. Supports fleet grouping by mission, vehicle type, or operational area. Provides fleet status to the Task Coordination Engine for allocation decisions and to the Unified Dashboard for fleet-level situational awareness. Publishes fleet status change events for cross-subsystem coordination.",
+      "position": {
+        "x": 80,
+        "y": 480
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "layer-group"
+      },
+      "ports": [
+        {
+          "id": "port-ops04-fm-in-vehicles",
+          "label": "Vehicle Statuses",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops04-fm-in-assignments",
+          "label": "Task Assignments",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops04-fm-out-status",
+          "label": "Fleet Status",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops04-fm-out-dash",
+          "label": "Fleet Dashboard",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops04-fm-out-events",
+          "label": "Fleet Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops04-task-coord",
+      "label": "Task Coordination Engine",
+      "type": "component",
+      "engineId": "eng-ops-task-coordination",
+      "description": "Multi-vehicle task coordination engine managing task allocation, sequencing, dependency resolution, and dynamic reassignment during mission execution. Receives task definitions from the Mission Execution Engine and fleet availability from the Fleet Management Engine to compute optimal task-to-vehicle assignments. Handles task dependencies (e.g., survey area A must complete before area B), priority-based preemption, and automatic reassignment when a vehicle becomes unavailable. Publishes task status to the Unified Dashboard and escalates task failures to the Vehicle Recovery Engine when a vehicle cannot complete its assigned task.",
+      "position": {
+        "x": 480,
+        "y": 480
+      },
+      "size": {
+        "width": 270,
+        "height": 210
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "tasks"
+      },
+      "ports": [
+        {
+          "id": "port-ops04-tc-in-tasks",
+          "label": "Mission Tasks",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-ops04-tc-in-fleet",
+          "label": "Fleet Status",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops04-tc-out-assignments",
+          "label": "Task Assignments",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops04-tc-out-exec",
+          "label": "Assignment Commands",
+          "direction": "out",
+          "dataType": "command",
+          "position": "top"
+        },
+        {
+          "id": "port-ops04-tc-out-status",
+          "label": "Task Status",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops04-tc-out-failure",
+          "label": "Task Failure",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops04-tc-out-events",
+          "label": "Task Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-ops04-recovery",
+      "label": "Vehicle Recovery Engine",
+      "type": "component",
+      "engineId": "eng-ops-vehicle-recovery",
+      "description": "Orchestrates vehicle recovery procedures in response to lost communication links, critical system failures, mission deviations, or operator-initiated emergency commands. Manages a configurable recovery procedure hierarchy: attempt link re-establishment, initiate return-to-home (RTH), execute emergency landing at nearest safe site, or activate beacon for physical retrieval. Monitors communication link quality via the Link Quality Monitor and triggers automatic recovery when link loss exceeds configurable thresholds. Coordinates with the Manual Control Engine for operator takeover during recovery and dispatches recovery commands through the Command Control Engine. Publishes recovery lifecycle events for operator awareness and audit.",
+      "position": {
+        "x": 480,
+        "y": 120
+      },
+      "size": {
+        "width": 270,
+        "height": 210
+      },
+      "style": {
+        "backgroundColor": "#1a1a2e",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "life-ring"
+      },
+      "ports": [
+        {
+          "id": "port-ops04-vr-in-monitor",
+          "label": "Deviation/Lost-Link",
+          "direction": "in",
+          "dataType": "event",
+          "position": "left"
+        },
+        {
+          "id": "port-ops04-vr-in-link",
+          "label": "Link Quality",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-ops04-vr-in-task-fail",
+          "label": "Task Failure",
+          "direction": "in",
+          "dataType": "event",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops04-vr-in-safety",
+          "label": "Recovery Policies",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-ops04-vr-out-commands",
+          "label": "Recovery Commands",
+          "direction": "out",
+          "dataType": "command",
+          "position": "right"
+        },
+        {
+          "id": "port-ops04-vr-out-mode",
+          "label": "Recovery Mode",
+          "direction": "out",
+          "dataType": "command",
+          "position": "bottom"
+        },
+        {
+          "id": "port-ops04-vr-out-status",
+          "label": "Recovery Status",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-ops04-vr-out-events",
+          "label": "Recovery Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "top"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-ops04-fm-to-tc",
+      "source": "node-ops04-fleet-mgr",
+      "target": "node-ops04-task-coord",
+      "sourcePort": "port-ops04-fm-out-status",
+      "targetPort": "port-ops04-tc-in-fleet",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Fleet Availability",
+        "description": "Fleet Management Engine provides current fleet availability, vehicle health summaries, and geographic distribution to the Task Coordination Engine for allocation decisions.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.17-01",
+          "req-2.18-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops04-tc-to-fm",
+      "source": "node-ops04-task-coord",
+      "target": "node-ops04-fleet-mgr",
+      "sourcePort": "port-ops04-tc-out-assignments",
+      "targetPort": "port-ops04-fm-in-assignments",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Task Assignments",
+        "description": "Task Coordination Engine provides current task-to-vehicle assignments to the Fleet Management Engine for fleet status tracking and availability updates.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.18-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops04-tc-to-recovery",
+      "source": "node-ops04-task-coord",
+      "target": "node-ops04-recovery",
+      "sourcePort": "port-ops04-tc-out-failure",
+      "targetPort": "port-ops04-vr-in-task-fail",
+      "semantic": {
+        "type": "event",
+        "label": "Task Failure Escalation",
+        "description": "Task Coordination Engine escalates task failures to the Vehicle Recovery Engine when a vehicle cannot complete its assigned task due to system degradation or link loss.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.18-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops04-recovery-to-mc",
+      "source": "node-ops04-recovery",
+      "target": "node-ops04-manual-ctrl",
+      "sourcePort": "port-ops04-vr-out-mode",
+      "targetPort": "port-ops04-mc-in-recovery",
+      "semantic": {
+        "type": "command",
+        "label": "Recovery Mode Activation",
+        "description": "Vehicle Recovery Engine activates manual control mode for operator takeover during recovery procedures, overriding autonomous control with direct operator input.",
+        "protocol": null,
+        "dataType": "command",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.16-02",
+          "req-2.19-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-ops04-api-to-mc",
+      "source": "ext-ops04-api-gateway",
+      "target": "node-ops04-manual-ctrl",
+      "sourcePort": null,
+      "targetPort": "port-ops04-mc-in-operator",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Operator Input Stream",
+        "description": "Core API Gateway delivers real-time operator input streams (joystick axes, button states, RC channels) to the Manual Control Engine for translation into vehicle commands.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.16-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-mc-to-cmdctrl",
+      "source": "node-ops04-manual-ctrl",
+      "target": "ext-ops04-cmd-control",
+      "sourcePort": "port-ops04-mc-out-commands",
+      "targetPort": null,
+      "semantic": {
+        "type": "command",
+        "label": "Manual Vehicle Commands",
+        "description": "Manual Control Engine dispatches rate-limited, safety-bounded manual commands to the Command Control Engine for validation and vehicle transmission.",
+        "protocol": null,
+        "dataType": "command",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.16-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-safety-to-mc",
+      "source": "ext-ops04-safety",
+      "target": "node-ops04-manual-ctrl",
+      "sourcePort": null,
+      "targetPort": "port-ops04-mc-in-envelope",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Control Safety Envelope",
+        "description": "Safety Policy Engine provides control envelope limits (max rate, altitude ceiling, geofence boundary, structural load limits) to the Manual Control Engine for command clamping.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.16-01",
+          "req-GA-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-state-to-fm",
+      "source": "ext-ops04-vehicle-state",
+      "target": "node-ops04-fleet-mgr",
+      "sourcePort": null,
+      "targetPort": "port-ops04-fm-in-vehicles",
+      "semantic": {
+        "type": "telemetry",
+        "label": "Fleet Vehicle Telemetry",
+        "description": "Vehicle State Store provides real-time status for all fleet vehicles (position, health, battery, mode) to the Fleet Management Engine for fleet status aggregation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.17-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#06b6d4",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-exec-to-tc",
+      "source": "ext-ops04-executor",
+      "target": "node-ops04-task-coord",
+      "sourcePort": null,
+      "targetPort": "port-ops04-tc-in-tasks",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Mission Task Definitions",
+        "description": "Mission Execution Engine provides task definitions (survey areas, inspection points, delivery targets) to the Task Coordination Engine for multi-vehicle allocation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.18-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-tc-to-exec",
+      "source": "node-ops04-task-coord",
+      "target": "ext-ops04-executor",
+      "sourcePort": "port-ops04-tc-out-exec",
+      "targetPort": null,
+      "semantic": {
+        "type": "command",
+        "label": "Task Assignment Commands",
+        "description": "Task Coordination Engine sends task-to-vehicle assignment commands to the Mission Execution Engine for integration into each vehicle's active mission plan.",
+        "protocol": null,
+        "dataType": "command",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.18-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-monitor-to-recovery",
+      "source": "ext-ops04-monitor",
+      "target": "node-ops04-recovery",
+      "sourcePort": null,
+      "targetPort": "port-ops04-vr-in-monitor",
+      "semantic": {
+        "type": "event",
+        "label": "Deviation/Lost-Link Trigger",
+        "description": "Mission Monitoring Engine triggers the Vehicle Recovery Engine when critical mission deviations or lost-link conditions are detected during active execution.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.19-01",
+          "req-GA-11"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-link-to-recovery",
+      "source": "ext-ops04-link-quality",
+      "target": "node-ops04-recovery",
+      "sourcePort": null,
+      "targetPort": "port-ops04-vr-in-link",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Link Quality Metrics",
+        "description": "Link Quality Monitor provides real-time communication link quality metrics (RSSI, packet loss, latency) to the Vehicle Recovery Engine for proactive link-loss prediction.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.19-01",
+          "req-GA-11"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-recovery-to-cmdctrl",
+      "source": "node-ops04-recovery",
+      "target": "ext-ops04-cmd-control",
+      "sourcePort": "port-ops04-vr-out-commands",
+      "targetPort": null,
+      "semantic": {
+        "type": "command",
+        "label": "Recovery Commands",
+        "description": "Vehicle Recovery Engine submits recovery actions to Command Control for priority dispatch when a usable command path exists. For a fully lost link, execution depends on the vehicle-side failsafe or an independent control path; that contract remains an unresolved decision.",
+        "protocol": null,
+        "dataType": "command",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.19-01",
+          "req-GA-11"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-safety-to-recovery",
+      "source": "ext-ops04-safety",
+      "target": "node-ops04-recovery",
+      "sourcePort": null,
+      "targetPort": "port-ops04-vr-in-safety",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Recovery Policies",
+        "description": "Safety Policy Engine provides recovery procedure policies (RTH altitude, emergency landing criteria, link-loss timeout thresholds) to the Vehicle Recovery Engine.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.19-01",
+          "req-2.19-02",
+          "req-GA-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-fm-to-dash",
+      "source": "node-ops04-fleet-mgr",
+      "target": "ext-ops04-dashboard",
+      "sourcePort": "port-ops04-fm-out-dash",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Fleet Status Display",
+        "description": "Fleet Management Engine provides aggregated fleet status (vehicle count, availability, group assignments, geographic distribution) to the Unified Dashboard.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.17-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-tc-to-dash",
+      "source": "node-ops04-task-coord",
+      "target": "ext-ops04-dashboard",
+      "sourcePort": "port-ops04-tc-out-status",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Task Status Display",
+        "description": "Task Coordination Engine provides real-time task allocation status, completion progress, and dependency graphs to the Unified Dashboard for operator awareness.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-recovery-to-dash",
+      "source": "node-ops04-recovery",
+      "target": "ext-ops04-dashboard",
+      "sourcePort": "port-ops04-vr-out-status",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Recovery Status Display",
+        "description": "Vehicle Recovery Engine provides real-time recovery procedure status (active procedure, estimated time, vehicle state) to the Unified Dashboard for operator awareness.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-mc-to-bus",
+      "source": "node-ops04-manual-ctrl",
+      "target": "ext-ops04-event-bus",
+      "sourcePort": "port-ops04-mc-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Control Mode Events",
+        "description": "Manual Control Engine publishes control mode transition events (auto→manual, manual→auto, emergency override) and envelope violation events to the Core Event Bus.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.16-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-fm-to-bus",
+      "source": "node-ops04-fleet-mgr",
+      "target": "ext-ops04-event-bus",
+      "sourcePort": "port-ops04-fm-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Fleet Status Events",
+        "description": "Fleet Management Engine publishes fleet status change events (vehicle added/removed, group reassignment, availability change) to the Core Event Bus.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-tc-to-bus",
+      "source": "node-ops04-task-coord",
+      "target": "ext-ops04-event-bus",
+      "sourcePort": "port-ops04-tc-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Task Coordination Events",
+        "description": "Task Coordination Engine publishes task lifecycle events (allocated, started, completed, reassigned, failed) to the Core Event Bus for cross-subsystem awareness.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.18-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-ops04-recovery-to-bus",
+      "source": "node-ops04-recovery",
+      "target": "ext-ops04-event-bus",
+      "sourcePort": "port-ops04-vr-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Recovery Lifecycle Events",
+        "description": "Vehicle Recovery Engine publishes recovery lifecycle events (triggered, procedure selected, RTH initiated, landing executed, recovered) to the Core Event Bus for audit and operator alerting.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "source-to-target",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.19-02",
+          "req-GA-11"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "ext-ops04-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops04-api-gateway",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-api-gateway",
+      "label": "Core API Gateway",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops04-vehicle-state",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-vehicle-state",
+      "label": "Vehicle State Store",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops04-cmd-control",
+      "sourceDocumentId": "doc-ops-02",
+      "engineId": "eng-ops-command-control",
+      "label": "Command Control Engine",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#8b5cf6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops04-executor",
+      "sourceDocumentId": "doc-ops-02",
+      "engineId": "eng-ops-mission-execution",
+      "label": "Mission Execution Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#8b5cf6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops04-monitor",
+      "sourceDocumentId": "doc-ops-02",
+      "engineId": "eng-ops-mission-monitoring",
+      "label": "Mission Monitoring Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#8b5cf6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops04-dashboard",
+      "sourceDocumentId": "doc-ops-01",
+      "engineId": "eng-ops-unified",
+      "label": "Unified Operations Dashboard",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops04-safety",
+      "sourceDocumentId": "doc-sec-01",
+      "engineId": "eng-sec-safety-policy",
+      "label": "Safety Policy Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#ef4444",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "ext-ops04-link-quality",
+      "sourceDocumentId": "doc-comm-02",
+      "engineId": "eng-comm-link-quality",
+      "label": "Link Quality Monitor",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#06b6d4",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-ops-manual-control",
+      "localNodeId": "node-ops04-manual-ctrl",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-fleet-management",
+      "localNodeId": "node-ops04-fleet-mgr",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-task-coordination",
+      "localNodeId": "node-ops04-task-coord",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-ops-vehicle-recovery",
+      "localNodeId": "node-ops04-recovery",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-ops"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.16-01",
+      "description": "The system shall provide direct manual vehicle control through operator input devices with rate limiting, dead-zone filtering, and safety envelope enforcement.",
+      "coveredByNodes": [
+        "node-ops04-manual-ctrl"
+      ],
+      "coveredByEdges": [
+        "edge-ops04-api-to-mc",
+        "edge-ops04-safety-to-mc",
+        "edge-ops04-mc-to-cmdctrl"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Manual Control Engine ingests operator input, applies safety envelope from the Safety Policy Engine, and dispatches bounded commands via Command Control."
+    },
+    {
+      "requirementId": "req-2.16-02",
+      "description": "The system shall support smooth control mode transitions between autonomous, assisted, manual, and emergency override modes.",
+      "coveredByNodes": [
+        "node-ops04-manual-ctrl"
+      ],
+      "coveredByEdges": [
+        "edge-ops04-recovery-to-mc",
+        "edge-ops04-mc-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Manual Control Engine handles mode transitions triggered by recovery procedures and publishes transition events for audit."
+    },
+    {
+      "requirementId": "req-2.17-01",
+      "description": "The system shall provide fleet-level vehicle management including grouping, status aggregation, availability tracking, and geographic distribution.",
+      "coveredByNodes": [
+        "node-ops04-fleet-mgr"
+      ],
+      "coveredByEdges": [
+        "edge-ops04-state-to-fm",
+        "edge-ops04-fm-to-dash",
+        "edge-ops04-fm-to-tc"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "demonstration",
+      "notes": "Fleet Management Engine aggregates vehicle telemetry into fleet status and provides it to the dashboard and task coordinator."
+    },
+    {
+      "requirementId": "req-2.18-01",
+      "description": "The system shall coordinate multi-vehicle task allocation, sequencing, dependency management, and dynamic reassignment during mission execution.",
+      "coveredByNodes": [
+        "node-ops04-task-coord"
+      ],
+      "coveredByEdges": [
+        "edge-ops04-exec-to-tc",
+        "edge-ops04-fm-to-tc",
+        "edge-ops04-tc-to-exec",
+        "edge-ops04-tc-to-fm"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Task Coordination Engine receives tasks and fleet status, computes assignments, and feeds them back to the executor and fleet manager."
+    },
+    {
+      "requirementId": "req-2.18-02",
+      "description": "The system shall automatically reassign tasks when a vehicle becomes unavailable due to failure, link loss, or health degradation.",
+      "coveredByNodes": [
+        "node-ops04-task-coord"
+      ],
+      "coveredByEdges": [
+        "edge-ops04-tc-to-recovery",
+        "edge-ops04-tc-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Task Coordination Engine escalates failures to the Recovery Engine and publishes reassignment events."
+    },
+    {
+      "requirementId": "req-2.19-01",
+      "description": "The system shall orchestrate vehicle recovery procedures including lost-link response, return-to-home, emergency landing, and beacon activation.",
+      "coveredByNodes": [
+        "node-ops04-recovery"
+      ],
+      "coveredByEdges": [
+        "edge-ops04-monitor-to-recovery",
+        "edge-ops04-link-to-recovery",
+        "edge-ops04-safety-to-recovery",
+        "edge-ops04-recovery-to-cmdctrl"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Recovery Engine ingests triggers from monitoring and link quality, applies safety policies, and dispatches recovery commands."
+    },
+    {
+      "requirementId": "req-2.19-02",
+      "description": "The system shall support configurable recovery procedure hierarchies with automatic escalation based on severity and link-loss duration.",
+      "coveredByNodes": [
+        "node-ops04-recovery"
+      ],
+      "coveredByEdges": [
+        "edge-ops04-safety-to-recovery",
+        "edge-ops04-recovery-to-mc",
+        "edge-ops04-recovery-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Recovery Engine applies configurable procedure hierarchies from the Safety Policy Engine and escalates to manual control when needed."
+    },
+    {
+      "requirementId": "req-GA-07",
+      "description": "The system shall enforce safety validation at all mission lifecycle stages and prevent unsafe command execution.",
+      "coveredByNodes": [
+        "node-ops04-manual-ctrl",
+        "node-ops04-recovery"
+      ],
+      "coveredByEdges": [
+        "edge-ops04-safety-to-mc",
+        "edge-ops04-safety-to-recovery"
+      ],
+      "coverageStatus": "partially-mapped",
+      "verificationMethod": "test",
+      "notes": "Manual control envelope and recovery policy enforcement covered here; full lifecycle safety spans ops-01 through ops-03 and sec subsystems."
+    },
+    {
+      "requirementId": "req-GA-11",
+      "description": "The system shall maintain vehicle safety during communication link degradation and loss through automatic recovery procedures.",
+      "coveredByNodes": [
+        "node-ops04-recovery"
+      ],
+      "coveredByEdges": [
+        "edge-ops04-link-to-recovery",
+        "edge-ops04-monitor-to-recovery",
+        "edge-ops04-recovery-to-cmdctrl",
+        "edge-ops04-recovery-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "test",
+      "notes": "Recovery Engine monitors link quality and mission deviations, triggering automatic recovery procedures to maintain vehicle safety."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-073",
+      "description": "Manual control input latency from operator device to vehicle actuator must remain below a configurable threshold (default 200ms) for safe manual operation.",
+      "rationale": "Excessive control latency makes manual vehicle control unsafe, particularly for fast-moving aerial vehicles."
+    },
+    {
+      "id": "AS-074",
+      "description": "Fleet Management Engine maintains an eventually consistent fleet status model updated at a configurable rate (default 2 Hz) rather than requiring strict real-time consistency across all vehicles.",
+      "rationale": "Strict consistency across a large fleet would impose excessive communication overhead; eventual consistency is sufficient for task allocation decisions."
+    },
+    {
+      "id": "AS-075",
+      "description": "Task Coordination Engine reassignment decisions are made within a single planning cycle and do not require operator approval for automatic reassignment of failed tasks.",
+      "rationale": "Delayed reassignment during time-critical missions could result in mission failure or safety hazards."
+    },
+    {
+      "id": "AS-076",
+      "description": "Vehicle Recovery Engine operates with a configurable link-loss timeout (default 30 seconds) before initiating automatic RTH, with shorter timeouts for beyond-visual-line-of-sight operations.",
+      "rationale": "Different operational contexts have different link-loss tolerances; a fixed timeout would be either too aggressive or too conservative."
+    },
+    {
+      "id": "AS-077",
+      "description": "The Mission Execution Engine and Command Control Engine are bidirectional integration boundaries in this diagram; their external-reference role records the primary interaction direction only.",
+      "rationale": "Mission tasks flow from Mission Execution to Task Coordination while assignments return to Mission Execution; manual and recovery commands flow into Command Control."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-074",
+      "description": "Manual control input device abstraction layer: whether to support a generic HID interface or require device-specific drivers per controller type.",
+      "impact": "Affects operator hardware flexibility and Manual Control Engine implementation complexity.",
+      "owner": "Platform Architecture"
+    },
+    {
+      "id": "UD-075",
+      "description": "Fleet size scalability target and the point at which fleet status aggregation requires hierarchical grouping or sampling.",
+      "impact": "Affects Fleet Management Engine architecture and dashboard rendering performance.",
+      "owner": "Operations Architecture"
+    },
+    {
+      "id": "UD-076",
+      "description": "Task coordination optimization algorithm: greedy assignment, auction-based, or centralized optimization for multi-vehicle task allocation.",
+      "impact": "Affects task allocation quality, computation time, and scalability to large fleets.",
+      "owner": "Planning Architecture"
+    },
+    {
+      "id": "UD-077",
+      "description": "Whether the Vehicle Recovery Engine supports cooperative recovery (one vehicle assisting another) or only self-recovery procedures.",
+      "impact": "Affects recovery capability for multi-vehicle missions and the Recovery Engine's coordination complexity.",
+      "owner": "Operations Lead"
+    },
+    {
+      "id": "UD-078",
+      "description": "Define the vehicle-side lost-link execution contract: whether RTH, loiter, emergency landing, and beacon actions are preconfigured onboard failsafes, executable through an independent communications path, or require a restored link before Command Control dispatch.",
+      "impact": "A lost-link event can make remote recovery commands undeliverable. The recovery architecture must define which actions execute autonomously onboard and how their initiation and completion are confirmed after connectivity returns.",
+      "owner": "Vehicle Integration and Safety Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-17",
+    "lastModified": "2026-10-31"
+  }
+}

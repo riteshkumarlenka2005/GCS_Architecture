@@ -1,0 +1,1132 @@
+{
+    "schemaVersion": "1.0.0",
+    "documentId": "doc-sensor-03",
+    "title": "Coverage Planning, Data Quality & Observation Feedback",
+    "diagramType": "subsystem-architecture",
+    "description": "Sensor subsystem architecture for coverage path planning with configurable patterns, real-time data quality assessment, observation scoring, and closed-loop re-acquisition feedback to mission planning.",
+    "category": "sensor",
+    "coordinateSystem": {
+        "type": "cartesian",
+        "origin": "top-left",
+        "unit": "px"
+    },
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "width": 1200,
+        "height": 800,
+        "zoom": 1.0
+    },
+    "groups": [
+        {
+            "groupId": "grp-s03-coverage",
+            "label": "Coverage Planning",
+            "description": "Coverage path optimization and pattern generation integrating sensor FOV, terrain, and vehicle state",
+            "style": {
+                "fill": "#ec489920",
+                "stroke": "#ec4899",
+                "strokeWidth": 1,
+                "dash": "dashed",
+                "cornerRadius": 8
+            },
+            "nodeIds": [
+                "node-s03-coverage-planner"
+            ]
+        },
+        {
+            "groupId": "grp-s03-quality",
+            "label": "Data Quality Assessment",
+            "description": "Real-time sensor data quality scoring, degradation detection, and re-acquisition request generation",
+            "style": {
+                "fill": "#f43f5e20",
+                "stroke": "#f43f5e",
+                "strokeWidth": 1,
+                "dash": "dashed",
+                "cornerRadius": 8
+            },
+            "nodeIds": [
+                "node-s03-quality-monitor"
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "nodeId": "node-s03-coverage-planner",
+            "label": "Coverage Planner",
+            "type": "component",
+            "description": "Plans sensor coverage paths to maximize area coverage or target observation. Generates optimized waypoints using configurable patterns (lawnmower, spiral, radial) based on sensor FOV, terrain elevation, vehicle kinematics, and mission objectives. Integrates with mission planning for waypoint injection and with data quality for re-acquisition gap filling. Coverage products must identify the target geometry, planned versus observed coverage state, coordinate reference, terrain/model version, and required resolution/overlap so gaps are computed against the actual mission objective.",
+            "position": {
+                "x": 160,
+                "y": 260
+            },
+            "size": {
+                "width": 300,
+                "height": 220
+            },
+            "style": {
+                "fill": "#ec4899",
+                "stroke": "#be185d",
+                "strokeWidth": 2,
+                "cornerRadius": 6,
+                "icon": "grid"
+            },
+            "engines": [
+                "eng-sensor-coverage-planning"
+            ],
+            "ports": [
+                {
+                    "portId": "port-s03-covplan-in-coverage-req",
+                    "label": "Coverage Req",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left",
+                    "offset": 0.15
+                },
+                {
+                    "portId": "port-s03-covplan-in-sensor-fov",
+                    "label": "Sensor FOV",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.35
+                },
+                {
+                    "portId": "port-s03-covplan-in-terrain",
+                    "label": "Terrain",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.55
+                },
+                {
+                    "portId": "port-s03-covplan-in-vehicle-state",
+                    "label": "Vehicle State",
+                    "direction": "in",
+                    "dataType": "telemetry",
+                    "position": "left",
+                    "offset": 0.75
+                },
+                {
+                    "portId": "port-s03-covplan-in-reacquire-req",
+                    "label": "Reacquire Req",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "bottom",
+                    "offset": 0.3
+                },
+                {
+                    "portId": "port-s03-covplan-out-waypoints",
+                    "label": "Waypoints",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right",
+                    "offset": 0.2
+                },
+                {
+                    "portId": "port-s03-covplan-out-coverage-map",
+                    "label": "Coverage Map",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right",
+                    "offset": 0.5
+                },
+                {
+                    "portId": "port-s03-covplan-out-gap-report",
+                    "label": "Gap Report",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right",
+                    "offset": 0.8
+                }
+            ]
+        },
+        {
+            "nodeId": "node-s03-quality-monitor",
+            "label": "Data Quality Monitor",
+            "type": "component",
+            "description": "Monitors and assesses sensor data quality in real-time. Detects degraded imagery (blur, overexposure, underexposure), sensor noise anomalies, data dropouts, and timestamp gaps. Produces normalized quality scores per observation, triggers re-acquisition requests when quality falls below configurable thresholds, and emits alerts for operator awareness. Quality results must retain observation identifiers, sensor identifiers, capture timestamps, coordinate frame, calibration version, provenance, and uncertainty so annotations and re-acquisition decisions remain auditable.",
+            "position": {
+                "x": 720,
+                "y": 260
+            },
+            "size": {
+                "width": 300,
+                "height": 220
+            },
+            "style": {
+                "fill": "#f43f5e",
+                "stroke": "#be123c",
+                "strokeWidth": 2,
+                "cornerRadius": 6,
+                "icon": "activity"
+            },
+            "engines": [
+                "eng-sensor-data-quality"
+            ],
+            "ports": [
+                {
+                    "portId": "port-s03-qmon-in-observations",
+                    "label": "Observations",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.15
+                },
+                {
+                    "portId": "port-s03-qmon-in-fused-data",
+                    "label": "Fused Data",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.35
+                },
+                {
+                    "portId": "port-s03-qmon-in-calibration",
+                    "label": "Calibration",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.55
+                },
+                {
+                    "portId": "port-s03-qmon-in-coverage-gaps",
+                    "label": "Coverage Gaps",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left",
+                    "offset": 0.75
+                },
+                {
+                    "portId": "port-s03-qmon-out-quality-scores",
+                    "label": "Quality Scores",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right",
+                    "offset": 0.2
+                },
+                {
+                    "portId": "port-s03-qmon-out-reacquire-req",
+                    "label": "Reacquire Req",
+                    "direction": "out",
+                    "dataType": "command",
+                    "position": "right",
+                    "offset": 0.45
+                },
+                {
+                    "portId": "port-s03-qmon-out-quality-alerts",
+                    "label": "Quality Alerts",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "right",
+                    "offset": 0.7
+                },
+                {
+                    "portId": "port-s03-qmon-out-quality-report",
+                    "label": "Quality Report",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom",
+                    "offset": 0.5
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "edgeId": "edge-s03-covplan-to-qmon-gap",
+            "source": "node-s03-coverage-planner",
+            "target": "node-s03-quality-monitor",
+            "sourcePort": "port-s03-covplan-out-gap-report",
+            "targetPort": "port-s03-qmon-in-coverage-gaps",
+            "semantic": {
+                "type": "data",
+                "label": "Coverage gap report",
+                "description": "Coverage gap report sent to quality monitor to prioritize re-assessment of uncovered or poorly covered areas; gap geometry is expressed in the declared mission coordinate reference and includes coverage confidence/quality where available.",
+                "protocol": null,
+                "dataType": "GeoJSON+metadata",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.10"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.15,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-qmon-to-covplan-reacquire",
+            "source": "node-s03-quality-monitor",
+            "target": "node-s03-coverage-planner",
+            "sourcePort": "port-s03-qmon-out-reacquire-req",
+            "targetPort": "port-s03-covplan-in-reacquire-req",
+            "semantic": {
+                "type": "control",
+                "label": "Re-acquisition request",
+                "description": "Re-acquisition requests for observations that failed quality thresholds, injected as additional coverage targets; request includes affected observation/target IDs, location or footprint, failure reason, quality score, priority, and freshness/expiry metadata.",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": "quality score below configured re-acquisition threshold",
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.10"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.15,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-mission-to-covplan",
+            "source": "node-s03-ext-mission-planner",
+            "target": "node-s03-coverage-planner",
+            "sourcePort": null,
+            "targetPort": "port-s03-covplan-in-coverage-req",
+            "semantic": {
+                "type": "control",
+                "label": "Mission coverage objectives",
+                "description": "Mission planning provides coverage area, target list, resolution requirements, and priority weighting",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.09"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#ef4444",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-covplan-to-waypoints",
+            "source": "node-s03-coverage-planner",
+            "target": "node-s03-ext-waypoint-opt",
+            "sourcePort": "port-s03-covplan-out-waypoints",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "label": "Optimized waypoints",
+                "description": "Generated coverage waypoints injected into mission plan for vehicle execution",
+                "protocol": null,
+                "dataType": "GeoJSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.09",
+                    "req-5.02"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-fov-to-covplan",
+            "source": "node-s03-ext-fov",
+            "target": "node-s03-coverage-planner",
+            "sourcePort": null,
+            "targetPort": "port-s03-covplan-in-sensor-fov",
+            "semantic": {
+                "type": "data",
+                "label": "Sensor FOV parameters",
+                "description": "Current sensor field-of-view geometry used to compute ground footprint and overlap requirements",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.09"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-covplan-to-coverage",
+            "source": "node-s03-coverage-planner",
+            "target": "node-s03-ext-coverage",
+            "sourcePort": "port-s03-covplan-out-coverage-map",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "label": "Projected coverage map",
+                "description": "Projected coverage map merged into cumulative coverage store for visualization and gap analysis",
+                "protocol": null,
+                "dataType": "GeoTIFF/GeoJSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.09"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-observations-to-qmon",
+            "source": "node-s03-ext-observations",
+            "target": "node-s03-quality-monitor",
+            "sourcePort": null,
+            "targetPort": "port-s03-qmon-in-observations",
+            "semantic": {
+                "type": "data",
+                "label": "Raw observations",
+                "description": "Individual sensor observations streamed for quality assessment including imagery, metadata, and timestamps",
+                "protocol": null,
+                "dataType": "JSON+binary",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.10"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-fusion-to-qmon",
+            "source": "node-s03-ext-fusion",
+            "target": "node-s03-quality-monitor",
+            "sourcePort": null,
+            "targetPort": "port-s03-qmon-in-fused-data",
+            "semantic": {
+                "type": "data",
+                "label": "Fused observations",
+                "description": "Fused multi-sensor observations for cross-validation quality checks and consistency scoring",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.10"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-calibration-to-qmon",
+            "source": "node-s03-ext-calibration",
+            "target": "node-s03-quality-monitor",
+            "sourcePort": null,
+            "targetPort": "port-s03-qmon-in-calibration",
+            "semantic": {
+                "type": "data",
+                "label": "Calibration status",
+                "description": "Current sensor calibration parameters and drift indicators used to adjust quality scoring baselines",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.10"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-qmon-to-ops",
+            "source": "node-s03-quality-monitor",
+            "target": "node-s03-ext-ops-monitor",
+            "sourcePort": "port-s03-qmon-out-quality-alerts",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "label": "Quality degradation alerts",
+                "description": "Real-time alerts when sensor data quality falls below operational thresholds, displayed on operator dashboard",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": "quality warning or rejection threshold crossed",
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.10",
+                    "req-GA-04",
+                    "req-CL-09"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-qmon-to-persistence",
+            "source": "node-s03-quality-monitor",
+            "target": "node-s03-ext-persistence",
+            "sourcePort": "port-s03-qmon-out-quality-report",
+            "targetPort": null,
+            "semantic": {
+                "type": "persistence",
+                "label": "Quality reports",
+                "description": "Aggregate quality reports persisted for historical analysis, trend detection, and post-mission review; persist scoring-policy version, thresholds, source observation IDs, and processing timestamps with each report.",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.10"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#0d9488",
+                "strokeWidth": 2,
+                "dash": "dashed",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-qmon-to-alerts",
+            "source": "node-s03-quality-monitor",
+            "target": "node-s03-ext-alerts",
+            "sourcePort": "port-s03-qmon-out-quality-alerts",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "label": "Quality alert events",
+                "description": "Quality degradation events routed to alerting subsystem for escalation and notification",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": "quality alert policy matched",
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.10",
+                    "req-GA-04"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "dash": "dotted",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-qmon-scores-to-obs",
+            "source": "node-s03-quality-monitor",
+            "target": "node-s03-ext-observations-writeback",
+            "sourcePort": "port-s03-qmon-out-quality-scores",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "label": "Quality score annotations",
+                "description": "Per-observation quality scores written back to observation records for downstream filtering and review; annotations are keyed by stable observation ID and must not overwrite the original sensor payload or its immutable acquisition metadata.",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.10"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.2,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-covplan-to-persistence",
+            "source": "node-s03-coverage-planner",
+            "target": "node-s03-ext-persistence",
+            "sourcePort": "port-s03-covplan-out-coverage-map",
+            "targetPort": null,
+            "semantic": {
+                "type": "persistence",
+                "label": "Coverage map persistence",
+                "description": "Coverage maps persisted for historical comparison, mission replay, and audit trail",
+                "protocol": null,
+                "dataType": "GeoTIFF/GeoJSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.09"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#0d9488",
+                "strokeWidth": 2,
+                "dash": "dashed",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-terrain-to-covplan",
+            "source": "node-s03-ext-terrain",
+            "target": "node-s03-coverage-planner",
+            "sourcePort": null,
+            "targetPort": "port-s03-covplan-in-terrain",
+            "semantic": {
+                "type": "data",
+                "label": "Terrain elevation",
+                "description": "Terrain elevation data used to compute accurate ground sample distance and sensor footprint on sloped terrain",
+                "protocol": null,
+                "dataType": "GeoTIFF/DEM",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.09"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        },
+        {
+            "edgeId": "edge-s03-vehicle-to-covplan",
+            "source": "node-s03-ext-vehicle-state",
+            "target": "node-s03-coverage-planner",
+            "sourcePort": null,
+            "targetPort": "port-s03-covplan-in-vehicle-state",
+            "semantic": {
+                "type": "telemetry",
+                "label": "Vehicle kinematics",
+                "description": "Current vehicle position, altitude, speed, and heading used to compute feasible coverage trajectories",
+                "protocol": null,
+                "dataType": "JSON",
+                "direction": "unidirectional",
+                "trigger": null,
+                "synchronous": false,
+                "requirementIds": [
+                    "req-7.09"
+                ],
+                "assumptions": []
+            },
+            "visual": {
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "dash": "solid",
+                "arrow": "end",
+                "labelPosition": "center",
+                "cornerRadius": 0.1,
+                "routing": "orthogonal",
+                "waypoints": [],
+                "zIndex": 0
+            }
+        }
+    ],
+    "externalReferences": [
+        {
+            "nodeId": "node-s03-ext-mission-planner",
+            "sourceDocumentId": "doc-plan-01",
+            "engineId": "eng-plan-hybrid",
+            "label": "Mission Planner",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#f59e0b",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-waypoint-opt",
+            "sourceDocumentId": "doc-plan-02",
+            "engineId": "eng-plan-global-route",
+            "label": "Waypoint Optimizer",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#f59e0b",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-fov",
+            "sourceDocumentId": "doc-sensor-01",
+            "engineId": "eng-sensor-fov",
+            "label": "FOV Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ec4899",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-coverage",
+            "sourceDocumentId": "doc-sensor-01",
+            "engineId": "eng-sensor-coverage",
+            "label": "Coverage Map Store",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ec4899",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-observations",
+            "sourceDocumentId": "doc-sensor-02",
+            "engineId": "eng-sensor-observations",
+            "label": "Observation Manager",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-fusion",
+            "sourceDocumentId": "doc-sensor-02",
+            "engineId": "eng-sensor-fusion",
+            "label": "Sensor Fusion",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ec4899",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-calibration",
+            "sourceDocumentId": "doc-sensor-01",
+            "engineId": "eng-sensor-pose-calibration",
+            "label": "Pose Calibration",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#ec4899",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-ops-monitor",
+            "sourceDocumentId": "doc-ops-02",
+            "engineId": "eng-ops-mission-monitoring",
+            "label": "Mission Monitor",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-persistence",
+            "sourceDocumentId": "doc-data-01",
+            "engineId": "eng-data-persistence",
+            "label": "Data Persistence",
+            "type": "database",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#14b8a6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-alerts",
+            "sourceDocumentId": "doc-data-01",
+            "engineId": "eng-data-alerts",
+            "label": "Alert Engine",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#14b8a6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-terrain",
+            "sourceDocumentId": "doc-cop-02",
+            "engineId": "eng-cop-terrain",
+            "label": "Terrain Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#10b981",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-vehicle-state",
+            "sourceDocumentId": "doc-core-03",
+            "engineId": "eng-core-vehicle-state",
+            "label": "Vehicle State",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "node-s03-ext-observations-writeback",
+            "sourceDocumentId": "doc-sensor-02",
+            "engineId": "eng-sensor-observations",
+            "label": "Observation Manager (quality annotations)",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#475569",
+                "borderStyle": "dashed"
+            }
+        }
+    ],
+    "crossReferences": [],
+    "requirementsCoverage": [
+        {
+            "requirementId": "req-7.09",
+            "description": "Coverage planning with configurable patterns, mission integration, and gap minimization",
+            "coveredByNodes": [
+                "node-s03-coverage-planner"
+            ],
+            "coveredByEdges": [
+                "edge-s03-mission-to-covplan",
+                "edge-s03-covplan-to-waypoints",
+                "edge-s03-fov-to-covplan",
+                "edge-s03-covplan-to-coverage",
+                "edge-s03-terrain-to-covplan",
+                "edge-s03-vehicle-to-covplan",
+                "edge-s03-covplan-to-persistence"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "Integration test with mission planning and sensor FOV engines",
+            "notes": "Supports lawnmower, spiral, and radial patterns with configurable overlap and resolution parameters"
+        },
+        {
+            "requirementId": "req-7.10",
+            "description": "Sensor data quality monitoring, per-observation scoring, degradation detection, and re-acquisition triggering",
+            "coveredByNodes": [
+                "node-s03-quality-monitor"
+            ],
+            "coveredByEdges": [
+                "edge-s03-covplan-to-qmon-gap",
+                "edge-s03-qmon-to-covplan-reacquire",
+                "edge-s03-observations-to-qmon",
+                "edge-s03-fusion-to-qmon",
+                "edge-s03-calibration-to-qmon",
+                "edge-s03-qmon-to-ops",
+                "edge-s03-qmon-to-persistence",
+                "edge-s03-qmon-to-alerts",
+                "edge-s03-qmon-scores-to-obs"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "Unit test with synthetic degraded imagery and integration test with live sensor feed",
+            "notes": "Quality scoring uses normalized 0-1 scale with configurable thresholds per sensor type and modality"
+        },
+        {
+            "requirementId": "req-5.02",
+            "description": "Waypoint generation and route optimization for mission execution",
+            "coveredByNodes": [
+                "node-s03-coverage-planner"
+            ],
+            "coveredByEdges": [
+                "edge-s03-covplan-to-waypoints"
+            ],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "Integration test with planning subsystem",
+            "notes": "Coverage planner generates waypoints that are further optimized by the planning subsystem for kinematic feasibility"
+        },
+        {
+            "requirementId": "req-GA-04",
+            "description": "Real-time performance for time-critical operations",
+            "coveredByNodes": [
+                "node-s03-quality-monitor"
+            ],
+            "coveredByEdges": [
+                "edge-s03-qmon-to-ops",
+                "edge-s03-qmon-to-alerts"
+            ],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "Performance benchmark under maximum sensor throughput",
+            "notes": "Quality scoring must complete within sensor frame interval to avoid pipeline backpressure"
+        },
+        {
+            "requirementId": "req-GA-07",
+            "description": "Extensibility through plugin architecture and configurable components",
+            "coveredByNodes": [
+                "node-s03-coverage-planner"
+            ],
+            "coveredByEdges": [],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "Integration test with custom coverage pattern plugin",
+            "notes": "Coverage patterns are extensible via plugin; quality metrics are configurable per sensor type"
+        },
+        {
+            "requirementId": "req-CL-05",
+            "description": "Custom workflow scripting for operator-defined automation",
+            "coveredByNodes": [
+                "node-s03-coverage-planner",
+                "node-s03-quality-monitor"
+            ],
+            "coveredByEdges": [],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "Integration test with custom script",
+            "notes": "Operators can script custom coverage patterns and quality threshold overrides via scripting engine"
+        },
+        {
+            "requirementId": "req-CL-09",
+            "description": "Configurable dashboard widgets for operator situational awareness",
+            "coveredByNodes": [
+                "node-s03-quality-monitor"
+            ],
+            "coveredByEdges": [
+                "edge-s03-qmon-to-ops"
+            ],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "UI test with custom dashboard configuration",
+            "notes": "Quality metrics and coverage progress exposed as configurable dashboard widgets"
+        }
+    ],
+    "assumptions": [
+        {
+            "assumptionId": "AS-089",
+            "description": "Coverage planning patterns (lawnmower, spiral, radial) are pre-defined with configurable parameters (overlap percentage, line spacing, altitude); custom patterns are supported via the plugin extension engine.",
+            "rationale": "Standard survey patterns cover the majority of operational use cases; plugin support provides extensibility without core changes."
+        },
+        {
+            "assumptionId": "AS-090",
+            "description": "Data quality scoring uses a normalized 0.0–1.0 scale with configurable thresholds per sensor type and modality. Scores below the rejection threshold trigger automatic re-acquisition; scores below the warning threshold generate operator alerts.",
+            "rationale": "Normalized scoring enables consistent cross-sensor comparison and configurable policy enforcement without hard-coded values."
+        },
+        {
+            "assumptionId": "AS-091",
+            "description": "Coverage and observation geometry use an explicitly declared coordinate reference and frame; transformations are versioned and time-aligned with vehicle pose and sensor calibration.",
+            "rationale": "Coverage overlap, terrain projection, and re-acquisition targeting are invalid if frame or timestamp provenance is ambiguous."
+        },
+        {
+            "assumptionId": "AS-092",
+            "description": "Quality annotations are associated with observations by stable identifiers and are stored separately from immutable raw sensor payloads.",
+            "rationale": "This preserves source evidence and supports repeatable downstream filtering and audit."
+        },
+        {
+            "assumptionId": "AS-093",
+            "description": "Re-acquisition requests are advisory planning inputs; mission safety constraints, vehicle feasibility, and operator authorization remain enforced by the planning and mission execution subsystems.",
+            "rationale": "A data-quality trigger must not directly bypass mission validation or command authorization."
+        },
+        {
+            "assumptionId": "AS-094",
+            "description": "The quality monitor can evaluate both raw and fused observations, but modality-specific metrics and thresholds are configured per sensor type.",
+            "rationale": "A single universal image-quality metric is not valid for every sensor modality."
+        }
+    ],
+    "unresolvedDecisions": [
+        {
+            "decisionId": "UD-089",
+            "description": "Coverage planning optimization algorithm selection: greedy sweep vs genetic algorithm vs A*-variant with coverage heuristic. Trade-off between computation time and coverage optimality for large areas.",
+            "options": [
+                "Greedy sweep (fast, suboptimal)",
+                "Genetic algorithm (slow, near-optimal)",
+                "A*-variant with coverage heuristic (balanced)"
+            ],
+            "impact": "Affects planning latency for large survey areas and coverage completeness percentage."
+        },
+        {
+            "decisionId": "UD-090",
+            "description": "Data quality metric weighting scheme: relative importance of sharpness, exposure, noise floor, completeness, and timestamp continuity in the composite quality score.",
+            "options": [
+                "Equal weighting",
+                "Configurable per-sensor weighting",
+                "ML-derived weighting from historical data"
+            ],
+            "impact": "Affects which observations are flagged for re-acquisition and overall mission data yield."
+        },
+        {
+            "decisionId": "UD-091",
+            "description": "Define the re-acquisition request contract and arbitration policy when multiple low-quality observations map to overlapping targets or conflict with existing mission priorities.",
+            "options": [
+                "Deduplicate by target/footprint and merge priorities",
+                "Preserve each observation request independently",
+                "Delegate arbitration to the mission planner"
+            ],
+            "impact": "Affects duplicate task generation, mission churn, prioritization, and operator predictability."
+        },
+        {
+            "decisionId": "UD-092",
+            "description": "Define the quality-score lifecycle for asynchronous or late-arriving fused observations, including whether a later score may revise an earlier observation disposition.",
+            "options": [
+                "Immutable first score with later supplemental assessments",
+                "Versioned score revisions with explicit supersession",
+                "Windowed finalization after a configurable lateness bound"
+            ],
+            "impact": "Affects reproducibility, downstream filtering, and re-acquisition timing."
+        },
+        {
+            "decisionId": "UD-093",
+            "description": "Define bounded processing and backpressure behavior when sensor frame rates exceed quality-monitor capacity.",
+            "options": [
+                "Prioritized sampling with explicit dropped-frame accounting",
+                "Bounded queue with configurable degradation policy",
+                "Adaptive metric reduction under load"
+            ],
+            "impact": "Affects latency, data completeness, resource use, and quality-alert reliability."
+        }
+    ],
+    "metadata": {
+        "status": "draft",
+        "revision": 2,
+        "createdDate": "2025-01-15",
+        "lastModified": "2026-10-31"
+    }
+}

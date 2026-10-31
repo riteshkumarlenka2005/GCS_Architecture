@@ -1,0 +1,1359 @@
+{
+    "schemaVersion": "1.0.0",
+    "documentId": "doc-sensor-01",
+    "title": "Sensor Integration, Field of View, Pose Calibration & Coverage Analysis Architecture",
+    "diagramType": "subsystem-architecture",
+    "description": "Internal architecture of four Sensor subsystem engines forming the sensor data acquisition and geometric modeling pipeline: Sensor Integration (eng-sensor-integration) as the central sensor registration, discovery, and data ingestion hub; Field of View (eng-sensor-fov) for real-time geometric FOV modeling and projection per sensor type; Pose Calibration (eng-sensor-pose-calibration) for sensor mounting pose management, intrinsic parameter calibration, and coordinate frame alignment; and Coverage Analysis (eng-sensor-coverage) for ground footprint computation, overlap analysis, gap detection, and cumulative coverage map generation. Details the pipeline from raw sensor data ingestion through geometric modeling to coverage computation, and the integration with COP visualization and Planning subsystems.",
+    "category": "sensor",
+    "coordinateSystem": {
+        "type": "cartesian",
+        "unit": "px",
+        "origin": "top-left"
+    },
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "width": 1500,
+        "height": 1000,
+        "zoom": 1.0
+    },
+    "groups": [
+        {
+            "id": "grp-sensor01-ingestion",
+            "label": "Sensor Data Ingestion & Calibration",
+            "type": "functional-group",
+            "nodeIds": [
+                "node-sensor01-integration",
+                "node-sensor01-calibration"
+            ],
+            "style": {
+                "backgroundColor": "rgba(236, 72, 153, 0.05)",
+                "borderColor": "#ec4899",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 12,
+                "padding": 30
+            }
+        },
+        {
+            "id": "grp-sensor01-geometry",
+            "label": "Geometric Modeling & Coverage",
+            "type": "functional-group",
+            "nodeIds": [
+                "node-sensor01-fov",
+                "node-sensor01-coverage"
+            ],
+            "style": {
+                "backgroundColor": "rgba(16, 185, 129, 0.05)",
+                "borderColor": "#10b981",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 12,
+                "padding": 30
+            }
+        }
+    ],
+    "nodes": [
+        {
+            "id": "node-sensor01-integration",
+            "label": "Sensor Integration Engine",
+            "type": "component",
+            "engineId": "eng-sensor-integration",
+            "description": "Central sensor management hub handling sensor registration, discovery, capability advertisement, and raw data ingestion for all vehicle-mounted sensors. Maintains a sensor registry mapping each sensor instance to its type, capabilities, data format, and host vehicle. Ingests raw sensor data streams from the Communication Transport layer, performs initial format normalization and timestamp synchronization, and distributes processed sensor frames to downstream consumers (FOV Engine, Coverage Engine, Payload subsystem, COP visualization). Supports hot-plug sensor discovery for modular payload configurations and publishes sensor lifecycle events for cross-subsystem awareness. Sensor frame distribution should carry sensor identity, capture timestamp, clock-quality metadata, calibration version, and validity state so downstream consumers can reject stale or geometrically invalid frames.",
+            "position": {
+                "x": 80,
+                "y": 130
+            },
+            "size": {
+                "width": 270,
+                "height": 210
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#ec4899",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "satellite-dish"
+            },
+            "ports": [
+                {
+                    "id": "port-s01-si-in-loadout",
+                    "label": "Sensor Loadout",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s01-si-in-raw",
+                    "label": "Raw Sensor Data",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s01-si-in-config",
+                    "label": "Sensor Config",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s01-si-out-frames",
+                    "label": "Sensor Frames",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s01-si-out-registry",
+                    "label": "Sensor Registry",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-s01-si-out-events",
+                    "label": "Sensor Events",
+                    "direction": "out",
+                    "dataType": "event",
+                    "position": "bottom"
+                }
+            ]
+        },
+        {
+            "id": "node-sensor01-calibration",
+            "label": "Pose Calibration Engine",
+            "type": "component",
+            "engineId": "eng-sensor-pose-calibration",
+            "description": "Manages sensor mounting poses (6-DOF position and orientation relative to the vehicle body frame) and intrinsic calibration parameters (focal length, distortion coefficients, beam patterns) for all registered sensors. Supports initial calibration import, field recalibration workflows, and automatic drift detection by comparing observed vs. expected sensor measurements. Provides calibrated pose and intrinsic data to the FOV Engine for accurate geometric projection and to the Navigation Geospatial Engine for coordinate frame alignment. Maintains calibration version history and validity timestamps to detect stale calibrations.",
+            "position": {
+                "x": 80,
+                "y": 500
+            },
+            "size": {
+                "width": 270,
+                "height": 210
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#ec4899",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "crosshairs"
+            },
+            "ports": [
+                {
+                    "id": "port-s01-cal-in-registry",
+                    "label": "Sensor Registry",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s01-cal-in-vehicle",
+                    "label": "Vehicle Attitude",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s01-cal-in-operator",
+                    "label": "Calibration Commands",
+                    "direction": "in",
+                    "dataType": "command",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s01-cal-out-pose",
+                    "label": "Calibrated Poses",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s01-cal-out-intrinsics",
+                    "label": "Intrinsic Params",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s01-cal-out-status",
+                    "label": "Calibration Status",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-s01-cal-in-frame",
+                    "label": "Coordinate Frame Parameters",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                }
+            ]
+        },
+        {
+            "id": "node-sensor01-fov",
+            "label": "Field of View Engine",
+            "type": "component",
+            "engineId": "eng-sensor-fov",
+            "description": "Computes real-time geometric field-of-view projections for all active sensors based on calibrated sensor poses, vehicle attitude and position, and terrain elevation data. Supports multiple sensor types with distinct FOV models: perspective projection for cameras, conical sweep for LiDAR, fan-beam for radar, and hemispherical for RF sensors. Produces ground-projected FOV footprints, 3D frustum geometries, and instantaneous coverage polygons. Provides FOV data to the COP for real-time visualization overlays, to the Coverage Analysis Engine for cumulative coverage computation, and to the Planning subsystem for sensor-aware trajectory optimization. Projection outputs should include the coordinate reference frame, timestamp, sensor ID, and calibration version used for each footprint/frustum so COP and Coverage consumers can align and invalidate geometry consistently.",
+            "position": {
+                "x": 520,
+                "y": 130
+            },
+            "size": {
+                "width": 270,
+                "height": 210
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#10b981",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "eye"
+            },
+            "ports": [
+                {
+                    "id": "port-s01-fov-in-frames",
+                    "label": "Sensor Frames",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s01-fov-in-pose",
+                    "label": "Calibrated Poses",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s01-fov-in-intrinsics",
+                    "label": "Intrinsic Params",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s01-fov-in-terrain",
+                    "label": "Terrain Elevation",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s01-fov-out-footprint",
+                    "label": "FOV Footprints",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s01-fov-out-frustum",
+                    "label": "3D Frustums",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-s01-fov-out-cop",
+                    "label": "FOV Overlay",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                }
+            ]
+        },
+        {
+            "id": "node-sensor01-coverage",
+            "label": "Coverage Analysis Engine",
+            "type": "component",
+            "engineId": "eng-sensor-coverage",
+            "description": "Computes cumulative ground coverage maps, overlap analysis, gap detection, and coverage quality metrics over the course of a mission. Ingests instantaneous FOV footprints from the FOV Engine and vehicle trajectory data from the Vehicle State Store to build time-integrated coverage mosaics. Supports configurable resolution grids, multi-sensor coverage fusion, and coverage quality scoring (resolution, overlap percentage, incidence angle). Provides coverage maps to the COP for real-time visualization, to the Coverage Planning Engine (sensor-02) for adaptive mission replanning, and to the Mission Monitoring Engine for coverage-based progress tracking. Coverage accumulation is scoped to an explicit mission target-area geometry and must retain the coordinate reference system, grid resolution, sensor provenance, and time window used to calculate each coverage product.",
+            "position": {
+                "x": 520,
+                "y": 500
+            },
+            "size": {
+                "width": 270,
+                "height": 210
+            },
+            "style": {
+                "backgroundColor": "#1a1a2e",
+                "borderColor": "#10b981",
+                "borderWidth": 2,
+                "borderStyle": "solid",
+                "cornerRadius": 8,
+                "textColor": "#e2e8f0",
+                "fontSize": 13,
+                "icon": "map-marked-alt"
+            },
+            "ports": [
+                {
+                    "id": "port-s01-cov-in-footprint",
+                    "label": "FOV Footprints",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s01-cov-in-trajectory",
+                    "label": "Vehicle Trajectory",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                },
+                {
+                    "id": "port-s01-cov-in-target",
+                    "label": "Target Area",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "left"
+                },
+                {
+                    "id": "port-s01-cov-out-map",
+                    "label": "Coverage Map",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s01-cov-out-gaps",
+                    "label": "Gap Report",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "bottom"
+                },
+                {
+                    "id": "port-s01-cov-out-metrics",
+                    "label": "Coverage Metrics",
+                    "direction": "out",
+                    "dataType": "data",
+                    "position": "right"
+                },
+                {
+                    "id": "port-s01-cov-in-target-area",
+                    "label": "Mission Target Area Geometry",
+                    "direction": "in",
+                    "dataType": "data",
+                    "position": "top"
+                }
+            ]
+        }
+    ],
+    "edges": [
+        {
+            "id": "edge-s01-si-to-fov",
+            "source": "node-sensor01-integration",
+            "target": "node-sensor01-fov",
+            "sourcePort": "port-s01-si-out-frames",
+            "targetPort": "port-s01-fov-in-frames",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Normalized Sensor Frames",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Sensor Integration Engine delivers timestamp-synchronized, format-normalized sensor frames to the FOV Engine for real-time geometric projection.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-s01-si-to-cal",
+            "source": "node-sensor01-integration",
+            "target": "node-sensor01-calibration",
+            "sourcePort": "port-s01-si-out-registry",
+            "targetPort": "port-s01-cal-in-registry",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Sensor Registry",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Sensor Integration Engine provides the active sensor registry (sensor types, instances, host vehicles) to the Pose Calibration Engine for calibration parameter lookup and management.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-s01-cal-to-fov-pose",
+            "source": "node-sensor01-calibration",
+            "target": "node-sensor01-fov",
+            "sourcePort": "port-s01-cal-out-pose",
+            "targetPort": "port-s01-fov-in-pose",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Calibrated Sensor Poses",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Pose Calibration Engine provides calibrated 6-DOF mounting poses for all active sensors to the FOV Engine for accurate geometric projection relative to the vehicle body frame.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-s01-cal-to-fov-intrinsics",
+            "source": "node-sensor01-calibration",
+            "target": "node-sensor01-fov",
+            "sourcePort": "port-s01-cal-out-intrinsics",
+            "targetPort": "port-s01-fov-in-intrinsics",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Intrinsic Parameters",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Pose Calibration Engine provides sensor intrinsic parameters (focal length, distortion, beam pattern) to the FOV Engine for sensor-specific projection modeling.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-s01-fov-to-cov",
+            "source": "node-sensor01-fov",
+            "target": "node-sensor01-coverage",
+            "sourcePort": "port-s01-fov-out-footprint",
+            "targetPort": "port-s01-cov-in-footprint",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Instantaneous FOV Footprints",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "FOV Engine provides ground-projected instantaneous coverage footprints to the Coverage Analysis Engine for cumulative coverage map integration.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 10
+            }
+        },
+        {
+            "id": "edge-s01-registry-to-si",
+            "source": "ext-s01-vehicle-registry",
+            "target": "node-sensor01-integration",
+            "sourcePort": null,
+            "targetPort": "port-s01-si-in-loadout",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Sensor Loadout Definitions",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Core Vehicle Registry provides sensor loadout definitions (sensor types, quantities, mounting positions) per vehicle type to the Sensor Integration Engine for sensor discovery and registration.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-transport-to-si",
+            "source": "ext-s01-transport",
+            "target": "node-sensor01-integration",
+            "sourcePort": null,
+            "targetPort": "port-s01-si-in-raw",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Raw Sensor Data Streams",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Communication Transport layer delivers raw sensor data streams (video, LiDAR point clouds, radar returns) from vehicles to the Sensor Integration Engine for normalization and distribution.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-state-to-cal",
+            "source": "ext-s01-vehicle-state",
+            "target": "node-sensor01-calibration",
+            "sourcePort": null,
+            "targetPort": "port-s01-cal-in-vehicle",
+            "semantic": {
+                "type": "telemetry",
+                "direction": "unidirectional",
+                "label": "Vehicle Attitude & Position",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Vehicle State Store provides real-time vehicle attitude (roll, pitch, yaw) and position to the Pose Calibration Engine for body-to-world frame transformation and drift detection.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-state-to-cov",
+            "source": "ext-s01-vehicle-state",
+            "target": "node-sensor01-coverage",
+            "sourcePort": null,
+            "targetPort": "port-s01-cov-in-trajectory",
+            "semantic": {
+                "type": "telemetry",
+                "direction": "unidirectional",
+                "label": "Vehicle Trajectory",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Vehicle State Store provides vehicle position history (trajectory) to the Coverage Analysis Engine for time-integrated coverage map computation.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#06b6d4",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-terrain-to-fov",
+            "source": "ext-s01-terrain",
+            "target": "node-sensor01-fov",
+            "sourcePort": null,
+            "targetPort": "port-s01-fov-in-terrain",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Terrain Elevation Data",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "COP Terrain Engine provides terrain elevation data (DEM) to the FOV Engine for ground-intersection computation and terrain-aware FOV projection.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-navgeo-to-cal",
+            "source": "ext-s01-nav-geo",
+            "target": "node-sensor01-calibration",
+            "sourcePort": null,
+            "targetPort": "port-s01-cal-in-frame",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Coordinate Frame Alignment",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Navigation Geospatial Engine supplies the active coordinate reference system, frame identifiers, and transformation parameters to Pose Calibration. These parameters are distinct from operator-issued calibration commands.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#8b5cf6",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-fov-to-cop",
+            "source": "node-sensor01-fov",
+            "target": "ext-s01-cop-core",
+            "sourcePort": "port-s01-fov-out-cop",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "FOV Visualization Overlay",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "FOV Engine provides real-time FOV overlay data (frustum geometries, ground footprints) to the COP Core for geospatial visualization on the operator map display.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-cov-to-cop",
+            "source": "node-sensor01-coverage",
+            "target": "ext-s01-cop-core",
+            "sourcePort": "port-s01-cov-out-map",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Coverage Map Overlay",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Coverage Analysis Engine provides cumulative coverage map data to the COP Core for real-time coverage visualization on the operator map display.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-cov-to-monitor",
+            "source": "node-sensor01-coverage",
+            "target": "ext-s01-monitor",
+            "sourcePort": "port-s01-cov-out-metrics",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Coverage Progress Metrics",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Coverage Analysis Engine provides coverage completion metrics (percentage covered, gap count, quality score) to the Mission Monitoring Engine for coverage-based mission progress tracking.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-api-to-si",
+            "source": "ext-s01-api-gateway",
+            "target": "node-sensor01-integration",
+            "sourcePort": null,
+            "targetPort": "port-s01-si-in-config",
+            "semantic": {
+                "type": "control",
+                "direction": "unidirectional",
+                "label": "Sensor Configuration",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Core API Gateway delivers operator sensor configuration commands (enable/disable sensors, adjust data rates, select modes) to the Sensor Integration Engine.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#8b5cf6",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-si-to-bus",
+            "source": "node-sensor01-integration",
+            "target": "ext-s01-event-bus",
+            "sourcePort": "port-s01-si-out-events",
+            "targetPort": null,
+            "semantic": {
+                "type": "event",
+                "direction": "unidirectional",
+                "label": "Sensor Lifecycle Events",
+                "protocol": null,
+                "dataType": "event",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Sensor Integration Engine publishes sensor lifecycle events (discovered, registered, online, offline, error) to the Core Event Bus for cross-subsystem awareness.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#fbbf24",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "dotted",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-cal-to-dash",
+            "source": "node-sensor01-calibration",
+            "target": "ext-s01-dashboard",
+            "sourcePort": "port-s01-cal-out-status",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Calibration Status",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Pose Calibration Engine provides calibration status (validity, age, drift metrics) to the Unified Dashboard for operator awareness of sensor calibration health.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-cov-to-planning",
+            "source": "node-sensor01-coverage",
+            "target": "ext-s01-hybrid",
+            "sourcePort": "port-s01-cov-out-gaps",
+            "targetPort": null,
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Coverage Gap Report",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Coverage Analysis Engine provides coverage gap reports to the Hybrid Planning Coordinator for adaptive replanning to fill uncovered areas.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-hybrid-to-target-area",
+            "source": "ext-s01-hybrid",
+            "target": "node-sensor01-coverage",
+            "sourcePort": null,
+            "targetPort": "port-s01-cov-in-target-area",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Mission Target Area Geometry",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Hybrid Planning Coordinator supplies the mission's target-area geometry to Coverage Analysis so coverage gaps and completion metrics are computed against the intended area. The exact exchange contract and source-document port are defined at the planning integration boundary.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#f59e0b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        },
+        {
+            "id": "edge-s01-cal-status-to-integration",
+            "source": "node-sensor01-calibration",
+            "target": "node-sensor01-integration",
+            "sourcePort": "port-s01-cal-out-status",
+            "targetPort": "port-s01-si-in-config",
+            "semantic": {
+                "type": "data",
+                "direction": "unidirectional",
+                "label": "Calibration Validity State",
+                "protocol": null,
+                "dataType": "data",
+                "trigger": null,
+                "synchronous": null,
+                "description": "Pose Calibration publishes calibration validity and freshness state to Sensor Integration so stale or invalid sensor calibrations can be surfaced and downstream frame publication can be quality-gated. This is status data, not an operator configuration command.",
+                "requirementIds": [],
+                "assumptions": []
+            },
+            "visual": {
+                "routing": "orthogonal",
+                "waypoints": [],
+                "cornerRadius": 8,
+                "stroke": "#64748b",
+                "strokeWidth": 2,
+                "arrow": "end",
+                "dash": "solid",
+                "labelPosition": "center",
+                "zIndex": 5
+            }
+        }
+    ],
+    "externalReferences": [
+        {
+            "nodeId": "ext-s01-vehicle-registry",
+            "sourceDocumentId": "doc-core-01",
+            "engineId": "eng-core-vehicle-registry",
+            "label": "Vehicle Registry",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s01-vehicle-state",
+            "sourceDocumentId": "doc-core-03",
+            "engineId": "eng-core-vehicle-state",
+            "label": "Vehicle State Store",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s01-event-bus",
+            "sourceDocumentId": "doc-core-04",
+            "engineId": "eng-core-event-processing",
+            "label": "Core Event Bus",
+            "type": "event-bus",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#fbbf24",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s01-api-gateway",
+            "sourceDocumentId": "doc-core-04",
+            "engineId": "eng-core-api-gateway",
+            "label": "Core API Gateway",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s01-transport",
+            "sourceDocumentId": "doc-comm-01",
+            "engineId": "eng-comm-transport",
+            "label": "Communication Transport",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#06b6d4",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s01-cop-core",
+            "sourceDocumentId": "doc-cop-01",
+            "engineId": "eng-cop-core",
+            "label": "COP Core",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#10b981",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s01-terrain",
+            "sourceDocumentId": "doc-cop-02",
+            "engineId": "eng-cop-terrain",
+            "label": "COP Terrain Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#10b981",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s01-nav-geo",
+            "sourceDocumentId": "doc-ops-03",
+            "engineId": "eng-ops-nav-geospatial",
+            "label": "Navigation Geospatial Engine",
+            "type": "component",
+            "role": "source",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s01-monitor",
+            "sourceDocumentId": "doc-ops-02",
+            "engineId": "eng-ops-mission-monitoring",
+            "label": "Mission Monitoring Engine",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#8b5cf6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s01-dashboard",
+            "sourceDocumentId": "doc-ops-01",
+            "engineId": "eng-ops-unified",
+            "label": "Unified Operations Dashboard",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#3b82f6",
+                "borderStyle": "dashed"
+            }
+        },
+        {
+            "nodeId": "ext-s01-hybrid",
+            "sourceDocumentId": "doc-plan-01",
+            "engineId": "eng-plan-hybrid",
+            "label": "Hybrid Planning Coordinator",
+            "type": "component",
+            "role": "target",
+            "style": {
+                "shape": "rounded-rectangle",
+                "category": "external",
+                "color": "#f59e0b",
+                "borderStyle": "dashed"
+            }
+        }
+    ],
+    "crossReferences": [
+        {
+            "canonicalEngineId": "eng-sensor-integration",
+            "localNodeId": "node-sensor01-integration",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-sensor"
+                }
+            ]
+        },
+        {
+            "canonicalEngineId": "eng-sensor-pose-calibration",
+            "localNodeId": "node-sensor01-calibration",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-sensor"
+                }
+            ]
+        },
+        {
+            "canonicalEngineId": "eng-sensor-fov",
+            "localNodeId": "node-sensor01-fov",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-sensor"
+                }
+            ]
+        },
+        {
+            "canonicalEngineId": "eng-sensor-coverage",
+            "localNodeId": "node-sensor01-coverage",
+            "otherOccurrences": [
+                {
+                    "documentId": "doc-master-02",
+                    "nodeId": "node-master-sensor"
+                }
+            ]
+        }
+    ],
+    "requirementsCoverage": [
+        {
+            "requirementId": "req-2.20-01",
+            "description": "The system shall provide a sensor integration framework supporting registration, discovery, and data ingestion for heterogeneous vehicle-mounted sensors.",
+            "coveredByNodes": [
+                "node-sensor01-integration"
+            ],
+            "coveredByEdges": [
+                "edge-s01-registry-to-si",
+                "edge-s01-transport-to-si",
+                "edge-s01-si-to-fov",
+                "edge-s01-si-to-cal"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "demonstration",
+            "notes": "Sensor Integration Engine manages the full sensor lifecycle from registry-based discovery through raw data ingestion and normalized frame distribution."
+        },
+        {
+            "requirementId": "req-2.20-02",
+            "description": "The system shall support hot-plug sensor discovery for modular payload configurations without requiring system restart.",
+            "coveredByNodes": [
+                "node-sensor01-integration"
+            ],
+            "coveredByEdges": [
+                "edge-s01-registry-to-si",
+                "edge-s01-si-to-bus"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Sensor Integration Engine publishes sensor discovery events to the Event Bus and dynamically updates the sensor registry on hot-plug."
+        },
+        {
+            "requirementId": "req-2.20-03",
+            "description": "The system shall model and visualize real-time sensor fields of view including camera frustums, LiDAR cones, and radar beams projected onto terrain.",
+            "coveredByNodes": [
+                "node-sensor01-fov"
+            ],
+            "coveredByEdges": [
+                "edge-s01-si-to-fov",
+                "edge-s01-cal-to-fov-pose",
+                "edge-s01-cal-to-fov-intrinsics",
+                "edge-s01-terrain-to-fov",
+                "edge-s01-fov-to-cop"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "demonstration",
+            "notes": "FOV Engine ingests calibrated poses, intrinsics, and terrain data to compute ground-projected FOV footprints displayed on the COP."
+        },
+        {
+            "requirementId": "req-2.20-04",
+            "description": "The system shall manage sensor mounting poses and intrinsic calibration parameters with version tracking and drift detection.",
+            "coveredByNodes": [
+                "node-sensor01-calibration"
+            ],
+            "coveredByEdges": [
+                "edge-s01-si-to-cal",
+                "edge-s01-state-to-cal",
+                "edge-s01-cal-to-fov-pose",
+                "edge-s01-cal-to-dash",
+                "edge-s01-navgeo-to-cal",
+                "edge-s01-cal-status-to-integration"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Pose Calibration manages mounting poses and intrinsic parameters, receives vehicle attitude and coordinate-frame parameters, reports calibration status, and exposes validity/freshness state to Sensor Integration for downstream quality gating."
+        },
+        {
+            "requirementId": "req-2.20-05",
+            "description": "The system shall compute cumulative ground coverage maps with overlap analysis, gap detection, and coverage quality metrics.",
+            "coveredByNodes": [
+                "node-sensor01-coverage"
+            ],
+            "coveredByEdges": [
+                "edge-s01-fov-to-cov",
+                "edge-s01-state-to-cov",
+                "edge-s01-cov-to-cop",
+                "edge-s01-cov-to-monitor",
+                "edge-s01-cov-to-planning",
+                "edge-s01-hybrid-to-target-area"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Coverage Analysis integrates FOV footprints over vehicle trajectory against explicit mission target-area geometry, then emits coverage maps, gap reports, and quality metrics."
+        },
+        {
+            "requirementId": "req-2.20-06",
+            "description": "The system shall synchronize sensor data timestamps across heterogeneous sensors for coherent multi-sensor fusion.",
+            "coveredByNodes": [
+                "node-sensor01-integration"
+            ],
+            "coveredByEdges": [
+                "edge-s01-transport-to-si",
+                "edge-s01-si-to-fov"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "test",
+            "notes": "Sensor Integration Engine performs timestamp synchronization during frame normalization before distribution to downstream consumers."
+        },
+        {
+            "requirementId": "req-GA-12",
+            "description": "The system shall support closed-loop mission execution with real-time monitoring and adaptive replanning.",
+            "coveredByNodes": [
+                "node-sensor01-coverage"
+            ],
+            "coveredByEdges": [
+                "edge-s01-cov-to-monitor",
+                "edge-s01-cov-to-planning"
+            ],
+            "coverageStatus": "partially-mapped",
+            "verificationMethod": "test",
+            "notes": "Coverage gap reports feed the planning replan loop; full closed-loop spans ops-02, ops-04, and plan-02."
+        },
+        {
+            "requirementId": "req-GA-15",
+            "description": "The system shall provide real-time geospatial visualization of sensor coverage and vehicle situational awareness.",
+            "coveredByNodes": [
+                "node-sensor01-fov",
+                "node-sensor01-coverage"
+            ],
+            "coveredByEdges": [
+                "edge-s01-fov-to-cop",
+                "edge-s01-cov-to-cop"
+            ],
+            "coverageStatus": "fully-mapped",
+            "verificationMethod": "demonstration",
+            "notes": "FOV footprints and coverage maps are delivered to the COP Core for real-time geospatial display."
+        }
+    ],
+    "assumptions": [
+        {
+            "id": "AS-081",
+            "description": "Sensor data timestamps are derived from a common time source (e.g., GPS PPS) on the vehicle, and the Sensor Integration Engine performs fine-grained synchronization to sub-millisecond accuracy.",
+            "rationale": "Multi-sensor fusion and accurate FOV projection require temporally coherent sensor frames."
+        },
+        {
+            "id": "AS-082",
+            "description": "Sensor mounting poses are measured during vehicle assembly and imported as initial calibration; field recalibration is performed only when drift exceeds configurable thresholds.",
+            "rationale": "Frequent recalibration would disrupt operations; drift-based triggering balances accuracy and availability."
+        },
+        {
+            "id": "AS-083",
+            "description": "FOV projection uses a planar terrain approximation for real-time performance, with full DEM intersection available for high-accuracy coverage analysis at reduced update rates.",
+            "rationale": "Full DEM ray-casting for every sensor frame would exceed real-time computational budgets on typical GCS hardware."
+        },
+        {
+            "id": "AS-084",
+            "description": "Coverage maps are maintained on a configurable-resolution grid (default 1m) in the local coordinate frame and reprojected to the display CRS for COP visualization.",
+            "rationale": "Grid-based coverage representation enables efficient incremental updates and gap detection."
+        },
+        {
+            "id": "AS-085",
+            "description": "All sensor frames and geometric products carry explicit sensor identity, capture time, coordinate reference frame, and calibration-version metadata.",
+            "rationale": "Without provenance and frame/version metadata, downstream FOV projection, multi-sensor fusion, and coverage accumulation can combine incompatible or stale measurements."
+        },
+        {
+            "id": "AS-086",
+            "description": "Coverage Analysis receives mission target-area geometry from the Planning subsystem and evaluates coverage only within the active mission's declared area of interest.",
+            "rationale": "Coverage percentage and gap reports are not meaningful without a defined target-area boundary."
+        }
+    ],
+    "unresolvedDecisions": [
+        {
+            "id": "UD-081",
+            "description": "Maximum supported sensor count per vehicle and the scaling strategy for high-sensor-count platforms (e.g., multi-spectral survey vehicles with 10+ sensors).",
+            "impact": "Affects Sensor Integration Engine throughput and FOV Engine computational load.",
+            "owner": "Sensor Architecture"
+        },
+        {
+            "id": "UD-082",
+            "description": "FOV update rate vs. accuracy trade-off: whether to compute full terrain-intersected FOV at 1 Hz or approximate flat-ground FOV at 10 Hz.",
+            "impact": "Affects COP visualization responsiveness and coverage map accuracy.",
+            "owner": "Sensor Architecture"
+        },
+        {
+            "id": "UD-083",
+            "description": "Coverage map persistence: whether coverage maps are stored in-memory only for the active mission or persisted to the Data subsystem for cross-mission analysis.",
+            "impact": "Affects storage requirements and the ability to compare coverage across multiple missions.",
+            "owner": "Data Architecture"
+        },
+        {
+            "id": "UD-084",
+            "description": "Calibration drift detection algorithm: statistical comparison of overlapping sensor observations, landmark-based validation, or operator-initiated check.",
+            "impact": "Affects calibration reliability and the risk of undetected pose errors degrading coverage quality.",
+            "owner": "Sensor Architecture"
+        },
+        {
+            "id": "UD-085",
+            "description": "Define the target-area geometry contract between Hybrid Planning and Coverage Analysis, including geometry type, CRS, versioning, update behavior, and mission association.",
+            "impact": "Affects coverage denominator correctness, gap-report alignment, and adaptive replanning interoperability.",
+            "owner": "Sensor & Planning Architecture"
+        },
+        {
+            "id": "UD-086",
+            "description": "Define sensor-frame quality gating behavior when calibration is missing, stale, drifting, or invalid, including whether raw data remains available while geometric products are suppressed.",
+            "impact": "Affects sensor availability, FOV accuracy, coverage correctness, and operator warning behavior.",
+            "owner": "Sensor Architecture"
+        }
+    ],
+    "metadata": {
+        "status": "draft",
+        "revision": 2,
+        "createdDate": "2025-01-18",
+        "lastModified": "2026-10-31"
+    }
+}
