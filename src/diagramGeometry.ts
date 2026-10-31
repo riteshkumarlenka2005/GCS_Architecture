@@ -784,8 +784,37 @@ function perpOffset(source: EdgeAnchor, target: EdgeAnchor, dist: number): { dx:
   return { dx: (-(ty - sy) / len) * dist, dy: ((tx - sx) / len) * dist }
 }
 
-function offsetPoints(points: Point[], dx: number, dy: number): Point[] {
-  return points.map((p) => ({ x: p.x + dx, y: p.y + dy }))
+// PORT_CIRCLE_RADIUS must match the SVG <circle r="4"> used to render ports in DiagramView.
+const PORT_CIRCLE_RADIUS = 4
+
+/**
+ * Trim an anchor point back by PORT_CIRCLE_RADIUS in the approach direction so the
+ * arrowhead tip lands on the visible edge of the port circle rather than its centre.
+ * Only applies when there is an explicit port (the port circle is rendered on top of
+ * the edge path; without trimming, the arrowhead tip is hidden under the circle).
+ */
+function trimAnchorForArrowhead(anchor: EdgeAnchor): EdgeAnchor {
+  const { point, side } = anchor
+  const r = PORT_CIRCLE_RADIUS
+  switch (side) {
+    case 'left':   return { ...anchor, point: { x: point.x + r, y: point.y } }
+    case 'right':  return { ...anchor, point: { x: point.x - r, y: point.y } }
+    case 'top':    return { ...anchor, point: { x: point.x, y: point.y + r } }
+    case 'bottom': return { ...anchor, point: { x: point.x, y: point.y - r } }
+    default: return anchor
+  }
+}
+
+/**
+ * Offset only the MIDDLE points of a polyline (indices 1..n-2), preserving the
+ * first and last points so port connection anchors remain on their ports.
+ * For a 2-point path (straight line), no offset is applied — overlapping parallel
+ * straight edges are a known limitation and a jog would look worse.
+ */
+function offsetMiddlePoints(points: Point[], dx: number, dy: number): Point[] {
+  if (points.length <= 2) return points
+  const middle = points.slice(1, -1).map((p) => ({ x: p.x + dx, y: p.y + dy }))
+  return [points[0], ...middle, points[points.length - 1]]
 }
 
 export function buildEdgeRoute(
@@ -799,8 +828,19 @@ export function buildEdgeRoute(
   const waypoints = edge.visual?.waypoints ?? []
   const sourceToward = waypoints[0] ?? getNodeCenter(targetNode)
   const targetToward = waypoints[waypoints.length - 1] ?? getNodeCenter(sourceNode)
-  const source = getEdgeAnchor(sourceNode, edge.sourcePort, sourceToward)
-  const target = getEdgeAnchor(targetNode, edge.targetPort, targetToward)
+  let source = getEdgeAnchor(sourceNode, edge.sourcePort, sourceToward)
+  let target = getEdgeAnchor(targetNode, edge.targetPort, targetToward)
+
+  // Trim explicit port anchors so arrowhead tips land at the port circle EDGE,
+  // not the centre. The port circles are rendered on top of edges in SVG, so
+  // without trimming the tip is hidden under the circle.
+  const arrow = edge.visual?.arrow ?? 'end'
+  if (edge.sourcePort && (arrow === 'start' || arrow === 'both')) {
+    source = trimAnchorForArrowhead(source)
+  }
+  if (edge.targetPort && (arrow === 'end' || arrow === 'both')) {
+    target = trimAnchorForArrowhead(target)
+  }
 
   let points: Point[]
   let path: string
@@ -816,7 +856,8 @@ export function buildEdgeRoute(
   }
 
   // Apply bidirectional lane offset: if a reverse edge exists between same nodes,
-  // shift this edge perpendicularly by ±12px so the two don't overlap.
+  // shift ONLY the MIDDLE waypoints by ±12px so parallel edges separate visually
+  // while their endpoints remain connected to the port anchors.
   if (allEdges && allEdges.length > 0) {
     const isBidirectional = edge.semantic?.direction === 'bidirectional'
     const hasReverseEdge = !isBidirectional && allEdges.some(
@@ -824,7 +865,7 @@ export function buildEdgeRoute(
     )
     if (isBidirectional || hasReverseEdge) {
       const { dx, dy } = perpOffset(source, target, BIDIR_LANE_OFFSET)
-      points = offsetPoints(points, dx, dy)
+      points = offsetMiddlePoints(points, dx, dy)
       path = roundedPolylinePath(points, edge.visual?.cornerRadius ?? 8)
     }
   }

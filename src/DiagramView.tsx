@@ -579,10 +579,10 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
             key={edge.id}
             id={markerId(normalizedDoc.documentId, edge.id)}
             viewBox="0 0 10 10"
-            refX="9"
+            refX="10"
             refY="5"
-            markerWidth="7"
-            markerHeight="7"
+            markerWidth="6"
+            markerHeight="6"
             orient="auto-start-reverse"
             markerUnits="strokeWidth"
           >
