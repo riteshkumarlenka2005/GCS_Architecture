@@ -103,8 +103,8 @@
   z-index: 20;
   display: flex;
   flex-direction: column;
-  width: 224px;
-  max-height: 320px;
+  width: 295px;
+  max-height: min(800px, calc(100vh - 48px));
   overflow-y: auto;
   padding: 6px;
   border: 1px solid var(--toolbar-border);
@@ -113,6 +113,29 @@
   box-shadow: var(--toolbar-shadow);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--toolbar-border) transparent;
+}
+
+.canvas-menu::-webkit-scrollbar,
+.inspector-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.canvas-menu::-webkit-scrollbar-track,
+.inspector-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.canvas-menu::-webkit-scrollbar-thumb,
+.inspector-content::-webkit-scrollbar-thumb {
+  background: var(--toolbar-border);
+  border-radius: 999px;
+}
+
+.canvas-menu::-webkit-scrollbar-thumb:hover,
+.inspector-content::-webkit-scrollbar-thumb:hover {
+  background: var(--tool-fg);
 }
 
 .canvas-menu-title {
@@ -326,6 +349,10 @@
 
 .toolbar-position {
   position: relative;
+}
+
+.toolbar-position .canvas-menu {
+  width: 210px;
 }
 
 /* Horizontal docked modes */

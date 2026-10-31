@@ -268,8 +268,21 @@ function App() {
   useEffect(() => {
     const handleNativeWheel = (event: WheelEvent) => {
       if (locked) return
-      const target = event.target as Node | null
-      if (target && toolbarRef.current?.contains(target)) return
+      const target = event.target as Element | null
+      if (!target) return
+      // If wheel occurs inside any UI panel (Inspector, Validation, Toolbar, Menus),
+      // allow native browser scrolling and do NOT zoom or preventDefault.
+      if (
+        toolbarRef.current?.contains(target as Node) ||
+        target.closest?.(
+          '.inspector-panel, .validation-panel, .toolbar, .canvas-menu, .pos-menu, .ctx-menu, aside, [role="menu"]',
+        )
+      ) {
+        return
+      }
+      if (canvasRef.current && !canvasRef.current.contains(target as Node)) {
+        return
+      }
       event.preventDefault()
       const delta = Math.max(-300, Math.min(300, event.deltaY))
       const factor = Math.pow(ZOOM_FACTOR, delta / 100)

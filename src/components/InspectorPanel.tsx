@@ -63,6 +63,16 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
 }) => {
   const [reqFilter, setReqFilter] = useState('')
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({})
+  const panelRef = React.useRef<HTMLElement>(null)
+
+  // Stop wheel events inside the Inspector from bubbling up to the canvas zoom handler
+  React.useLayoutEffect(() => {
+    const el = panelRef.current
+    if (!el) return
+    const stop = (e: WheelEvent) => e.stopPropagation()
+    el.addEventListener('wheel', stop, { passive: false })
+    return () => el.removeEventListener('wheel', stop)
+  }, [])
 
   const toggleSection = (id: string) => {
     setCollapsedSections((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -164,7 +174,7 @@ export const InspectorPanel: React.FC<InspectorPanelProps> = ({
   }
 
   return (
-    <aside className="inspector-panel" aria-label="Architecture Inspector">
+    <aside ref={panelRef} className="inspector-panel" aria-label="Architecture Inspector">
       {/* Inspector Header */}
       <div className="inspector-header">
         <div className="inspector-header-title">
