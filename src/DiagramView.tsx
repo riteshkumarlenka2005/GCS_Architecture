@@ -380,7 +380,7 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
     [normalizedDoc.groups, normalizedDoc.nodes, groupsById],
   )
   const routes = useMemo(
-    () => new Map(normalizedDoc.edges.map((edge) => [edge.id, buildEdgeRoute(edge, nodesById, normalizedDoc.edges)])),
+    () => new Map(normalizedDoc.edges.map((edge) => [edge.id, buildEdgeRoute(edge, nodesById)])),
     [normalizedDoc.edges, nodesById],
   )
   const sortedEdges = useMemo(
@@ -579,10 +579,10 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
             key={edge.id}
             id={markerId(normalizedDoc.documentId, edge.id)}
             viewBox="0 0 10 10"
-            refX="10"
+            refX="9"
             refY="5"
-            markerWidth="6"
-            markerHeight="6"
+            markerWidth="7"
+            markerHeight="7"
             orient="auto-start-reverse"
             markerUnits="strokeWidth"
           >
