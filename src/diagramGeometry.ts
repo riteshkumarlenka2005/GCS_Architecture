@@ -89,8 +89,8 @@ export function getGroupBounds(
       typeof group.style?.padding === 'number' ? group.style.padding : 30
     const headerHeight = 28
     return {
-      x: Math.max(10, minX - padding),
-      y: Math.max(10, minY - padding - headerHeight),
+      x: minX - padding,
+      y: minY - padding - headerHeight,
       width: maxX - minX + padding * 2,
       height: maxY - minY + padding * 2 + headerHeight,
     }
@@ -194,8 +194,8 @@ export function calculateResizedBounds(
   }
 
   return {
-    x: Math.round(Math.max(0, x) * 10) / 10,
-    y: Math.round(Math.max(0, y) * 10) / 10,
+    x: Math.round(x * 10) / 10,
+    y: Math.round(y * 10) / 10,
     width: Math.round(width * 10) / 10,
     height: Math.round(height * 10) / 10,
   }

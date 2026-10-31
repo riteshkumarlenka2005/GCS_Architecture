@@ -289,7 +289,7 @@ function App() {
       const target = event.target as Element | null
       const isDiagramInteractive =
         target?.closest(
-          '[data-node-id],[data-group-id],[data-edge-id],[data-port-id],[data-resize-handle],[data-waypoint]',
+          '[data-node-id],[data-group-id],[data-edge-id],[data-port-id],[data-resize-handle],[data-waypoint],.shape,.path-handle,.resize-handle',
         ) !== null || Boolean(diagramSvgRef.current && target && diagramSvgRef.current.contains(target) && target !== diagramSvgRef.current)
       if (isDiagramInteractive) return
 
@@ -620,6 +620,52 @@ function App() {
     [transform, updateShapes, persistShapes],
   )
 
+  const transformRef = useRef(transform)
+  useEffect(() => {
+    transformRef.current = transform
+  }, [transform])
+
+  const handleWindowShapePointerMoveRef = useRef<(event: PointerEvent) => void>(() => {})
+  const handleWindowShapePointerUpRef = useRef<() => void>(() => {})
+
+  const handleWindowShapePointerMove = useCallback(
+    (event: PointerEvent) => {
+      const drag = shapeDragRef.current
+      if (!drag) return
+      const s = transformRef.current.scale || 1
+      const dx = (event.clientX - drag.startX) / s
+      const dy = (event.clientY - drag.startY) / s
+      const updated = applyShapeDrag(drag.origin, drag.hit, dx, dy)
+      updateShapes((list) =>
+        list.map((shape) => (shape.id === drag.shapeId ? updated : shape)),
+      )
+    },
+    [updateShapes],
+  )
+
+  const handleWindowShapePointerUp = useCallback(() => {
+    window.removeEventListener('pointermove', handleWindowShapePointerMoveRef.current)
+    window.removeEventListener('pointerup', handleWindowShapePointerUpRef.current)
+    window.removeEventListener('pointercancel', handleWindowShapePointerUpRef.current)
+    if (shapeDragRef.current) {
+      shapeDragRef.current = null
+      persistShapes(shapesRef.current)
+    }
+  }, [persistShapes])
+
+  useEffect(() => {
+    handleWindowShapePointerMoveRef.current = handleWindowShapePointerMove
+    handleWindowShapePointerUpRef.current = handleWindowShapePointerUp
+  })
+
+  useEffect(() => {
+    return () => {
+      window.removeEventListener('pointermove', handleWindowShapePointerMoveRef.current)
+      window.removeEventListener('pointerup', handleWindowShapePointerUpRef.current)
+      window.removeEventListener('pointercancel', handleWindowShapePointerUpRef.current)
+    }
+  }, [])
+
   const handleShapePointerDown = useCallback(
     (event: ReactPointerEvent<Element>, shape: Shape, hit: HitKind) => {
       if (locked) return
@@ -637,7 +683,9 @@ function App() {
         startY: event.clientY,
         origin: shape,
       }
-      event.currentTarget.setPointerCapture(event.pointerId)
+      window.addEventListener('pointermove', handleWindowShapePointerMoveRef.current)
+      window.addEventListener('pointerup', handleWindowShapePointerUpRef.current)
+      window.addEventListener('pointercancel', handleWindowShapePointerUpRef.current)
     },
     [locked],
   )
@@ -657,11 +705,8 @@ function App() {
   )
 
   const handleShapePointerUp = useCallback(() => {
-    const drag = shapeDragRef.current
-    shapeDragRef.current = null
-    if (!drag) return
-    persistShapes(shapesRef.current)
-  }, [persistShapes])
+    handleWindowShapePointerUp()
+  }, [handleWindowShapePointerUp])
 
   const handleShapeContextMenu = useCallback(
     (event: ReactMouseEvent<Element>, shape: Shape) => {

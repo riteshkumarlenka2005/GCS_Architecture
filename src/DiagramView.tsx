@@ -180,8 +180,8 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
 
     // 1. Move Single Node
     if (drag.kind === 'node-move') {
-      const nextX = Math.round(Math.max(0, drag.origin.x + dx) * 10) / 10
-      const nextY = Math.round(Math.max(0, drag.origin.y + dy) * 10) / 10
+      const nextX = Math.round((drag.origin.x + dx) * 10) / 10
+      const nextY = Math.round((drag.origin.y + dy) * 10) / 10
 
       if (drag.isGhost) {
         onDocumentChangeRef.current({
@@ -251,8 +251,8 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
         return {
           ...node,
           position: {
-            x: Math.round(Math.max(0, origin.x + dx) * 10) / 10,
-            y: Math.round(Math.max(0, origin.y + dy) * 10) / 10,
+            x: Math.round((origin.x + dx) * 10) / 10,
+            y: Math.round((origin.y + dy) * 10) / 10,
           },
         }
       })
@@ -264,8 +264,8 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
           ...g,
           bounds: {
             ...origin,
-            x: Math.round(Math.max(0, origin.x + dx) * 10) / 10,
-            y: Math.round(Math.max(0, origin.y + dy) * 10) / 10,
+            x: Math.round((origin.x + dx) * 10) / 10,
+            y: Math.round((origin.y + dy) * 10) / 10,
           },
         }
       })
