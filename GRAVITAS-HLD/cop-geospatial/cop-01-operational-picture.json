@@ -1,0 +1,972 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-cop-01",
+  "title": "Core COP & Geospatial Visualization Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of the foundational Common Operational Picture engines: COP Core (eng-cop-core) for view orchestration and operator interaction coordination; Geospatial Visualization (eng-cop-geospatial-viz) for viewport management, coordinate transforms, and map rendering; and Map Layers (eng-cop-map-layers) for layer stack management, tile source configuration, and layer lifecycle. Shows data flow from vehicle state through the COP to the rendered display and integration with the Core event bus and Data Persistence.",
+  "category": "cop",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1400,
+    "height": 900,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-cop01-geospatial",
+      "label": "Geospatial Visualization",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop01-viewport",
+        "node-cop01-renderer"
+      ],
+      "style": {
+        "backgroundColor": "rgba(16, 185, 129, 0.05)",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-cop01-layers",
+      "label": "Layer Management",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop01-layer-mgr",
+        "node-cop01-layer-store"
+      ],
+      "style": {
+        "backgroundColor": "rgba(245, 158, 11, 0.05)",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-cop01-core",
+      "label": "COP Orchestrator",
+      "type": "component",
+      "engineId": "eng-cop-core",
+      "description": "Central coordinator for the Common Operational Picture. Manages the lifecycle of map views, dispatches operator interaction commands (pan, zoom, layer toggle) to the appropriate subsystem, ingests real-time vehicle position updates from the Vehicle State Store, and publishes COP interaction events to the Core event bus. Acts as the single integration point between upstream data sources and the visualization pipeline.",
+      "position": {
+        "x": 120,
+        "y": 280
+      },
+      "size": {
+        "width": 230,
+        "height": 180
+      },
+      "style": {
+        "backgroundColor": "#0e3a2e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "map"
+      },
+      "ports": [
+        {
+          "id": "port-cop01-core-in-vehicle",
+          "label": "Vehicle Positions",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop01-core-in-events",
+          "label": "System Events",
+          "direction": "in",
+          "dataType": "event",
+          "position": "left"
+        },
+        {
+          "id": "port-cop01-core-in-viewport",
+          "label": "Viewport State",
+          "direction": "in",
+          "dataType": "event",
+          "position": "right"
+        },
+        {
+          "id": "port-cop01-core-out-view-cmd",
+          "label": "View Command",
+          "direction": "out",
+          "dataType": "control",
+          "position": "right"
+        },
+        {
+          "id": "port-cop01-core-out-layer-cmd",
+          "label": "Layer Command",
+          "direction": "out",
+          "dataType": "control",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop01-core-out-events",
+          "label": "COP Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "left"
+        },
+        {
+          "id": "port-cop01-core-out-vehicle-features",
+          "label": "Vehicle Render Features",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop01-viewport",
+      "label": "Viewport Controller",
+      "type": "component",
+      "engineId": "eng-cop-geospatial-viz",
+      "description": "Manages the map viewport state including center coordinates, zoom level, rotation, and active coordinate reference system. Translates operator gestures (pan, zoom, rotate) into viewport transformations, computes the visible geographic extent for tile and feature culling, and notifies the COP Orchestrator of viewport state changes that may trigger data loading or view-dependent updates.",
+      "position": {
+        "x": 520,
+        "y": 140
+      },
+      "size": {
+        "width": 220,
+        "height": 150
+      },
+      "style": {
+        "backgroundColor": "#0e3a2e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "expand"
+      },
+      "ports": [
+        {
+          "id": "port-cop01-vp-in-cmd",
+          "label": "View Command In",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-cop01-vp-out-state",
+          "label": "Viewport State Out",
+          "direction": "out",
+          "dataType": "event",
+          "position": "left"
+        },
+        {
+          "id": "port-cop01-vp-out-extent",
+          "label": "Visible Extent",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-cop01-renderer",
+      "label": "Map Renderer",
+      "type": "component",
+      "engineId": "eng-cop-geospatial-viz",
+      "description": "Renders the composed map scene to the display surface. Receives the visible geographic extent from the Viewport Controller and the ordered layer stack from the Layer Manager, fetches required map tiles and vector features, performs coordinate projection and symbol placement, and composites all layers into the final rendered frame. Handles rendering optimizations including level-of-detail selection, tile caching, and feature culling.",
+      "position": {
+        "x": 520,
+        "y": 420
+      },
+      "size": {
+        "width": 220,
+        "height": 150
+      },
+      "style": {
+        "backgroundColor": "#0e3a2e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "image"
+      },
+      "ports": [
+        {
+          "id": "port-cop01-ren-in-extent",
+          "label": "Visible Extent In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop01-ren-in-layers",
+          "label": "Layer Stack In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-cop01-ren-in-vehicle-features",
+          "label": "Vehicle Features In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        }
+      ]
+    },
+    {
+      "id": "node-cop01-layer-mgr",
+      "label": "Layer Manager",
+      "type": "component",
+      "engineId": "eng-cop-map-layers",
+      "description": "Manages the map layer stack including base maps, operational overlays, and data layers. Controls layer visibility, draw order, opacity, and blending modes. Processes layer control commands from the COP Orchestrator, queries the Layer Registry for layer definitions and source configurations, and delivers the composed layer stack to the Map Renderer for display.",
+      "position": {
+        "x": 900,
+        "y": 140
+      },
+      "size": {
+        "width": 220,
+        "height": 160
+      },
+      "style": {
+        "backgroundColor": "#1e2a1e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "layer-group"
+      },
+      "ports": [
+        {
+          "id": "port-cop01-lm-in-cmd",
+          "label": "Layer Command In",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-cop01-lm-out-stack",
+          "label": "Composed Layer Stack",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop01-lm-out-query",
+          "label": "Layer Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop01-lm-in-catalog",
+          "label": "Layer Catalog",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop01-layer-store",
+      "label": "Layer Registry",
+      "type": "database",
+      "engineId": "eng-cop-map-layers",
+      "description": "Persistent registry of all available map layer definitions, tile source configurations, and layer metadata. Stores base map sources, overlay definitions, coordinate reference system mappings, and layer attribution information. Provides the layer catalog to the Layer Manager on demand and supports runtime registration of new layer sources.",
+      "position": {
+        "x": 900,
+        "y": 440
+      },
+      "size": {
+        "width": 220,
+        "height": 130
+      },
+      "style": {
+        "backgroundColor": "#0a2e2a",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "database"
+      },
+      "ports": [
+        {
+          "id": "port-cop01-ls-in-query",
+          "label": "Query In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop01-ls-out-catalog",
+          "label": "Catalog Out",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop01-ls-out-persist-write",
+          "label": "Persist Layer Configuration",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop01-ls-in-persist-read",
+          "label": "Restore Layer Configuration",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-cop01-core-to-vp",
+      "source": "node-cop01-core",
+      "target": "node-cop01-viewport",
+      "sourcePort": "port-cop01-core-out-view-cmd",
+      "targetPort": "port-cop01-vp-in-cmd",
+      "semantic": {
+        "type": "control-flow",
+        "label": "View Navigation Command",
+        "description": "COP Orchestrator dispatches operator-initiated or programmatic viewport commands (pan, zoom, rotate, fly-to) to the Viewport Controller.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop01-vp-to-core",
+      "source": "node-cop01-viewport",
+      "target": "node-cop01-core",
+      "sourcePort": "port-cop01-vp-out-state",
+      "targetPort": "port-cop01-core-in-viewport",
+      "semantic": {
+        "type": "event",
+        "label": "Viewport State Change",
+        "description": "Viewport Controller reports state changes (new center, zoom level, extent) to the COP Orchestrator for view-dependent data loading and operator context tracking.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop01-vp-to-renderer",
+      "source": "node-cop01-viewport",
+      "target": "node-cop01-renderer",
+      "sourcePort": "port-cop01-vp-out-extent",
+      "targetPort": "port-cop01-ren-in-extent",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Visible Extent & Transform",
+        "description": "Viewport Controller provides the current visible geographic bounding box and projection transform to the Map Renderer for tile and feature culling.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop01-core-to-lm",
+      "source": "node-cop01-core",
+      "target": "node-cop01-layer-mgr",
+      "sourcePort": "port-cop01-core-out-layer-cmd",
+      "targetPort": "port-cop01-lm-in-cmd",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Layer Control Command",
+        "description": "COP Orchestrator sends layer visibility, ordering, and opacity commands to the Layer Manager in response to operator interactions or mission context changes.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop01-lm-to-renderer",
+      "source": "node-cop01-layer-mgr",
+      "target": "node-cop01-renderer",
+      "sourcePort": "port-cop01-lm-out-stack",
+      "targetPort": "port-cop01-ren-in-layers",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Composed Layer Stack",
+        "description": "Layer Manager delivers the ordered, visibility-filtered layer stack with opacity and blending parameters to the Map Renderer for compositing.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop01-lm-to-ls",
+      "source": "node-cop01-layer-mgr",
+      "target": "node-cop01-layer-store",
+      "sourcePort": "port-cop01-lm-out-query",
+      "targetPort": "port-cop01-ls-in-query",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Query Layer Definitions",
+        "description": "Layer Manager queries the Layer Registry for layer definitions, tile source configurations, and metadata when building or updating the layer stack.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop01-ls-to-lm",
+      "source": "node-cop01-layer-store",
+      "target": "node-cop01-layer-mgr",
+      "sourcePort": "port-cop01-ls-out-catalog",
+      "targetPort": "port-cop01-lm-in-catalog",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Layer Catalog Response",
+        "description": "Layer Registry returns the requested layer definitions and source configurations to the Layer Manager.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop01-vehicle-to-core",
+      "source": "node-core03-state-store",
+      "target": "node-cop01-core",
+      "sourcePort": null,
+      "targetPort": "port-cop01-core-in-vehicle",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle Position Updates",
+        "description": "Vehicle State Store streams real-time vehicle positions, headings, and status to the COP Orchestrator for display on the operational picture.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop01-bus-to-core",
+      "source": "node-core04-event-bus",
+      "target": "node-cop01-core",
+      "sourcePort": null,
+      "targetPort": "port-cop01-core-in-events",
+      "semantic": {
+        "type": "event",
+        "label": "System Events to COP",
+        "description": "Core Event Bus delivers system-wide events (vehicle connected/disconnected, mission state changes, alerts) to the COP Orchestrator for contextual display updates.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop01-core-to-bus",
+      "source": "node-cop01-core",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-cop01-core-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "COP Interaction Events",
+        "description": "COP Orchestrator publishes operator interaction events (view changes, layer toggles, feature selections) to the Core Event Bus for audit logging and cross-subsystem awareness.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop01-core-to-renderer-vehicles",
+      "source": "node-cop01-core",
+      "target": "node-cop01-renderer",
+      "sourcePort": "port-cop01-core-out-vehicle-features",
+      "targetPort": "port-cop01-ren-in-vehicle-features",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Vehicle State & Render Features",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "vehicle-state-update",
+        "synchronous": false,
+        "description": "COP Orchestrator forwards normalized vehicle positions, headings, status and render-ready feature data to the Map Renderer for symbol placement and display.",
+        "requirementIds": [
+          "req-2.5-01",
+          "req-2.5-05",
+          "req-2.6-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop01-ls-to-persistence",
+      "source": "node-cop01-layer-store",
+      "target": "node-data01-persistence",
+      "sourcePort": "port-cop01-ls-out-persist-write",
+      "targetPort": null,
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Persist Layer Definitions",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "layer-registry-update",
+        "synchronous": false,
+        "description": "Layer Registry persists layer definitions, tile-source configuration, CRS mappings and attribution metadata through the Data Persistence Engine.",
+        "requirementIds": [],
+        "assumptions": [
+          "AS-025"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    },
+    {
+      "id": "edge-cop01-persistence-to-ls",
+      "source": "node-data01-persistence",
+      "target": "node-cop01-layer-store",
+      "sourcePort": null,
+      "targetPort": "port-cop01-ls-in-persist-read",
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Restore Layer Configuration",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": "registry-initialization",
+        "synchronous": false,
+        "description": "Data Persistence Engine supplies previously stored layer configuration and metadata to the Layer Registry during initialization or recovery.",
+        "requirementIds": [],
+        "assumptions": [
+          "AS-025"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 5
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-core03-state-store",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-vehicle-state",
+      "label": "Vehicle State Store",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core04-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-data01-persistence",
+      "sourceDocumentId": "doc-data-01",
+      "engineId": "eng-data-persistence",
+      "label": "Data Persistence Engine",
+      "type": "database",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#14b8a6",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-cop-core",
+      "localNodeId": "node-cop01-core",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-cop"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.5-01",
+      "description": "The system shall provide a Common Operational Picture displaying all connected vehicles and their current states in real time.",
+      "coveredByNodes": [
+        "node-cop01-core",
+        "node-cop01-renderer"
+      ],
+      "coveredByEdges": [
+        "edge-cop01-vehicle-to-core",
+        "edge-cop01-vp-to-renderer",
+        "edge-cop01-lm-to-renderer",
+        "edge-cop01-core-to-renderer-vehicles"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "COP Orchestrator ingests vehicle positions from Vehicle State Store; Renderer composites them onto the map display."
+    },
+    {
+      "requirementId": "req-2.5-02",
+      "description": "The system shall render geospatial map data with configurable base layers and operational overlays.",
+      "coveredByNodes": [
+        "node-cop01-renderer",
+        "node-cop01-layer-mgr",
+        "node-cop01-layer-store"
+      ],
+      "coveredByEdges": [
+        "edge-cop01-lm-to-renderer",
+        "edge-cop01-lm-to-ls",
+        "edge-cop01-ls-to-lm"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Layer Manager builds the composed layer stack from Layer Registry definitions; Renderer composites all layers."
+    },
+    {
+      "requirementId": "req-2.5-03",
+      "description": "The system shall support multiple coordinate reference systems and map projections.",
+      "coveredByNodes": [
+        "node-cop01-viewport",
+        "node-cop01-renderer"
+      ],
+      "coveredByEdges": [
+        "edge-cop01-vp-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Viewport Controller manages the active CRS and projection transform; Renderer applies coordinate transforms during rendering."
+    },
+    {
+      "requirementId": "req-2.5-04",
+      "description": "The system shall manage map layer visibility, draw ordering, and opacity for all active layers.",
+      "coveredByNodes": [
+        "node-cop01-layer-mgr",
+        "node-cop01-core"
+      ],
+      "coveredByEdges": [
+        "edge-cop01-core-to-lm",
+        "edge-cop01-lm-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "COP Orchestrator issues layer control commands; Layer Manager maintains the ordered stack with visibility and opacity."
+    },
+    {
+      "requirementId": "req-2.5-05",
+      "description": "The system shall update the operational picture in real time as vehicle positions and states change.",
+      "coveredByNodes": [
+        "node-cop01-core",
+        "node-cop01-renderer"
+      ],
+      "coveredByEdges": [
+        "edge-cop01-vehicle-to-core",
+        "edge-cop01-vp-to-renderer",
+        "edge-cop01-core-to-renderer-vehicles"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Vehicle State Store streams position updates to COP Orchestrator; Viewport Controller triggers re-render on extent changes."
+    },
+    {
+      "requirementId": "req-2.6-01",
+      "description": "The system shall display vehicle positions, headings, and status indicators on the geospatial map.",
+      "coveredByNodes": [
+        "node-cop01-core",
+        "node-cop01-renderer"
+      ],
+      "coveredByEdges": [
+        "edge-cop01-vehicle-to-core",
+        "edge-cop01-lm-to-renderer",
+        "edge-cop01-core-to-renderer-vehicles"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Vehicle data flows through COP Orchestrator to the rendering pipeline; symbol rendering is handled by the Map Renderer."
+    },
+    {
+      "requirementId": "req-2.6-02",
+      "description": "The system shall support interactive zoom, pan, and rotation of the map viewport.",
+      "coveredByNodes": [
+        "node-cop01-viewport",
+        "node-cop01-core"
+      ],
+      "coveredByEdges": [
+        "edge-cop01-core-to-vp",
+        "edge-cop01-vp-to-core"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "COP Orchestrator translates operator gestures into view commands; Viewport Controller applies transforms and reports state."
+    },
+    {
+      "requirementId": "req-2.6-03",
+      "description": "The system shall render map tiles from configurable tile sources including local and remote providers.",
+      "coveredByNodes": [
+        "node-cop01-layer-store",
+        "node-cop01-layer-mgr",
+        "node-cop01-renderer"
+      ],
+      "coveredByEdges": [
+        "edge-cop01-ls-to-lm",
+        "edge-cop01-lm-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Layer Registry stores tile source configurations; Layer Manager resolves active sources; Renderer fetches and displays tiles."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-022",
+      "description": "Map tile sources are accessed via standard tile URL templates (e.g., {z}/{x}/{y}) and the specific tile server technology is a deployment decision.",
+      "rationale": "Tile source protocols are well-standardized; the architecture abstracts the source behind the Layer Registry configuration."
+    },
+    {
+      "id": "AS-023",
+      "description": "The Map Renderer uses the host platform's GPU-accelerated graphics API for compositing and the specific rendering framework is an implementation detail.",
+      "rationale": "Rendering performance depends on platform capabilities; the architecture defines the data pipeline, not the rendering technology."
+    },
+    {
+      "id": "AS-024",
+      "description": "Vehicle position updates arrive at a rate sufficient for smooth real-time display (typically 1–10 Hz per vehicle) and are timestamped for interpolation.",
+      "rationale": "Update rate depends on vehicle telemetry configuration and link bandwidth; the COP handles variable rates gracefully."
+    },
+    {
+      "id": "AS-025",
+      "description": "The Layer Registry persists layer configurations across GCS restarts using the Data Persistence Engine as its storage backend.",
+      "rationale": "Operators expect layer configurations to survive restarts; storage mechanism is abstracted."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-027",
+      "description": "Default coordinate reference system and supported projection list (e.g., WGS 84 / Web Mercator as default, with UTM and local projections as options).",
+      "impact": "Affects Viewport Controller's projection engine and Renderer's coordinate transform pipeline.",
+      "owner": "Geospatial Architecture"
+    },
+    {
+      "id": "UD-028",
+      "description": "Map tile caching strategy: in-memory only, disk-backed, or hybrid with configurable cache size.",
+      "impact": "Affects Map Renderer's tile loading performance and storage requirements.",
+      "owner": "Deployment Architecture"
+    },
+    {
+      "id": "UD-029",
+      "description": "Maximum number of simultaneous map layers and the performance budget for layer compositing.",
+      "impact": "Affects Layer Manager's resource allocation and Renderer's compositing pipeline.",
+      "owner": "Performance Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-15",
+    "lastModified": "2026-10-31"
+  }
+}

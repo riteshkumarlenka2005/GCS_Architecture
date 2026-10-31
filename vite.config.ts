@@ -26,6 +26,15 @@ const ORDER_PRIORITY: Record<string, number> = {
   'doc-comm-03': 22,
   'doc-comm-04': 23,
   'doc-comm-05': 24,
+  'doc-cop-01': 30,
+  'doc-cop-02': 31,
+  'doc-cop-03': 32,
+  'doc-cop-04': 33,
+  'doc-plan-01': 40,
+  'doc-plan-02': 41,
+  'doc-plan-03': 42,
+  'doc-plan-04': 43,
+  'doc-plan-05': 44,
 }
 
 function loadArchitectureData() {

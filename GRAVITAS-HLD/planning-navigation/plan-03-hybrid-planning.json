@@ -1,0 +1,1217 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-plan-03",
+  "title": "Multi-Vehicle Coordination & Deconfliction Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of three fleet-level planning engines: Fleet Optimization (eng-plan-fleet-optimization) for task allocation and resource optimization across the vehicle fleet; Multi-Vehicle Coordination (eng-plan-multi-vehicle-coord) for cross-vehicle plan synchronization, shared constraint management, and per-vehicle route orchestration; and Deconfliction (eng-plan-deconfliction) for spatial-temporal conflict detection and resolution across all active vehicle trajectories. Details the coordination pipeline from fleet-level task assignment through plan synchronization to final deconfliction safety check, with integration to the Hybrid Coordinator, Global Route Planner, Motion Model Engine, Vehicle State Store, COP spatial constraints, and Core Event Bus.",
+  "category": "plan",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1500,
+    "height": 950,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-plan03-fleet",
+      "label": "Fleet Optimization",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-plan03-fleet-optimizer"
+      ],
+      "style": {
+        "backgroundColor": "rgba(245, 158, 11, 0.05)",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-plan03-coordination",
+      "label": "Multi-Vehicle Coordination & Deconfliction",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-plan03-coordinator",
+        "node-plan03-deconflict",
+        "node-plan03-resolution-store"
+      ],
+      "style": {
+        "backgroundColor": "rgba(239, 68, 68, 0.04)",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-plan03-fleet-optimizer",
+      "label": "Fleet Optimizer",
+      "type": "component",
+      "engineId": "eng-plan-fleet-optimization",
+      "description": "Performs fleet-level task allocation and resource optimization across all available vehicles. Ingests mission-level objectives from the Hybrid Planning Coordinator and current vehicle capabilities (battery state, payload configuration, position, availability) from the Vehicle State Store. Solves the task-to-vehicle assignment problem considering proximity, capability match, energy budget, priority, and time windows. Supports dynamic task reassignment when vehicles become unavailable or mission priorities change. Outputs task allocation plans to the Multi-Vehicle Coordinator for per-vehicle plan generation and publishes fleet optimization events to the Core Event Bus.",
+      "position": {
+        "x": 100,
+        "y": 120
+      },
+      "size": {
+        "width": 260,
+        "height": 190
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "users-gear"
+      },
+      "ports": [
+        {
+          "id": "port-plan03-fo-in-tasks",
+          "label": "Mission Tasks",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-plan03-fo-in-capabilities",
+          "label": "Vehicle Capabilities",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan03-fo-out-allocations",
+          "label": "Task Allocations",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan03-fo-out-events",
+          "label": "Fleet Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-plan03-coordinator",
+      "label": "Multi-Vehicle Coordinator",
+      "type": "component",
+      "engineId": "eng-plan-multi-vehicle-coord",
+      "description": "Coordinates plans across all active vehicles to ensure mutual compatibility and shared constraint satisfaction. Receives task allocations from the Fleet Optimizer, dispatches per-vehicle route planning requests to the Global Route Planner, ingests current vehicle states for plan synchronization, and queries the Motion Model Engine for cross-vehicle feasibility validation. Assembles the set of individual vehicle plans into a unified plan set and forwards it to the Deconfliction Engine for spatial-temporal conflict checking. Incorporates resolved plans from the Deconfliction Engine and delivers the final coordinated plan set to the Hybrid Planning Coordinator.",
+      "position": {
+        "x": 480,
+        "y": 120
+      },
+      "size": {
+        "width": 270,
+        "height": 210
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "diagram-project"
+      },
+      "ports": [
+        {
+          "id": "port-plan03-mc-in-allocations",
+          "label": "Task Allocations",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan03-mc-in-vehicles",
+          "label": "Vehicle States",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan03-mc-in-routes",
+          "label": "Individual Routes",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan03-mc-in-resolved",
+          "label": "Resolved Plans",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan03-mc-in-motion",
+          "label": "Motion Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan03-mc-out-route-req",
+          "label": "Route Requests",
+          "direction": "out",
+          "dataType": "control",
+          "position": "right"
+        },
+        {
+          "id": "port-plan03-mc-out-plan-set",
+          "label": "Plan Set for Deconfliction",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan03-mc-out-motion-q",
+          "label": "Feasibility Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan03-mc-out-events",
+          "label": "Coordination Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "top"
+        },
+        {
+          "id": "port-plan03-mc-out-final-plan",
+          "label": "Final Coordinated Plan Set",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        }
+      ]
+    },
+    {
+      "id": "node-plan03-deconflict",
+      "label": "Deconfliction Engine",
+      "type": "component",
+      "engineId": "eng-plan-deconfliction",
+      "description": "Detects and resolves spatial-temporal conflicts across all active vehicle trajectories. Receives the coordinated plan set from the Multi-Vehicle Coordinator, projects each vehicle's planned trajectory forward in time using motion model constraints, and tests all trajectory pairs for spatial proximity violations within configurable separation minima (horizontal and vertical). When conflicts are detected, applies resolution strategies including altitude separation, timing offsets, speed adjustments, and route modifications. Validates resolved plans against spatial constraints from the COP (geofences, obstacles) and checks resolution history for recurring conflict patterns. Returns the deconflicted plan set to the Coordinator and publishes conflict alerts to the Core Event Bus.",
+      "position": {
+        "x": 480,
+        "y": 480
+      },
+      "size": {
+        "width": 270,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#2a1a1e",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "shield-halved"
+      },
+      "ports": [
+        {
+          "id": "port-plan03-dc-in-plan-set",
+          "label": "Plan Set In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan03-dc-in-spatial",
+          "label": "Spatial Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan03-dc-in-history",
+          "label": "Resolution History",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan03-dc-out-resolved",
+          "label": "Resolved Plans",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan03-dc-out-persist",
+          "label": "Persist Conflict Record",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan03-dc-out-alerts",
+          "label": "Conflict Alerts",
+          "direction": "out",
+          "dataType": "event",
+          "position": "right"
+        },
+        {
+          "id": "port-plan03-dc-out-motion-q",
+          "label": "Trajectory Projection Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan03-dc-in-motion",
+          "label": "Vehicle Motion Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        }
+      ]
+    },
+    {
+      "id": "node-plan03-resolution-store",
+      "label": "Conflict Resolution Store",
+      "type": "database",
+      "engineId": "eng-plan-deconfliction",
+      "description": "Persistent storage for conflict detection records, resolution decisions, and deconfliction history. Stores each detected conflict with its spatial-temporal coordinates, involved vehicles, severity classification, applied resolution strategy, and outcome. Provides historical resolution data to the Deconfliction Engine for pattern recognition and resolution strategy selection. Supports query and export for safety audit, mission debrief, and regulatory compliance reporting.",
+      "position": {
+        "x": 480,
+        "y": 780
+      },
+      "size": {
+        "width": 250,
+        "height": 120
+      },
+      "style": {
+        "backgroundColor": "#1a1018",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "database"
+      },
+      "ports": [
+        {
+          "id": "port-plan03-rs-in-write",
+          "label": "Write Conflict Record",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan03-rs-out-read",
+          "label": "Read History",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-plan03-fo-to-mc",
+      "source": "node-plan03-fleet-optimizer",
+      "target": "node-plan03-coordinator",
+      "sourcePort": "port-plan03-fo-out-allocations",
+      "targetPort": "port-plan03-mc-in-allocations",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Task Allocations",
+        "description": "Fleet Optimizer delivers the optimized task-to-vehicle assignment plan to the Multi-Vehicle Coordinator for per-vehicle route generation and plan synchronization.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-mc-to-dc",
+      "source": "node-plan03-coordinator",
+      "target": "node-plan03-deconflict",
+      "sourcePort": "port-plan03-mc-out-plan-set",
+      "targetPort": "port-plan03-dc-in-plan-set",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Coordinated Plan Set",
+        "description": "Multi-Vehicle Coordinator assembles individual vehicle plans into a unified plan set and forwards it to the Deconfliction Engine for spatial-temporal conflict checking.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-dc-to-mc",
+      "source": "node-plan03-deconflict",
+      "target": "node-plan03-coordinator",
+      "sourcePort": "port-plan03-dc-out-resolved",
+      "targetPort": "port-plan03-mc-in-resolved",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Deconflicted Plans",
+        "description": "Deconfliction Engine returns the conflict-free plan set with applied resolution strategies (altitude separation, timing offsets, route adjustments) to the Multi-Vehicle Coordinator.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-dc-to-rs",
+      "source": "node-plan03-deconflict",
+      "target": "node-plan03-resolution-store",
+      "sourcePort": "port-plan03-dc-out-persist",
+      "targetPort": "port-plan03-rs-in-write",
+      "semantic": {
+        "type": "persistence",
+        "label": "Persist Conflict Record",
+        "description": "Deconfliction Engine writes each detected conflict and its resolution to the Conflict Resolution Store for audit, pattern analysis, and regulatory compliance.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dashed",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#0d9488",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-rs-to-dc",
+      "source": "node-plan03-resolution-store",
+      "target": "node-plan03-deconflict",
+      "sourcePort": "port-plan03-rs-out-read",
+      "targetPort": "port-plan03-dc-in-history",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Resolution History",
+        "description": "Conflict Resolution Store returns historical conflict patterns and previously successful resolution strategies to the Deconfliction Engine for informed strategy selection.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-hybrid-to-fo",
+      "source": "node-plan01-hybrid",
+      "target": "node-plan03-fleet-optimizer",
+      "sourcePort": null,
+      "targetPort": "port-plan03-fo-in-tasks",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Mission Task Objectives",
+        "description": "Hybrid Planning Coordinator dispatches mission-level task objectives (waypoints to visit, areas to survey, payloads to deliver) to the Fleet Optimizer for task-to-vehicle assignment.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-vehicles-to-fo",
+      "source": "node-core03-state-store",
+      "target": "node-plan03-fleet-optimizer",
+      "sourcePort": null,
+      "targetPort": "port-plan03-fo-in-capabilities",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle Capabilities & Status",
+        "description": "Vehicle State Store provides current vehicle capabilities (battery, payload, position, availability, health) to the Fleet Optimizer for resource-aware task allocation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-vehicles-to-mc",
+      "source": "node-core03-state-store",
+      "target": "node-plan03-coordinator",
+      "sourcePort": null,
+      "targetPort": "port-plan03-mc-in-vehicles",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Current Vehicle States",
+        "description": "Vehicle State Store provides real-time vehicle positions, velocities, and status to the Multi-Vehicle Coordinator for plan synchronization and deviation tracking.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-mc-to-router",
+      "source": "node-plan03-coordinator",
+      "target": "node-plan02-global-router",
+      "sourcePort": "port-plan03-mc-out-route-req",
+      "targetPort": null,
+      "semantic": {
+        "type": "control-flow",
+        "label": "Per-Vehicle Route Requests",
+        "description": "Multi-Vehicle Coordinator dispatches individual route planning requests to the Global Route Planner for each vehicle based on its assigned tasks.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-router-to-mc",
+      "source": "node-plan02-global-router",
+      "target": "node-plan03-coordinator",
+      "sourcePort": null,
+      "targetPort": "port-plan03-mc-in-routes",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Individual Vehicle Routes",
+        "description": "Global Route Planner returns the computed route for each vehicle to the Multi-Vehicle Coordinator for assembly into the coordinated plan set.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-mc-to-motion",
+      "source": "node-plan03-coordinator",
+      "target": "node-plan01-motion",
+      "sourcePort": "port-plan03-mc-out-motion-q",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Cross-Vehicle Feasibility Query",
+        "description": "Multi-Vehicle Coordinator queries the Motion Model Engine to validate that the coordinated plan set is kinematically feasible for all vehicles simultaneously.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-motion-to-mc",
+      "source": "node-plan01-motion",
+      "target": "node-plan03-coordinator",
+      "sourcePort": null,
+      "targetPort": "port-plan03-mc-in-motion",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Motion Constraints",
+        "description": "Motion Model Engine returns per-vehicle kinematic and dynamic constraints to the Multi-Vehicle Coordinator for plan feasibility validation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-cop-to-dc",
+      "source": "node-cop03-geofence-eval",
+      "target": "node-plan03-deconflict",
+      "sourcePort": null,
+      "targetPort": "port-plan03-dc-in-spatial",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Geofence & Obstacle Constraints",
+        "description": "COP Geofence Evaluator provides active geofence boundaries and dynamic obstacle positions to the Deconfliction Engine to ensure resolution strategies do not violate spatial constraints.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-fo-to-bus",
+      "source": "node-plan03-fleet-optimizer",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-plan03-fo-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Fleet Optimization Events",
+        "description": "Fleet Optimizer publishes task allocation changes, reassignment events, and resource utilization updates to the Core Event Bus for operator awareness.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-mc-to-bus",
+      "source": "node-plan03-coordinator",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-plan03-mc-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Coordination Events",
+        "description": "Multi-Vehicle Coordinator publishes plan synchronization events, coordination conflicts, and plan set updates to the Core Event Bus for operator visibility.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-dc-to-bus",
+      "source": "node-plan03-deconflict",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-plan03-dc-out-alerts",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Conflict Detection Alerts",
+        "description": "Deconfliction Engine publishes high-priority conflict detection and resolution alerts to the Core Event Bus for operator notification and safety audit logging.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan03-mc-to-hybrid-final",
+      "source": "node-plan03-coordinator",
+      "target": "node-plan01-hybrid",
+      "sourcePort": "port-plan03-mc-out-final-plan",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Final Deconflicted Plan Set",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Multi-Vehicle Coordinator returns the deconflicted, synchronized plan set to the Hybrid Planning Coordinator for integration into the active mission plan.",
+        "requirementIds": [
+          "req-2.11-06",
+          "req-2.14-05"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 8
+      }
+    },
+    {
+      "id": "edge-plan03-dc-to-motion",
+      "source": "node-plan03-deconflict",
+      "target": "node-plan01-motion",
+      "sourcePort": "port-plan03-dc-out-motion-q",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Trajectory Projection Feasibility Query",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Deconfliction Engine requests vehicle-specific motion constraints needed to project each active trajectory over the conflict-detection horizon.",
+        "requirementIds": [
+          "req-2.14-03",
+          "req-2.14-04"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 8
+      }
+    },
+    {
+      "id": "edge-plan03-motion-to-dc",
+      "source": "node-plan01-motion",
+      "target": "node-plan03-deconflict",
+      "sourcePort": null,
+      "targetPort": "port-plan03-dc-in-motion",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Trajectory Motion Constraints",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Motion Model Engine returns vehicle-specific kinematic and dynamic constraints used by the Deconfliction Engine for spatial-temporal trajectory projection.",
+        "requirementIds": [
+          "req-2.14-03",
+          "req-2.14-04"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 8
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-plan01-hybrid",
+      "sourceDocumentId": "doc-plan-01",
+      "engineId": "eng-plan-hybrid",
+      "label": "Hybrid Planning Coordinator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan01-motion",
+      "sourceDocumentId": "doc-plan-01",
+      "engineId": "eng-plan-motion-model",
+      "label": "Motion Model Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan02-global-router",
+      "sourceDocumentId": "doc-plan-02",
+      "engineId": "eng-plan-global-route",
+      "label": "Global Route Planner",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core03-state-store",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-vehicle-state",
+      "label": "Vehicle State Store",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core04-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop03-geofence-eval",
+      "sourceDocumentId": "doc-cop-03",
+      "engineId": "eng-cop-geofence",
+      "label": "Geofence Evaluator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#ef4444",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-plan-fleet-optimization",
+      "localNodeId": "node-plan03-fleet-optimizer",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-multi-vehicle-coord",
+      "localNodeId": "node-plan03-coordinator",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-deconfliction",
+      "localNodeId": "node-plan03-deconflict",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.11-05",
+      "description": "The system shall allocate mission tasks to vehicles based on capability, proximity, energy budget, and priority.",
+      "coveredByNodes": [
+        "node-plan03-fleet-optimizer"
+      ],
+      "coveredByEdges": [
+        "edge-plan03-hybrid-to-fo",
+        "edge-plan03-vehicles-to-fo",
+        "edge-plan03-fo-to-mc"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Fleet Optimizer solves the task-to-vehicle assignment problem using vehicle capabilities from the Vehicle State Store and mission objectives from the Hybrid Coordinator."
+    },
+    {
+      "requirementId": "req-2.11-06",
+      "description": "The system shall coordinate plans across multiple vehicles to ensure mutual compatibility and shared constraint satisfaction.",
+      "coveredByNodes": [
+        "node-plan03-coordinator"
+      ],
+      "coveredByEdges": [
+        "edge-plan03-fo-to-mc",
+        "edge-plan03-mc-to-router",
+        "edge-plan03-router-to-mc",
+        "edge-plan03-mc-to-dc",
+        "edge-plan03-mc-to-hybrid-final"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Multi-Vehicle Coordinator synchronizes individual routes, validates feasibility, sends the plan set through deconfliction, and returns the final deconflicted set to the Hybrid Planning Coordinator."
+    },
+    {
+      "requirementId": "req-2.14-03",
+      "description": "The system shall detect spatial-temporal conflicts between vehicle trajectories including horizontal and vertical separation violations.",
+      "coveredByNodes": [
+        "node-plan03-deconflict"
+      ],
+      "coveredByEdges": [
+        "edge-plan03-mc-to-dc",
+        "edge-plan03-dc-to-bus",
+        "edge-plan03-dc-to-motion",
+        "edge-plan03-motion-to-dc"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Deconfliction Engine projects vehicle trajectories using vehicle-specific motion constraints and tests pairwise horizontal and vertical separation."
+    },
+    {
+      "requirementId": "req-2.14-04",
+      "description": "The system shall resolve detected conflicts using altitude separation, timing offsets, speed adjustments, and route modifications.",
+      "coveredByNodes": [
+        "node-plan03-deconflict"
+      ],
+      "coveredByEdges": [
+        "edge-plan03-dc-to-mc",
+        "edge-plan03-cop-to-dc",
+        "edge-plan03-dc-to-rs",
+        "edge-plan03-dc-to-motion",
+        "edge-plan03-motion-to-dc"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Deconfliction Engine applies resolution strategies, checks them against COP spatial constraints, and uses motion-model bounds when projecting and validating adjusted trajectories."
+    },
+    {
+      "requirementId": "req-2.14-05",
+      "description": "The system shall maintain deconfliction guarantees during plan updates and replanning events.",
+      "coveredByNodes": [
+        "node-plan03-deconflict",
+        "node-plan03-coordinator"
+      ],
+      "coveredByEdges": [
+        "edge-plan03-mc-to-dc",
+        "edge-plan03-dc-to-mc",
+        "edge-plan03-rs-to-dc",
+        "edge-plan03-mc-to-hybrid-final"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Plan updates are passed through Deconfliction before the final plan set is returned to the Hybrid Planning Coordinator; resolution history informs recurring conflict handling."
+    },
+    {
+      "requirementId": "req-2.15-03",
+      "description": "The system shall optimize fleet resource utilization including battery life, payload capacity, and mission time.",
+      "coveredByNodes": [
+        "node-plan03-fleet-optimizer"
+      ],
+      "coveredByEdges": [
+        "edge-plan03-vehicles-to-fo",
+        "edge-plan03-fo-to-mc",
+        "edge-plan03-fo-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Fleet Optimizer considers battery, payload, and time in the task allocation objective function; publishes utilization metrics to the Event Bus."
+    },
+    {
+      "requirementId": "req-2.15-04",
+      "description": "The system shall support dynamic task reassignment when vehicles become unavailable or mission priorities change.",
+      "coveredByNodes": [
+        "node-plan03-fleet-optimizer",
+        "node-plan03-coordinator"
+      ],
+      "coveredByEdges": [
+        "edge-plan03-vehicles-to-fo",
+        "edge-plan03-fo-to-mc",
+        "edge-plan03-fo-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Fleet Optimizer re-evaluates allocations on vehicle status changes; Coordinator propagates reassignment to affected vehicle plans."
+    },
+    {
+      "requirementId": "req-2.15-05",
+      "description": "The system shall log all conflict detection and resolution events for safety audit and regulatory compliance.",
+      "coveredByNodes": [
+        "node-plan03-deconflict",
+        "node-plan03-resolution-store"
+      ],
+      "coveredByEdges": [
+        "edge-plan03-dc-to-rs",
+        "edge-plan03-dc-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Deconfliction Engine persists all conflict records to the Resolution Store and publishes alerts to the Event Bus for audit logging."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-047",
+      "description": "The deconfliction pipeline runs as a final validation step on every plan update, ensuring no plan is committed to execution without passing through conflict checking.",
+      "rationale": "Safety-critical requirement; skipping deconfliction on any plan update could result in mid-air or ground collisions."
+    },
+    {
+      "id": "AS-048",
+      "description": "Separation minima (horizontal and vertical) are configurable per operational context and vehicle type, with stricter minima for mixed-vehicle operations (e.g., UAV and manned aircraft).",
+      "rationale": "Different vehicle types and operational environments require different separation standards; a single fixed value would be inappropriate."
+    },
+    {
+      "id": "AS-049",
+      "description": "The Fleet Optimizer's task allocation algorithm produces a near-optimal solution within a bounded computation time suitable for the mission planning cycle.",
+      "rationale": "Exact optimization of task allocation is NP-hard for large fleets; practical solutions use heuristic or approximation algorithms with bounded runtime."
+    },
+    {
+      "id": "AS-050",
+      "description": "Conflict resolution strategies are applied in priority order (altitude separation first, then timing offset, then speed adjustment, then route modification) to minimize plan disruption.",
+      "rationale": "Less disruptive strategies are preferred when they can resolve the conflict; route modification is the most disruptive and is used as a last resort."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-050",
+      "description": "Fleet optimization algorithm (e.g., Hungarian method, auction-based, genetic algorithm) and its scalability to large fleet sizes.",
+      "impact": "Affects Fleet Optimizer's solution quality and computation time for large fleets.",
+      "owner": "Planning Architecture"
+    },
+    {
+      "id": "UD-051",
+      "description": "Default separation minima per vehicle type pair and operational context (e.g., 50 m horizontal / 10 m vertical for UAV-UAV, larger for mixed operations).",
+      "impact": "Affects Deconfliction Engine's conflict detection sensitivity and the frequency of resolution actions.",
+      "owner": "Safety Architecture"
+    },
+    {
+      "id": "UD-052",
+      "description": "Trajectory projection time horizon for conflict detection (e.g., 30 seconds, 2 minutes, 5 minutes) and the temporal resolution of the projection.",
+      "impact": "Affects Deconfliction Engine's computation load and the lead time for conflict resolution.",
+      "owner": "Planning Architecture"
+    },
+    {
+      "id": "UD-053",
+      "description": "Conflict resolution authority: automatic resolution by the Deconfliction Engine, operator approval required, or configurable per conflict severity.",
+      "impact": "Affects the autonomy level of the planning system and the operator's workload during multi-vehicle operations.",
+      "owner": "Operations Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-15",
+    "lastModified": "2026-10-31"
+  }
+}

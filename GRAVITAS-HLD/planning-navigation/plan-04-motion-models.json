@@ -1,0 +1,1203 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-plan-04",
+  "title": "Trajectory Analysis, Feasibility & Cost Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of four planning evaluation engines: Trajectory Analysis (eng-plan-trajectory-analysis) for trajectory quality, smoothness, and dynamic profile evaluation; Feasibility Checker (eng-plan-feasibility) for multi-constraint plan validation as the final commitment gate; Cost Function Engine (eng-plan-cost-function) for configurable multi-objective cost evaluation; and Terrain Traversability (eng-plan-terrain-traversability) for vehicle-specific terrain cost surface generation. Details the evaluation pipeline from cost surface generation through trajectory analysis to final feasibility validation, with integration to the Hybrid Coordinator, Motion Model Engine, Global Route Planner, Deconfliction Engine, COP Terrain Processor, and Core Event Bus.",
+  "category": "plan",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1400,
+    "height": 900,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-plan04-evaluation",
+      "label": "Trajectory & Cost Evaluation",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-plan04-cost-engine",
+        "node-plan04-trajectory-analyzer"
+      ],
+      "style": {
+        "backgroundColor": "rgba(245, 158, 11, 0.05)",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-plan04-validation",
+      "label": "Feasibility & Traversability Validation",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-plan04-feasibility-checker",
+        "node-plan04-terrain-trav"
+      ],
+      "style": {
+        "backgroundColor": "rgba(239, 68, 68, 0.04)",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-plan04-cost-engine",
+      "label": "Cost Function Engine",
+      "type": "component",
+      "engineId": "eng-plan-cost-function",
+      "description": "Provides configurable multi-objective cost functions for route and trajectory evaluation. Maintains a library of cost dimensions including distance, time, energy consumption, risk exposure, altitude change, and custom user-defined costs. Supports weighted combination of cost dimensions with mission-configurable priority profiles (e.g., minimum-time, minimum-energy, minimum-risk). Evaluates candidate routes and trajectories from the Global Route Planner and Trajectory Analyzer, returning scalar cost values and Pareto-optimal trade-off surfaces. Cost parameters are tunable per vehicle type and mission phase.",
+      "position": {
+        "x": 120,
+        "y": 140
+      },
+      "size": {
+        "width": 250,
+        "height": 180
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "chart-line"
+      },
+      "ports": [
+        {
+          "id": "port-plan04-ce-in-candidate",
+          "label": "Candidate Route/Trajectory",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan04-ce-in-terrain-cost",
+          "label": "Terrain Cost Surface",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan04-ce-in-config",
+          "label": "Cost Configuration",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-plan04-ce-out-cost",
+          "label": "Cost Evaluation",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan04-ce-out-pareto",
+          "label": "Pareto Surface",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-plan04-trajectory-analyzer",
+      "label": "Trajectory Analyzer",
+      "type": "component",
+      "engineId": "eng-plan-trajectory-analysis",
+      "description": "Analyzes planned trajectories for quality, smoothness, and dynamic profile compliance. Evaluates curvature continuity, acceleration and jerk profiles, velocity envelope adherence, and waypoint transition smoothness. Ingests candidate trajectories from the Global Route Planner and Deconfliction Engine, queries the Motion Model Engine for vehicle-specific dynamic limits, and requests cost evaluation from the Cost Function Engine. Produces trajectory quality scores and identifies segments that violate dynamic constraints or exceed quality thresholds, flagging them for local replanning.",
+      "position": {
+        "x": 500,
+        "y": 140
+      },
+      "size": {
+        "width": 250,
+        "height": 180
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "wave-square"
+      },
+      "ports": [
+        {
+          "id": "port-plan04-ta-in-trajectory",
+          "label": "Candidate Trajectory",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan04-ta-out-motion-q",
+          "label": "Dynamic Limits Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan04-ta-in-motion",
+          "label": "Dynamic Limits",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan04-ta-out-cost-req",
+          "label": "Cost Evaluation Request",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan04-ta-in-cost",
+          "label": "Cost Result",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan04-ta-out-report",
+          "label": "Trajectory Quality Report",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-plan04-feasibility-checker",
+      "label": "Feasibility Checker",
+      "type": "component",
+      "engineId": "eng-plan-feasibility",
+      "description": "Serves as the final validation gate before plan commitment to execution. Aggregates constraint evaluations from all planning subsystems: kinematic and dynamic feasibility from the Motion Model Engine, trajectory quality from the Trajectory Analyzer, spatial constraint compliance from the COP (geofences, obstacles, terrain), deconfliction clearance from the Deconfliction Engine, and cost acceptability from the Cost Function Engine. Applies configurable feasibility thresholds and go/no-go criteria per mission phase. Returns a feasibility verdict (pass, conditional, fail) with detailed violation reports. Plans that fail feasibility are routed back to the appropriate planning engine for repair.",
+      "position": {
+        "x": 880,
+        "y": 140
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#2a1a1e",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "clipboard-check"
+      },
+      "ports": [
+        {
+          "id": "port-plan04-fc-in-trajectory-report",
+          "label": "Trajectory Report",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan04-fc-in-motion",
+          "label": "Kinematic/Dynamic Check",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan04-fc-in-spatial",
+          "label": "Spatial Compliance",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan04-fc-in-deconflict",
+          "label": "Deconfliction Clearance",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan04-fc-in-cost",
+          "label": "Cost Acceptability",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan04-fc-out-verdict",
+          "label": "Feasibility Verdict",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan04-fc-out-events",
+          "label": "Feasibility Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-plan04-terrain-trav",
+      "label": "Terrain Traversability Engine",
+      "type": "component",
+      "engineId": "eng-plan-terrain-traversability",
+      "description": "Evaluates terrain for vehicle-specific traversability and generates cost surfaces for route planning. Ingests raw terrain elevation and surface data from the COP Terrain Processor, applies vehicle-specific traversability models (maximum slope, surface friction, ground clearance, water depth), and produces a traversability cost grid where each cell represents the traversal cost or impassability for the target vehicle type. Identifies no-go zones and high-cost corridors, and supplies the cost surface to the Cost Function Engine for integration into route optimization. Traversability models are configurable per vehicle type and environmental conditions.",
+      "position": {
+        "x": 120,
+        "y": 500
+      },
+      "size": {
+        "width": 250,
+        "height": 180
+      },
+      "style": {
+        "backgroundColor": "#2a1a1e",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "mountain-sun"
+      },
+      "ports": [
+        {
+          "id": "port-plan04-tt-in-terrain",
+          "label": "Raw Terrain Data",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan04-tt-in-vehicle",
+          "label": "Vehicle Traversability Model",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-plan04-tt-out-cost-surface",
+          "label": "Traversability Cost Surface",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan04-tt-out-nogo",
+          "label": "No-Go Zones",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-plan04-tt-to-ce",
+      "source": "node-plan04-terrain-trav",
+      "target": "node-plan04-cost-engine",
+      "sourcePort": "port-plan04-tt-out-cost-surface",
+      "targetPort": "port-plan04-ce-in-terrain-cost",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Terrain Cost Surface",
+        "description": "Terrain Traversability Engine delivers the vehicle-specific traversability cost grid to the Cost Function Engine for integration into route and trajectory cost evaluation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-07",
+          "req-2.13-08",
+          "req-2.15-06"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-ta-to-ce",
+      "source": "node-plan04-trajectory-analyzer",
+      "target": "node-plan04-cost-engine",
+      "sourcePort": "port-plan04-ta-out-cost-req",
+      "targetPort": "port-plan04-ce-in-candidate",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Cost Evaluation Request",
+        "description": "Trajectory Analyzer submits candidate trajectory segments to the Cost Function Engine for multi-objective cost scoring.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-07",
+          "req-2.14-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-ce-to-ta",
+      "source": "node-plan04-cost-engine",
+      "target": "node-plan04-trajectory-analyzer",
+      "sourcePort": "port-plan04-ce-out-cost",
+      "targetPort": "port-plan04-ta-in-cost",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Cost Score",
+        "description": "Cost Function Engine returns the multi-objective cost evaluation for the candidate trajectory to the Trajectory Analyzer for quality scoring.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-07",
+          "req-2.14-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-ta-to-fc",
+      "source": "node-plan04-trajectory-analyzer",
+      "target": "node-plan04-feasibility-checker",
+      "sourcePort": "port-plan04-ta-out-report",
+      "targetPort": "port-plan04-fc-in-trajectory-report",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Trajectory Quality Report",
+        "description": "Trajectory Analyzer delivers the trajectory quality report including smoothness scores, dynamic profile compliance, and flagged violation segments to the Feasibility Checker.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-03",
+          "req-2.12-04",
+          "req-2.14-06"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-ta-to-motion",
+      "source": "node-plan04-trajectory-analyzer",
+      "target": "node-plan01-motion",
+      "sourcePort": "port-plan04-ta-out-motion-q",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Dynamic Limits Query",
+        "description": "Trajectory Analyzer queries the Motion Model Engine for vehicle-specific dynamic limits (max acceleration, jerk, turn rate) to evaluate trajectory profile compliance.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-03",
+          "req-2.14-06"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 8,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-motion-to-ta",
+      "source": "node-plan01-motion",
+      "target": "node-plan04-trajectory-analyzer",
+      "sourcePort": null,
+      "targetPort": "port-plan04-ta-in-motion",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Dynamic Limits",
+        "description": "Motion Model Engine returns vehicle-specific dynamic limits to the Trajectory Analyzer for profile evaluation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-03"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 8,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-motion-to-fc",
+      "source": "node-plan01-motion",
+      "target": "node-plan04-feasibility-checker",
+      "sourcePort": null,
+      "targetPort": "port-plan04-fc-in-motion",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Kinematic/Dynamic Feasibility",
+        "description": "Motion Model Engine provides kinematic and dynamic feasibility assessment to the Feasibility Checker as one of the validation inputs.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-04"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-router-to-ta",
+      "source": "node-plan02-global-router",
+      "target": "node-plan04-trajectory-analyzer",
+      "sourcePort": null,
+      "targetPort": "port-plan04-ta-in-trajectory",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Candidate Trajectories",
+        "description": "Global Route Planner submits candidate routes and trajectories to the Trajectory Analyzer for quality evaluation before feasibility checking.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-03"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-deconflict-to-fc",
+      "source": "node-plan03-deconflict",
+      "target": "node-plan04-feasibility-checker",
+      "sourcePort": null,
+      "targetPort": "port-plan04-fc-in-deconflict",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Deconfliction Clearance",
+        "description": "Deconfliction Engine provides spatial-temporal conflict clearance status to the Feasibility Checker confirming that the plan set is conflict-free.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-04"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-cop-to-fc",
+      "source": "node-cop01-core",
+      "target": "node-plan04-feasibility-checker",
+      "sourcePort": null,
+      "targetPort": "port-plan04-fc-in-spatial",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Spatial Constraint Compliance",
+        "description": "COP Orchestrator provides geofence and obstacle compliance status to the Feasibility Checker confirming that the plan does not violate spatial constraints.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-04"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-ce-to-fc",
+      "source": "node-plan04-cost-engine",
+      "target": "node-plan04-feasibility-checker",
+      "sourcePort": "port-plan04-ce-out-pareto",
+      "targetPort": "port-plan04-fc-in-cost",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Cost Acceptability Assessment",
+        "description": "Cost Function Engine provides cost acceptability assessment to the Feasibility Checker, indicating whether the plan cost falls within acceptable bounds for the mission profile.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-04",
+          "req-2.14-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-terrain-to-tt",
+      "source": "node-cop02-terrain-processor",
+      "target": "node-plan04-terrain-trav",
+      "sourcePort": null,
+      "targetPort": "port-plan04-tt-in-terrain",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Raw Terrain Elevation & Surface",
+        "description": "COP Terrain Processor provides raw terrain elevation, slope, and surface classification data to the Terrain Traversability Engine for vehicle-specific analysis.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-08",
+          "req-2.15-06"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-hybrid-to-ce",
+      "source": "node-plan01-hybrid",
+      "target": "node-plan04-cost-engine",
+      "sourcePort": null,
+      "targetPort": "port-plan04-ce-in-config",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Cost Configuration",
+        "description": "Hybrid Planning Coordinator sends mission-specific cost configuration (objective weights, priority profile, cost thresholds) to the Cost Function Engine.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-hybrid-to-tt",
+      "source": "node-plan01-hybrid",
+      "target": "node-plan04-terrain-trav",
+      "sourcePort": null,
+      "targetPort": "port-plan04-tt-in-vehicle",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Vehicle Traversability Config",
+        "description": "Hybrid Planning Coordinator provides vehicle-specific traversability model parameters (max slope, ground clearance, surface type limits) to the Terrain Traversability Engine.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-08"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-fc-to-hybrid",
+      "source": "node-plan04-feasibility-checker",
+      "target": "node-plan01-hybrid",
+      "sourcePort": "port-plan04-fc-out-verdict",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Feasibility Verdict",
+        "description": "Feasibility Checker returns the final feasibility verdict (pass, conditional, fail) with violation details to the Hybrid Planning Coordinator for plan commitment or repair routing.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-04",
+          "req-2.14-06",
+          "req-2.15-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-fc-to-bus",
+      "source": "node-plan04-feasibility-checker",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-plan04-fc-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Feasibility Events",
+        "description": "Feasibility Checker publishes feasibility verdict events (plan approved, plan rejected with violations, conditional approval) to the Core Event Bus for operator awareness and audit.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.15-07"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan04-tt-to-fc",
+      "source": "node-plan04-terrain-trav",
+      "target": "node-plan04-feasibility-checker",
+      "sourcePort": "port-plan04-tt-out-nogo",
+      "targetPort": "port-plan04-fc-in-spatial",
+      "semantic": {
+        "type": "data-flow",
+        "label": "No-Go Zone Validation",
+        "description": "Terrain Traversability Engine provides no-go zone data to the Feasibility Checker to verify that the planned route does not traverse impassable terrain.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-08",
+          "req-2.15-06"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-plan01-hybrid",
+      "sourceDocumentId": "doc-plan-01",
+      "engineId": "eng-plan-hybrid",
+      "label": "Hybrid Planning Coordinator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan01-motion",
+      "sourceDocumentId": "doc-plan-01",
+      "engineId": "eng-plan-motion-model",
+      "label": "Motion Model Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan02-global-router",
+      "sourceDocumentId": "doc-plan-02",
+      "engineId": "eng-plan-global-route",
+      "label": "Global Route Planner",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan03-deconflict",
+      "sourceDocumentId": "doc-plan-03",
+      "engineId": "eng-plan-deconfliction",
+      "label": "Deconfliction Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#ef4444",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop02-terrain-processor",
+      "sourceDocumentId": "doc-cop-02",
+      "engineId": "eng-cop-terrain",
+      "label": "Terrain Processor",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop01-core",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-core",
+      "label": "COP Orchestrator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core04-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-plan-cost-function",
+      "localNodeId": "node-plan04-cost-engine",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-trajectory-analysis",
+      "localNodeId": "node-plan04-trajectory-analyzer",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-feasibility",
+      "localNodeId": "node-plan04-feasibility-checker",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-terrain-traversability",
+      "localNodeId": "node-plan04-terrain-trav",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.12-03",
+      "description": "The system shall analyze planned trajectories for smoothness, curvature continuity, and dynamic profile compliance.",
+      "coveredByNodes": [
+        "node-plan04-trajectory-analyzer"
+      ],
+      "coveredByEdges": [
+        "edge-plan04-router-to-ta",
+        "edge-plan04-ta-to-motion",
+        "edge-plan04-motion-to-ta",
+        "edge-plan04-ta-to-fc"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Trajectory Analyzer evaluates curvature, acceleration, jerk, and velocity profiles against Motion Model Engine limits."
+    },
+    {
+      "requirementId": "req-2.12-04",
+      "description": "The system shall validate plan feasibility against all kinematic, dynamic, spatial, and temporal constraints before commitment to execution.",
+      "coveredByNodes": [
+        "node-plan04-feasibility-checker"
+      ],
+      "coveredByEdges": [
+        "edge-plan04-ta-to-fc",
+        "edge-plan04-motion-to-fc",
+        "edge-plan04-cop-to-fc",
+        "edge-plan04-deconflict-to-fc",
+        "edge-plan04-ce-to-fc",
+        "edge-plan04-fc-to-hybrid"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Feasibility Checker aggregates all constraint evaluations and produces a final pass/conditional/fail verdict before plan commitment."
+    },
+    {
+      "requirementId": "req-2.13-07",
+      "description": "The system shall support configurable multi-objective cost functions for route and trajectory evaluation including distance, time, energy, and risk.",
+      "coveredByNodes": [
+        "node-plan04-cost-engine"
+      ],
+      "coveredByEdges": [
+        "edge-plan04-hybrid-to-ce",
+        "edge-plan04-ta-to-ce",
+        "edge-plan04-ce-to-ta",
+        "edge-plan04-tt-to-ce"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Cost Function Engine maintains a library of cost dimensions with configurable weights and priority profiles per mission."
+    },
+    {
+      "requirementId": "req-2.13-08",
+      "description": "The system shall generate vehicle-specific terrain traversability cost surfaces for route planning.",
+      "coveredByNodes": [
+        "node-plan04-terrain-trav"
+      ],
+      "coveredByEdges": [
+        "edge-plan04-terrain-to-tt",
+        "edge-plan04-hybrid-to-tt",
+        "edge-plan04-tt-to-ce",
+        "edge-plan04-tt-to-fc"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Terrain Traversability Engine applies vehicle-specific models to raw terrain data and produces cost grids and no-go zones."
+    },
+    {
+      "requirementId": "req-2.14-06",
+      "description": "The system shall identify and flag trajectory segments that violate dynamic constraints for local replanning.",
+      "coveredByNodes": [
+        "node-plan04-trajectory-analyzer",
+        "node-plan04-feasibility-checker"
+      ],
+      "coveredByEdges": [
+        "edge-plan04-ta-to-motion",
+        "edge-plan04-ta-to-fc",
+        "edge-plan04-fc-to-hybrid"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Trajectory Analyzer flags violation segments in the quality report; Feasibility Checker routes failed plans back for repair."
+    },
+    {
+      "requirementId": "req-2.14-07",
+      "description": "The system shall produce Pareto-optimal trade-off surfaces for multi-objective route optimization.",
+      "coveredByNodes": [
+        "node-plan04-cost-engine"
+      ],
+      "coveredByEdges": [
+        "edge-plan04-ce-to-fc",
+        "edge-plan04-ta-to-ce",
+        "edge-plan04-ce-to-ta"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Cost Function Engine computes Pareto surfaces across cost dimensions and provides them to the Feasibility Checker for acceptability assessment."
+    },
+    {
+      "requirementId": "req-2.15-06",
+      "description": "The system shall incorporate terrain traversability including slope limits, surface type, and ground clearance into planning constraints.",
+      "coveredByNodes": [
+        "node-plan04-terrain-trav",
+        "node-plan04-feasibility-checker"
+      ],
+      "coveredByEdges": [
+        "edge-plan04-terrain-to-tt",
+        "edge-plan04-tt-to-ce",
+        "edge-plan04-tt-to-fc"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Terrain Traversability Engine evaluates slope, surface, and clearance; no-go zones are validated by the Feasibility Checker."
+    },
+    {
+      "requirementId": "req-2.15-07",
+      "description": "The system shall publish feasibility verdicts and constraint violation details for operator awareness and plan audit.",
+      "coveredByNodes": [
+        "node-plan04-feasibility-checker"
+      ],
+      "coveredByEdges": [
+        "edge-plan04-fc-to-bus",
+        "edge-plan04-fc-to-hybrid"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Feasibility Checker publishes verdict events to the Core Event Bus and returns detailed violation reports to the Hybrid Coordinator."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-051",
+      "description": "The Feasibility Checker operates as a synchronous gate in the planning pipeline: no plan is committed to execution until it receives a passing verdict.",
+      "rationale": "Safety-critical requirement; bypassing feasibility validation could result in infeasible or unsafe plans being executed."
+    },
+    {
+      "id": "AS-052",
+      "description": "Cost function weights and priority profiles are configured per mission and can be adjusted at runtime by the operator through the Hybrid Planning Coordinator.",
+      "rationale": "Different missions have different optimization priorities (e.g., surveillance favors endurance, delivery favors speed); static weights would be inappropriate."
+    },
+    {
+      "id": "AS-053",
+      "description": "The terrain traversability cost grid resolution matches the planning grid resolution used by the Global Route Planner to avoid interpolation artifacts.",
+      "rationale": "Mismatched resolutions could cause the planner to miss narrow no-go zones or overestimate traversal costs."
+    },
+    {
+      "id": "AS-054",
+      "description": "Trajectory quality thresholds (maximum curvature, jerk, acceleration) are derived from the Motion Model Engine's per-vehicle dynamic limits with configurable safety margins.",
+      "rationale": "Quality thresholds must be vehicle-specific and include safety margins to account for modeling uncertainty and environmental disturbances."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-054",
+      "description": "Default cost function weight profiles for standard mission types (surveillance, delivery, mapping, search-and-rescue) and the mechanism for custom profile definition.",
+      "impact": "Affects Cost Function Engine's default behavior and the operator's configuration workload.",
+      "owner": "Operations Architecture"
+    },
+    {
+      "id": "UD-055",
+      "description": "Trajectory analysis evaluation rate and the maximum trajectory length that can be analyzed within the planning cycle time budget.",
+      "impact": "Affects Trajectory Analyzer's throughput and the planning pipeline's end-to-end latency.",
+      "owner": "Performance Architecture"
+    },
+    {
+      "id": "UD-056",
+      "description": "Feasibility Checker's conditional-pass criteria and the maximum number of repair iterations before a plan is rejected and escalated to the operator.",
+      "impact": "Affects the planning pipeline's resilience to difficult planning scenarios and the operator's intervention frequency.",
+      "owner": "Safety Architecture"
+    },
+    {
+      "id": "UD-057",
+      "description": "Terrain traversability model parameters per vehicle type (maximum slope, minimum ground clearance, surface friction coefficients) and their source (vehicle specification database, operator input, or learned from telemetry).",
+      "impact": "Affects Terrain Traversability Engine's accuracy and the configuration effort for new vehicle types.",
+      "owner": "Vehicle Integration Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-15",
+    "lastModified": "2026-10-31"
+  }
+}

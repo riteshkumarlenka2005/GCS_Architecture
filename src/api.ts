@@ -15,7 +15,7 @@ export interface CanvasStoreState {
   manifest: ArchitectureManifest | null
 }
 
-const STORAGE_KEY = 'gcs_canvas_store_v2'
+const STORAGE_KEY = 'gcs_canvas_store_v3'
 
 let memoryState: CanvasStoreState | null = null
 
@@ -27,6 +27,7 @@ function getLocalState(): CanvasStoreState {
   try {
     const raw =
       localStorage.getItem(STORAGE_KEY) ??
+      localStorage.getItem('gcs_canvas_store_v2') ??
       localStorage.getItem('gcs_canvas_store_v1')
 
     if (raw) {

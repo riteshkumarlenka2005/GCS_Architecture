@@ -1,0 +1,1412 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-cop-04",
+  "title": "Advanced Visualization Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of four advanced COP engines: Historical Playback (eng-cop-historical-playback) for time-controlled mission replay; Data Fusion Visualization (eng-cop-data-fusion-viz) for multi-source fused observation display; Configurable Overlays (eng-cop-configurable-overlays) for user-defined overlay pipelines; and Offline Maps (eng-cop-offline-maps) for disconnected tile serving. Shows integration with the COP Orchestrator, Map Renderer, Viewport Controller, Spatial Query Service, Vehicle State Store, Data Persistence, and Core Event Bus.",
+  "category": "cop",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1500,
+    "height": 950,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-cop04-playback",
+      "label": "Historical Playback Engine",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop04-playback-ctrl",
+        "node-cop04-playback-data"
+      ],
+      "style": {
+        "backgroundColor": "rgba(139, 92, 246, 0.05)",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-cop04-overlays",
+      "label": "Configurable Overlays Engine",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop04-overlay-mgr",
+        "node-cop04-overlay-renderer"
+      ],
+      "style": {
+        "backgroundColor": "rgba(16, 185, 129, 0.05)",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-cop04-offline",
+      "label": "Offline Maps Engine",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop04-offline-mgr",
+        "node-cop04-offline-store"
+      ],
+      "style": {
+        "backgroundColor": "rgba(20, 184, 166, 0.05)",
+        "borderColor": "#14b8a6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-cop04-fusion",
+      "label": "Data Fusion Visualization Engine",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop04-fusion-viz"
+      ],
+      "style": {
+        "backgroundColor": "rgba(59, 130, 246, 0.05)",
+        "borderColor": "#3b82f6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-cop04-playback-ctrl",
+      "label": "Playback Controller",
+      "type": "component",
+      "engineId": "eng-cop-historical-playback",
+      "description": "Manages the historical mission playback timeline: play, pause, scrub, speed control (0.25x–16x), and jump-to-timestamp. Coordinates with the Historical Data Retriever to load time-windowed data segments, injects historical vehicle positions and telemetry into the COP Orchestrator as if they were live data, synchronizes playback state across all COP layers (tracks, geofences, obstacles), and publishes playback lifecycle events to the Core Event Bus.",
+      "position": {
+        "x": 120,
+        "y": 120
+      },
+      "size": {
+        "width": 240,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#1a1a3e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "clock-rotate-left"
+      },
+      "ports": [
+        {
+          "id": "port-cop04-pc-in-data",
+          "label": "Historical Data In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-cop04-pc-out-inject",
+          "label": "Inject Positions",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop04-pc-out-events",
+          "label": "Playback Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop04-pc-out-query",
+          "label": "Historical Query",
+          "direction": "out",
+          "dataType": "control",
+          "position": "left"
+        }
+      ]
+    },
+    {
+      "id": "node-cop04-playback-data",
+      "label": "Historical Data Retriever",
+      "type": "component",
+      "engineId": "eng-cop-historical-playback",
+      "description": "Retrieves historical vehicle positions, telemetry, and mission events from the Data Persistence Engine for a requested time window. Supports pre-fetching of upcoming data segments to ensure smooth playback, caches recently accessed time windows in memory, and handles data gaps by interpolating between known positions or flagging discontinuities to the Playback Controller.",
+      "position": {
+        "x": 120,
+        "y": 380
+      },
+      "size": {
+        "width": 230,
+        "height": 150
+      },
+      "style": {
+        "backgroundColor": "#1a1a3e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "database"
+      },
+      "ports": [
+        {
+          "id": "port-cop04-pd-in-query",
+          "label": "Time Window Query",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-cop04-pd-out-data",
+          "label": "Historical Data Out",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop04-pd-in-data",
+          "label": "Historical Records In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        }
+      ]
+    },
+    {
+      "id": "node-cop04-fusion-viz",
+      "label": "Data Fusion Visualizer",
+      "type": "component",
+      "engineId": "eng-cop-data-fusion-viz",
+      "description": "Visualizes fused multi-source sensor observations and intelligence data on the operational picture. Ingests fused observation events from the Core Event Bus (originating from the Sensor Fusion engine), performs spatial and temporal correlation using the Spatial Query Service to cluster related detections, applies confidence-weighted symbology, and renders composite situational awareness overlays to the Map Renderer. Supports configurable fusion display modes including heat maps, confidence ellipses, and track correlation indicators.",
+      "position": {
+        "x": 520,
+        "y": 120
+      },
+      "size": {
+        "width": 240,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#0e3a2e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "layer-group"
+      },
+      "ports": [
+        {
+          "id": "port-cop04-fv-in-obs",
+          "label": "Fused Observations",
+          "direction": "in",
+          "dataType": "event",
+          "position": "top"
+        },
+        {
+          "id": "port-cop04-fv-out-query",
+          "label": "Correlation Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop04-fv-in-query-res",
+          "label": "Correlation Result",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop04-fv-out-layer",
+          "label": "Fusion Overlay",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop04-overlay-mgr",
+      "label": "Overlay Configuration Manager",
+      "type": "component",
+      "engineId": "eng-cop-configurable-overlays",
+      "description": "Manages user-defined overlay configurations including data source bindings, filter expressions, symbology rules, and display conditions. Supports CRUD operations on overlay definitions, import/export of overlay configuration packages, and template-based overlay creation for common mission types. Pushes the active overlay configuration set to the Overlay Renderer for evaluation and display.",
+      "position": {
+        "x": 520,
+        "y": 420
+      },
+      "size": {
+        "width": 240,
+        "height": 160
+      },
+      "style": {
+        "backgroundColor": "#0e3a2e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "sliders"
+      },
+      "ports": [
+        {
+          "id": "port-cop04-om-in-cmd",
+          "label": "Overlay Command",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-cop04-om-out-defs",
+          "label": "Active Overlay Defs",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop04-om-out-persist",
+          "label": "Persist Overlay Definitions",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop04-om-in-load",
+          "label": "Stored Overlay Definitions",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-cop04-overlay-renderer",
+      "label": "Overlay Renderer",
+      "type": "component",
+      "engineId": "eng-cop-configurable-overlays",
+      "description": "Evaluates active overlay configurations against current data sources and produces styled map overlay layers. Binds overlay data sources to live vehicle state, historical data, geofence status, and sensor observations. Applies filter expressions and symbology rules from the Overlay Configuration Manager, handles conditional display logic (e.g., show only when zoomed in, show only for selected vehicles), and outputs the composed overlay layers to the Map Renderer.",
+      "position": {
+        "x": 880,
+        "y": 420
+      },
+      "size": {
+        "width": 230,
+        "height": 160
+      },
+      "style": {
+        "backgroundColor": "#0e3a2e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "paintbrush"
+      },
+      "ports": [
+        {
+          "id": "port-cop04-oren-in-defs",
+          "label": "Overlay Defs In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-cop04-oren-out-layer",
+          "label": "Overlay Layers",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop04-offline-mgr",
+      "label": "Offline Map Manager",
+      "type": "component",
+      "engineId": "eng-cop-offline-maps",
+      "description": "Manages offline map tile packages and controls the transition between online and offline map serving modes. Handles tile package import and validation, monitors network connectivity to trigger automatic mode switching, serves cached tiles to the Map Renderer when online sources are unavailable, and coordinates with the Viewport Controller to pre-fetch tiles for the current and anticipated visible extents.",
+      "position": {
+        "x": 880,
+        "y": 120
+      },
+      "size": {
+        "width": 230,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#0e2e2e",
+        "borderColor": "#14b8a6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "wifi-slash"
+      },
+      "ports": [
+        {
+          "id": "port-cop04-offm-in-cmd",
+          "label": "Offline Command",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-cop04-offm-in-extent",
+          "label": "Visible Extent",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-cop04-offm-out-tile-req",
+          "label": "Tile Lookup",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop04-offm-in-tile-data",
+          "label": "Tile Data In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop04-offm-out-tiles",
+          "label": "Offline Tiles",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop04-offline-store",
+      "label": "Offline Tile Store",
+      "type": "database",
+      "engineId": "eng-cop-offline-maps",
+      "description": "Persistent storage for offline map tile packages indexed by geographic extent, zoom level, and tile source identifier. Supports multiple tile package formats, provides efficient tile lookup by quadkey or tile coordinate, manages storage quotas and eviction policies, and reports package coverage metadata to the Offline Map Manager for gap analysis.",
+      "position": {
+        "x": 880,
+        "y": 680
+      },
+      "size": {
+        "width": 220,
+        "height": 130
+      },
+      "style": {
+        "backgroundColor": "#0a2e2a",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "database"
+      },
+      "ports": [
+        {
+          "id": "port-cop04-offs-in-lookup",
+          "label": "Lookup In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop04-offs-out-data",
+          "label": "Tile Data Out",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop04-offs-out-persist",
+          "label": "Persist Tile Package",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop04-offs-in-persist",
+          "label": "Load Tile Package",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-cop04-pd-to-pc",
+      "source": "node-cop04-playback-data",
+      "target": "node-cop04-playback-ctrl",
+      "sourcePort": "port-cop04-pd-out-data",
+      "targetPort": "port-cop04-pc-in-data",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Historical Data Segment",
+        "description": "Historical Data Retriever delivers time-windowed vehicle positions, telemetry, and mission events to the Playback Controller for timeline injection.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-om-to-oren",
+      "source": "node-cop04-overlay-mgr",
+      "target": "node-cop04-overlay-renderer",
+      "sourcePort": "port-cop04-om-out-defs",
+      "targetPort": "port-cop04-oren-in-defs",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Active Overlay Definitions",
+        "description": "Overlay Configuration Manager pushes the current set of active overlay definitions with data bindings, filters, and symbology rules to the Overlay Renderer.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-offm-to-offs",
+      "source": "node-cop04-offline-mgr",
+      "target": "node-cop04-offline-store",
+      "sourcePort": "port-cop04-offm-out-tile-req",
+      "targetPort": "port-cop04-offs-in-lookup",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Tile Lookup Request",
+        "description": "Offline Map Manager queries the Offline Tile Store for cached tiles matching the current visible extent and zoom level.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-offs-to-offm",
+      "source": "node-cop04-offline-store",
+      "target": "node-cop04-offline-mgr",
+      "sourcePort": "port-cop04-offs-out-data",
+      "targetPort": "port-cop04-offm-in-tile-data",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Cached Tile Data",
+        "description": "Offline Tile Store returns matching cached tile data to the Offline Map Manager for serving to the Map Renderer.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-fv-to-sq",
+      "source": "node-cop04-fusion-viz",
+      "target": "node-cop03-spatial-query",
+      "sourcePort": "port-cop04-fv-out-query",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Spatial Correlation Query",
+        "description": "Data Fusion Visualizer queries the Spatial Query Service to cluster related detections and correlate observations across spatial and temporal dimensions.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 8,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-sq-to-fv",
+      "source": "node-cop03-spatial-query",
+      "target": "node-cop04-fusion-viz",
+      "sourcePort": null,
+      "targetPort": "port-cop04-fv-in-query-res",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Correlation Results",
+        "description": "Spatial Query Service returns spatial correlation and clustering results to the Data Fusion Visualizer for composite overlay generation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 8,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-persistence-to-pd",
+      "source": "node-data01-persistence",
+      "target": "node-cop04-playback-data",
+      "sourcePort": null,
+      "targetPort": "port-cop04-pd-in-data",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Historical Telemetry Query",
+        "description": "Data Persistence Engine returns historical vehicle telemetry, positions, and mission events to the Historical Data Retriever after its time-window query.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-pc-to-core",
+      "source": "node-cop04-playback-ctrl",
+      "target": "node-cop01-core",
+      "sourcePort": "port-cop04-pc-out-inject",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Inject Historical Positions",
+        "description": "Playback Controller injects historical vehicle positions into the COP Orchestrator, which distributes them to the rendering pipeline as if they were live data.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-pc-to-bus",
+      "source": "node-cop04-playback-ctrl",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-cop04-pc-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Playback State Events",
+        "description": "Playback Controller publishes playback lifecycle events (started, paused, speed changed, scrubbed, stopped) to the Core Event Bus for cross-subsystem synchronization.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-bus-to-fv",
+      "source": "node-core04-event-bus",
+      "target": "node-cop04-fusion-viz",
+      "sourcePort": null,
+      "targetPort": "port-cop04-fv-in-obs",
+      "semantic": {
+        "type": "event",
+        "label": "Fused Observation Events",
+        "description": "Core Event Bus delivers fused multi-source sensor observations from the Sensor Fusion engine to the Data Fusion Visualizer for display.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-fv-to-renderer",
+      "source": "node-cop04-fusion-viz",
+      "target": "node-cop01-renderer",
+      "sourcePort": "port-cop04-fv-out-layer",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Fusion Overlay Layer",
+        "description": "Data Fusion Visualizer delivers the composed fusion overlay (heat maps, confidence ellipses, correlated tracks) to the Map Renderer for compositing.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-core-to-om",
+      "source": "node-cop01-core",
+      "target": "node-cop04-overlay-mgr",
+      "sourcePort": null,
+      "targetPort": "port-cop04-om-in-cmd",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Overlay Commands",
+        "description": "COP Orchestrator dispatches operator-initiated overlay commands (create, edit, activate, deactivate, import, export) to the Overlay Configuration Manager.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-oren-to-renderer",
+      "source": "node-cop04-overlay-renderer",
+      "target": "node-cop01-renderer",
+      "sourcePort": "port-cop04-oren-out-layer",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Configurable Overlay Layers",
+        "description": "Overlay Renderer delivers the evaluated and styled configurable overlay layers to the Map Renderer for compositing into the operational picture.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-core-to-offm",
+      "source": "node-cop01-core",
+      "target": "node-cop04-offline-mgr",
+      "sourcePort": null,
+      "targetPort": "port-cop04-offm-in-cmd",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Offline Mode Commands",
+        "description": "COP Orchestrator sends offline mode commands (enable offline, import tile package, purge cache) to the Offline Map Manager.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-viewport-to-offm",
+      "source": "node-cop01-viewport",
+      "target": "node-cop04-offline-mgr",
+      "sourcePort": null,
+      "targetPort": "port-cop04-offm-in-extent",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Visible Extent",
+        "description": "Viewport Controller provides the current visible geographic extent to the Offline Map Manager for tile culling and pre-fetch decisions.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-offm-to-renderer",
+      "source": "node-cop04-offline-mgr",
+      "target": "node-cop01-renderer",
+      "sourcePort": "port-cop04-offm-out-tiles",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Offline Tile Layer",
+        "description": "Offline Map Manager serves cached map tiles to the Map Renderer when online tile sources are unavailable or when offline mode is active.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop04-pc-to-pd-query",
+      "source": "node-cop04-playback-ctrl",
+      "target": "node-cop04-playback-data",
+      "sourcePort": "port-cop04-pc-out-query",
+      "targetPort": "port-cop04-pd-in-query",
+      "semantic": {
+        "type": "control-flow",
+        "direction": "unidirectional",
+        "label": "Historical Time-Window Query",
+        "protocol": null,
+        "dataType": "control",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Playback Controller requests the selected historical time window and prefetch range from the Historical Data Retriever.",
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop04-om-to-persistence",
+      "source": "node-cop04-overlay-mgr",
+      "target": "node-data01-persistence",
+      "sourcePort": "port-cop04-om-out-persist",
+      "targetPort": null,
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Persist Overlay Configurations",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Overlay Configuration Manager stores user-defined overlay definitions and templates in the Data Persistence Engine.",
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop04-persistence-to-om",
+      "source": "node-data01-persistence",
+      "target": "node-cop04-overlay-mgr",
+      "sourcePort": null,
+      "targetPort": "port-cop04-om-in-load",
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Load Overlay Configurations",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Data Persistence Engine supplies stored overlay definitions to the Overlay Configuration Manager during initialization and retrieval.",
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop04-offs-to-persistence",
+      "source": "node-cop04-offline-store",
+      "target": "node-data01-persistence",
+      "sourcePort": "port-cop04-offs-out-persist",
+      "targetPort": null,
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Persist Offline Tile Packages",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Offline Tile Store delegates durable storage of imported tile packages and package metadata to the Data Persistence Engine.",
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop04-persistence-to-offs",
+      "source": "node-data01-persistence",
+      "target": "node-cop04-offline-store",
+      "sourcePort": null,
+      "targetPort": "port-cop04-offs-in-persist",
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Load Offline Tile Packages",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Data Persistence Engine supplies stored offline tile packages and metadata to the Offline Tile Store for serving and coverage analysis.",
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-cop01-core",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-core",
+      "label": "COP Orchestrator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop01-renderer",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-geospatial-viz",
+      "label": "Map Renderer",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop01-viewport",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-geospatial-viz",
+      "label": "Viewport Controller",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop03-spatial-query",
+      "sourceDocumentId": "doc-cop-03",
+      "engineId": "eng-cop-geospatial-data",
+      "label": "Spatial Query Service",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#14b8a6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core04-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-data01-persistence",
+      "sourceDocumentId": "doc-data-01",
+      "engineId": "eng-data-persistence",
+      "label": "Data Persistence Engine",
+      "type": "database",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#14b8a6",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-cop-historical-playback",
+      "localNodeId": "node-cop04-playback-ctrl",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-cop"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-cop-data-fusion-viz",
+      "localNodeId": "node-cop04-fusion-viz",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-cop"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-cop-configurable-overlays",
+      "localNodeId": "node-cop04-overlay-mgr",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-cop"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-cop-offline-maps",
+      "localNodeId": "node-cop04-offline-mgr",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-cop"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.5-13",
+      "description": "The system shall support historical mission playback with time control including play, pause, scrub, and variable speed.",
+      "coveredByNodes": [
+        "node-cop04-playback-ctrl",
+        "node-cop04-playback-data"
+      ],
+      "coveredByEdges": [
+        "edge-cop04-pd-to-pc",
+        "edge-cop04-pc-to-core",
+        "edge-cop04-persistence-to-pd",
+        "edge-cop04-pc-to-pd-query"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Playback Controller provides full timeline control; Historical Data Retriever fetches time-windowed data from persistence."
+    },
+    {
+      "requirementId": "req-2.5-14",
+      "description": "The system shall visualize fused multi-source sensor data with confidence-weighted symbology on the operational picture.",
+      "coveredByNodes": [
+        "node-cop04-fusion-viz"
+      ],
+      "coveredByEdges": [
+        "edge-cop04-bus-to-fv",
+        "edge-cop04-fv-to-sq",
+        "edge-cop04-sq-to-fv",
+        "edge-cop04-fv-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Data Fusion Visualizer ingests fused observations, correlates spatially via Spatial Query Service, and renders confidence-weighted overlays."
+    },
+    {
+      "requirementId": "req-2.5-15",
+      "description": "The system shall support user-configurable overlay definitions with custom symbology, data bindings, and display rules.",
+      "coveredByNodes": [
+        "node-cop04-overlay-mgr",
+        "node-cop04-overlay-renderer"
+      ],
+      "coveredByEdges": [
+        "edge-cop04-core-to-om",
+        "edge-cop04-om-to-oren",
+        "edge-cop04-oren-to-renderer",
+        "edge-cop04-om-to-persistence",
+        "edge-cop04-persistence-to-om"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Overlay Configuration Manager handles definition CRUD; Overlay Renderer evaluates rules and produces styled layers."
+    },
+    {
+      "requirementId": "req-2.6-10",
+      "description": "The system shall support offline map operation using pre-cached tile packages when network connectivity is unavailable.",
+      "coveredByNodes": [
+        "node-cop04-offline-mgr",
+        "node-cop04-offline-store"
+      ],
+      "coveredByEdges": [
+        "edge-cop04-offm-to-offs",
+        "edge-cop04-offs-to-offm",
+        "edge-cop04-offm-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Offline Map Manager serves cached tiles from the Offline Tile Store to the Map Renderer when online sources are unavailable."
+    },
+    {
+      "requirementId": "req-2.6-11",
+      "description": "The system shall synchronize historical playback across all COP layers including vehicle positions, tracks, geofences, and overlays.",
+      "coveredByNodes": [
+        "node-cop04-playback-ctrl"
+      ],
+      "coveredByEdges": [
+        "edge-cop04-pc-to-core",
+        "edge-cop04-pc-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Playback Controller injects historical positions into COP Orchestrator and publishes playback state events to the Event Bus for cross-layer synchronization."
+    },
+    {
+      "requirementId": "req-2.7-04",
+      "description": "The system shall bind overlay data sources to both live and historical data streams with configurable update rates.",
+      "coveredByNodes": [
+        "node-cop04-overlay-renderer",
+        "node-cop04-overlay-mgr"
+      ],
+      "coveredByEdges": [
+        "edge-cop04-om-to-oren",
+        "edge-cop04-oren-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Overlay Configuration Manager defines data bindings; Overlay Renderer evaluates them against live or historical data depending on playback state."
+    },
+    {
+      "requirementId": "req-2.7-05",
+      "description": "The system shall support import and management of offline map tile packages including coverage validation and storage quota enforcement.",
+      "coveredByNodes": [
+        "node-cop04-offline-mgr",
+        "node-cop04-offline-store"
+      ],
+      "coveredByEdges": [
+        "edge-cop04-core-to-offm",
+        "edge-cop04-offm-to-offs",
+        "edge-cop04-offs-to-offm",
+        "edge-cop04-offs-to-persistence",
+        "edge-cop04-persistence-to-offs"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Offline Map Manager handles package import and validation; Offline Tile Store enforces storage quotas and provides coverage metadata."
+    },
+    {
+      "requirementId": "req-2.8-01",
+      "description": "The system shall correlate fused sensor observations across spatial and temporal dimensions for composite situational awareness.",
+      "coveredByNodes": [
+        "node-cop04-fusion-viz"
+      ],
+      "coveredByEdges": [
+        "edge-cop04-bus-to-fv",
+        "edge-cop04-fv-to-sq",
+        "edge-cop04-sq-to-fv"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Data Fusion Visualizer delegates spatial correlation to the Spatial Query Service and applies temporal clustering internally."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-034",
+      "description": "Historical playback data is available in the Data Persistence Engine with sufficient temporal resolution for smooth playback at the maximum supported speed (16x).",
+      "rationale": "Playback smoothness depends on data density; the Historical Data Retriever interpolates gaps but cannot create data that was never recorded."
+    },
+    {
+      "id": "AS-035",
+      "description": "Fused observation events arriving via the Core Event Bus include spatial coordinates, temporal stamps, confidence scores, and source identifiers as defined by the Sensor Fusion engine contract.",
+      "rationale": "Data Fusion Visualizer is a consumer of fused observations; the event schema is an upstream contract."
+    },
+    {
+      "id": "AS-036",
+      "description": "Overlay configuration definitions are stored as structured documents (e.g., JSON) within the Data Persistence Engine and can be shared between operators via import/export.",
+      "rationale": "Overlay configurations are user-generated content that must survive restarts and be portable across GCS instances."
+    },
+    {
+      "id": "AS-037",
+      "description": "Offline tile packages conform to a standard tile package format (e.g., MBTiles, TPK) and the specific format support is an implementation detail.",
+      "rationale": "Tile package formats are well-standardized; the Offline Tile Store abstracts format differences behind a uniform tile lookup interface."
+    },
+    {
+      "id": "AS-038",
+      "description": "The transition between online and offline map serving modes is automatic based on network connectivity detection, with manual override available to the operator.",
+      "rationale": "Operators in field environments may lose connectivity unexpectedly; automatic fallback ensures map continuity."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-038",
+      "description": "Maximum supported playback speed and the data pre-fetch window size for smooth high-speed playback.",
+      "impact": "Affects Historical Data Retriever's memory usage and pre-fetch strategy.",
+      "owner": "Performance Architecture"
+    },
+    {
+      "id": "UD-039",
+      "description": "Data fusion visualization update rate and the maximum number of concurrent fused observations displayed.",
+      "impact": "Affects Data Fusion Visualizer's rendering performance and the Spatial Query Service's query load.",
+      "owner": "Performance Architecture"
+    },
+    {
+      "id": "UD-040",
+      "description": "Overlay expression language and filter syntax for configurable overlay data bindings.",
+      "impact": "Affects Overlay Configuration Manager's parser complexity and Overlay Renderer's evaluation performance.",
+      "owner": "Customization Architecture"
+    },
+    {
+      "id": "UD-041",
+      "description": "Offline tile storage quota default and eviction policy (LRU, by zoom level, by geographic region).",
+      "impact": "Affects Offline Tile Store's storage management and the operator's offline map coverage.",
+      "owner": "Deployment Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-15",
+    "lastModified": "2026-10-31"
+  }
+}

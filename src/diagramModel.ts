@@ -368,6 +368,7 @@ export const CANONICAL_ENGINES: Record<string, CanonicalEngineInfo> = {
   'eng-core-plugin-extension': { id: 'eng-core-plugin-extension', category: 'core', name: 'Plugin, Extension & Customization Engine' },
   'eng-core-schema-management': { id: 'eng-core-schema-management', category: 'core', name: 'Versioned Contracts & Schema Management Engine' },
   'eng-core-external-integration': { id: 'eng-core-external-integration', category: 'core', name: 'Integration & External Service Engine' },
+  'eng-core-command-dispatch': { id: 'eng-core-command-dispatch', category: 'core', name: 'Command Dispatch & Execution Engine' },
 
   // CATEGORY B — COMMUNICATIONS (11 engines)
   'eng-comm-transport': { id: 'eng-comm-transport', category: 'comm', name: 'Universal Transport & Connectivity Engine' },

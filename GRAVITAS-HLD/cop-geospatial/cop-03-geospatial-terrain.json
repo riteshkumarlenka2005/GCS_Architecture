@@ -1,0 +1,1285 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-cop-03",
+  "title": "Geofencing, Dynamic Obstacles & Geospatial Data Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of three COP engines: Geofence (eng-cop-geofence) for geofence definition, real-time evaluation, and alert generation; Dynamic Obstacles (eng-cop-dynamic-obstacles) for obstacle ingestion, tracking, and visualization; and Geospatial Data (eng-cop-geospatial-data) for data import/export, spatial indexing, and spatial query services. Shows integration with the COP Orchestrator, Vehicle State Store, Map Renderer, and Core Event Bus.",
+  "category": "cop",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1500,
+    "height": 950,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-cop03-geofence",
+      "label": "Geofence Engine",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop03-geofence-mgr",
+        "node-cop03-geofence-eval",
+        "node-cop03-geofence-store"
+      ],
+      "style": {
+        "backgroundColor": "rgba(239, 68, 68, 0.04)",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-cop03-obstacles",
+      "label": "Dynamic Obstacles Engine",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop03-obstacle-tracker",
+        "node-cop03-obstacle-renderer"
+      ],
+      "style": {
+        "backgroundColor": "rgba(245, 158, 11, 0.05)",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-cop03-geospatial",
+      "label": "Geospatial Data Engine",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop03-spatial-query",
+        "node-cop03-data-io"
+      ],
+      "style": {
+        "backgroundColor": "rgba(20, 184, 166, 0.05)",
+        "borderColor": "#14b8a6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-cop03-geofence-mgr",
+      "label": "Geofence Manager",
+      "type": "component",
+      "engineId": "eng-cop-geofence",
+      "description": "Manages the full lifecycle of geofence definitions: creation, editing, activation, deactivation, and deletion. Supports multiple geofence geometry types (polygon, circle, corridor, altitude band) and classification categories (no-fly zone, restricted area, waypoint boundary, custom). Processes geofence commands from the COP Orchestrator, persists definitions to the Geofence Store, and pushes the active geofence set to the Geofence Evaluator for real-time monitoring.",
+      "position": {
+        "x": 120,
+        "y": 120
+      },
+      "size": {
+        "width": 230,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#2a1a1e",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "draw-polygon"
+      },
+      "ports": [
+        {
+          "id": "port-cop03-gm-in-cmd",
+          "label": "Geofence Command",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-cop03-gm-out-active",
+          "label": "Active Geofences",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop03-gm-out-persist",
+          "label": "Persist Geofence",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop03-gm-in-load",
+          "label": "Loaded Geofences",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop03-gm-out-index",
+          "label": "Geofence Geometry Index",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop03-geofence-eval",
+      "label": "Geofence Evaluator",
+      "type": "component",
+      "engineId": "eng-cop-geofence",
+      "description": "Performs real-time evaluation of vehicle positions against all active geofences. Ingests vehicle position streams from the Vehicle State Store, tests containment and proximity using the Spatial Query Service for complex polygon geometries, detects entry/exit/proximity threshold events, and publishes geofence alerts to the Core Event Bus for operator notification and downstream safety policy enforcement.",
+      "position": {
+        "x": 480,
+        "y": 120
+      },
+      "size": {
+        "width": 230,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#2a1a1e",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "shield-alert"
+      },
+      "ports": [
+        {
+          "id": "port-cop03-ge-in-active",
+          "label": "Active Geofences In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-cop03-ge-in-positions",
+          "label": "Vehicle Positions",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop03-ge-out-query",
+          "label": "Spatial Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop03-ge-in-query-res",
+          "label": "Query Result",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop03-ge-out-alert",
+          "label": "Geofence Alert",
+          "direction": "out",
+          "dataType": "event",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop03-geofence-store",
+      "label": "Geofence Store",
+      "type": "database",
+      "engineId": "eng-cop-geofence",
+      "description": "Persistent storage for geofence definitions, geometry data, classification metadata, and alert history. Supports spatial indexing for efficient geofence retrieval by geographic extent, maintains version history for geofence edits, and provides bulk import/export of geofence sets for mission planning and debrief.",
+      "position": {
+        "x": 120,
+        "y": 400
+      },
+      "size": {
+        "width": 220,
+        "height": 130
+      },
+      "style": {
+        "backgroundColor": "#1a1018",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "database"
+      },
+      "ports": [
+        {
+          "id": "port-cop03-gs-in-write",
+          "label": "Write Geofence",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop03-gs-out-read",
+          "label": "Read Geofences",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop03-gs-out-persist-write",
+          "label": "Persistence Write",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop03-gs-in-persist-read",
+          "label": "Persistence Read",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop03-obstacle-tracker",
+      "label": "Obstacle Tracker",
+      "type": "component",
+      "engineId": "eng-cop-dynamic-obstacles",
+      "description": "Ingests dynamic obstacle reports from multiple sources (sensor detections via the event bus, manual operator annotations, external threat feeds) and maintains a time-stamped active obstacle list. Applies configurable time-to-live (TTL) and confidence decay to each obstacle, merges duplicate reports for the same physical obstacle, and pushes the current active obstacle set to the Obstacle Renderer for display.",
+      "position": {
+        "x": 860,
+        "y": 120
+      },
+      "size": {
+        "width": 230,
+        "height": 160
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "triangle-exclamation"
+      },
+      "ports": [
+        {
+          "id": "port-cop03-ot-in-report",
+          "label": "Obstacle Report",
+          "direction": "in",
+          "dataType": "event",
+          "position": "top"
+        },
+        {
+          "id": "port-cop03-ot-out-active",
+          "label": "Active Obstacles",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop03-ot-out-index",
+          "label": "Obstacle Position Index",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop03-obstacle-renderer",
+      "label": "Obstacle Renderer",
+      "type": "component",
+      "engineId": "eng-cop-dynamic-obstacles",
+      "description": "Renders active dynamic obstacles as styled overlay symbols on the operational picture. Receives the active obstacle list from the Obstacle Tracker, applies configurable symbology based on obstacle type and threat level (e.g., danger zone radius, exclusion area shading, movement vector arrows), and outputs the composed obstacle layer to the Map Renderer for compositing.",
+      "position": {
+        "x": 860,
+        "y": 380
+      },
+      "size": {
+        "width": 230,
+        "height": 140
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "eye"
+      },
+      "ports": [
+        {
+          "id": "port-cop03-or-in-active",
+          "label": "Active Obstacles In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop03-or-out-layer",
+          "label": "Obstacle Layer",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop03-spatial-query",
+      "label": "Spatial Query Service",
+      "type": "component",
+      "engineId": "eng-cop-geospatial-data",
+      "description": "Provides spatial indexing and query capabilities for all geospatial data managed by the COP. Maintains spatial indexes for imported datasets, geofence geometries, and obstacle positions. Supports point-in-polygon containment tests, nearest-neighbor searches, bounding-box intersection queries, and coordinate reference system transformations. Serves spatial query results to the Geofence Evaluator and other consumers.",
+      "position": {
+        "x": 480,
+        "y": 420
+      },
+      "size": {
+        "width": 230,
+        "height": 160
+      },
+      "style": {
+        "backgroundColor": "#0e2e2e",
+        "borderColor": "#14b8a6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "search-location"
+      },
+      "ports": [
+        {
+          "id": "port-cop03-sq-in-index",
+          "label": "Index Data",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-cop03-sq-in-query",
+          "label": "Spatial Query In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop03-sq-out-result",
+          "label": "Query Result Out",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        }
+      ]
+    },
+    {
+      "id": "node-cop03-data-io",
+      "label": "Data Import/Export Service",
+      "type": "component",
+      "engineId": "eng-cop-geospatial-data",
+      "description": "Handles import and export of geospatial data in standard interchange formats (KML, KMZ, GeoJSON, GeoPackage, Shapefile). Parses imported files, validates geometry and coordinate reference systems, transforms coordinates to the active CRS, registers datasets with the Spatial Query Service for indexing, and produces rendered overlay layers for the Map Renderer. Supports export of mission geofences, tracks, and annotations for debrief and sharing.",
+      "position": {
+        "x": 480,
+        "y": 680
+      },
+      "size": {
+        "width": 230,
+        "height": 160
+      },
+      "style": {
+        "backgroundColor": "#0e2e2e",
+        "borderColor": "#14b8a6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "file-import"
+      },
+      "ports": [
+        {
+          "id": "port-cop03-dio-in-cmd",
+          "label": "Import/Export Command",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-cop03-dio-out-index",
+          "label": "Index Imported Data",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop03-dio-out-layer",
+          "label": "Geospatial Overlay",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-cop03-gm-to-ge",
+      "source": "node-cop03-geofence-mgr",
+      "target": "node-cop03-geofence-eval",
+      "sourcePort": "port-cop03-gm-out-active",
+      "targetPort": "port-cop03-ge-in-active",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Push Active Geofences",
+        "description": "Geofence Manager pushes the current set of active geofence definitions to the Geofence Evaluator whenever the active set changes.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-gm-to-gs",
+      "source": "node-cop03-geofence-mgr",
+      "target": "node-cop03-geofence-store",
+      "sourcePort": "port-cop03-gm-out-persist",
+      "targetPort": "port-cop03-gs-in-write",
+      "semantic": {
+        "type": "persistence",
+        "label": "Persist Geofence Definition",
+        "description": "Geofence Manager writes new or modified geofence definitions to the Geofence Store for durable storage and version history.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dashed",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-gs-to-gm",
+      "source": "node-cop03-geofence-store",
+      "target": "node-cop03-geofence-mgr",
+      "sourcePort": "port-cop03-gs-out-read",
+      "targetPort": "port-cop03-gm-in-load",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Load Geofence Definitions",
+        "description": "Geofence Store returns stored geofence definitions to the Geofence Manager on startup or when a mission-specific geofence set is loaded.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-ge-to-sq",
+      "source": "node-cop03-geofence-eval",
+      "target": "node-cop03-spatial-query",
+      "sourcePort": "port-cop03-ge-out-query",
+      "targetPort": "port-cop03-sq-in-query",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Containment / Proximity Query",
+        "description": "Geofence Evaluator delegates complex spatial containment and proximity tests to the Spatial Query Service for polygon and corridor geofences.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-sq-to-ge",
+      "source": "node-cop03-spatial-query",
+      "target": "node-cop03-geofence-eval",
+      "sourcePort": "port-cop03-sq-out-result",
+      "targetPort": "port-cop03-ge-in-query-res",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Spatial Query Result",
+        "description": "Spatial Query Service returns containment and proximity test results to the Geofence Evaluator for alert generation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-ot-to-or",
+      "source": "node-cop03-obstacle-tracker",
+      "target": "node-cop03-obstacle-renderer",
+      "sourcePort": "port-cop03-ot-out-active",
+      "targetPort": "port-cop03-or-in-active",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Active Obstacle Set",
+        "description": "Obstacle Tracker delivers the current active obstacle list with positions, types, confidence levels, and TTL to the Obstacle Renderer.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-dio-to-sq",
+      "source": "node-cop03-data-io",
+      "target": "node-cop03-spatial-query",
+      "sourcePort": "port-cop03-dio-out-index",
+      "targetPort": "port-cop03-sq-in-index",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Index Imported Geospatial Data",
+        "description": "Data Import/Export Service sends parsed and CRS-transformed geospatial features to the Spatial Query Service for spatial indexing.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-vehicle-to-ge",
+      "source": "node-core03-state-store",
+      "target": "node-cop03-geofence-eval",
+      "sourcePort": null,
+      "targetPort": "port-cop03-ge-in-positions",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle Position Stream",
+        "description": "Vehicle State Store streams real-time vehicle positions to the Geofence Evaluator for containment and proximity testing against active geofences.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-core-to-gm",
+      "source": "node-cop01-core",
+      "target": "node-cop03-geofence-mgr",
+      "sourcePort": null,
+      "targetPort": "port-cop03-gm-in-cmd",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Geofence Commands",
+        "description": "COP Orchestrator dispatches operator-initiated geofence commands (create, edit, activate, deactivate, delete) to the Geofence Manager.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-ge-to-bus",
+      "source": "node-cop03-geofence-eval",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-cop03-ge-out-alert",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Geofence Alerts",
+        "description": "Geofence Evaluator publishes geofence breach, entry, exit, and proximity warning events to the Core Event Bus for operator notification and safety policy enforcement.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-bus-to-ot",
+      "source": "node-core04-event-bus",
+      "target": "node-cop03-obstacle-tracker",
+      "sourcePort": null,
+      "targetPort": "port-cop03-ot-in-report",
+      "semantic": {
+        "type": "event",
+        "label": "Obstacle Reports",
+        "description": "Core Event Bus delivers dynamic obstacle reports from sensor detections, operator annotations, and external feeds to the Obstacle Tracker.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-or-to-renderer",
+      "source": "node-cop03-obstacle-renderer",
+      "target": "node-cop01-renderer",
+      "sourcePort": "port-cop03-or-out-layer",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Obstacle Overlay Layer",
+        "description": "Obstacle Renderer delivers the composed dynamic obstacle overlay layer to the Map Renderer for compositing into the operational picture.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-core-to-dio",
+      "source": "node-cop01-core",
+      "target": "node-cop03-data-io",
+      "sourcePort": null,
+      "targetPort": "port-cop03-dio-in-cmd",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Import/Export Commands",
+        "description": "COP Orchestrator dispatches operator-initiated data import and export commands to the Data Import/Export Service.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#8b5cf6",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-dio-to-renderer",
+      "source": "node-cop03-data-io",
+      "target": "node-cop01-renderer",
+      "sourcePort": "port-cop03-dio-out-layer",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Geospatial Data Overlay",
+        "description": "Data Import/Export Service delivers rendered geospatial data overlays (imported KML, GeoJSON features) to the Map Renderer for display.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "arrow": "end"
+      }
+    },
+    {
+      "id": "edge-cop03-gm-to-sq-index",
+      "source": "node-cop03-geofence-mgr",
+      "target": "node-cop03-spatial-query",
+      "sourcePort": "port-cop03-gm-out-index",
+      "targetPort": "port-cop03-sq-in-index",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Index Geofence Geometry",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Geofence Manager supplies active geofence geometries to the Spatial Query Service index so containment and proximity queries can use indexed geometry.",
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop03-ot-to-sq-index",
+      "source": "node-cop03-obstacle-tracker",
+      "target": "node-cop03-spatial-query",
+      "sourcePort": "port-cop03-ot-out-index",
+      "targetPort": "port-cop03-sq-in-index",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Index Dynamic Obstacle Positions",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Obstacle Tracker supplies current obstacle positions to the Spatial Query Service index for spatial lookup and intersection queries.",
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop03-gs-to-persistence",
+      "source": "node-cop03-geofence-store",
+      "target": "node-data01-persistence",
+      "sourcePort": "port-cop03-gs-out-persist-write",
+      "targetPort": null,
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Persist Geofence Records",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Geofence Store delegates durable storage of geofence definitions, geometry versions, and alert-history records to the shared Data Persistence Engine.",
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop03-persistence-to-gs",
+      "source": "node-data01-persistence",
+      "target": "node-cop03-geofence-store",
+      "sourcePort": null,
+      "targetPort": "port-cop03-gs-in-persist-read",
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Load Geofence Records",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Data Persistence Engine supplies persisted geofence records to Geofence Store during initialization and retrieval.",
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-cop01-core",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-core",
+      "label": "COP Orchestrator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop01-renderer",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-geospatial-viz",
+      "label": "Map Renderer",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core03-state-store",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-vehicle-state",
+      "label": "Vehicle State Store",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core04-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-data01-persistence",
+      "sourceDocumentId": "doc-data-01",
+      "engineId": "eng-data-persistence",
+      "label": "Data Persistence Engine",
+      "type": "database",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#14b8a6",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-cop-geofence",
+      "localNodeId": "node-cop03-geofence-mgr",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-cop"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-cop-dynamic-obstacles",
+      "localNodeId": "node-cop03-obstacle-tracker",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-cop"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-cop-geospatial-data",
+      "localNodeId": "node-cop03-spatial-query",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-cop"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.5-09",
+      "description": "The system shall support geofence creation, editing, activation, deactivation, and deletion with immediate visual feedback on the operational picture.",
+      "coveredByNodes": [
+        "node-cop03-geofence-mgr",
+        "node-cop03-geofence-store"
+      ],
+      "coveredByEdges": [
+        "edge-cop03-core-to-gm",
+        "edge-cop03-gm-to-gs",
+        "edge-cop03-gs-to-gm",
+        "edge-cop03-gm-to-ge",
+        "edge-cop03-gs-to-persistence"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Geofence Manager handles full CRUD lifecycle; Geofence Store provides persistence; active set pushed to Evaluator for immediate display."
+    },
+    {
+      "requirementId": "req-2.5-10",
+      "description": "The system shall evaluate vehicle positions against active geofences in real time and generate entry, exit, and breach alerts.",
+      "coveredByNodes": [
+        "node-cop03-geofence-eval",
+        "node-cop03-spatial-query"
+      ],
+      "coveredByEdges": [
+        "edge-cop03-vehicle-to-ge",
+        "edge-cop03-ge-to-sq",
+        "edge-cop03-sq-to-ge",
+        "edge-cop03-ge-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Geofence Evaluator tests positions against active geofences using Spatial Query Service for complex geometries; alerts published to Event Bus."
+    },
+    {
+      "requirementId": "req-2.5-11",
+      "description": "The system shall display dynamic obstacles on the operational picture with configurable symbology and threat-level indicators.",
+      "coveredByNodes": [
+        "node-cop03-obstacle-tracker",
+        "node-cop03-obstacle-renderer"
+      ],
+      "coveredByEdges": [
+        "edge-cop03-bus-to-ot",
+        "edge-cop03-ot-to-or",
+        "edge-cop03-or-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Obstacle Tracker maintains active obstacle list; Obstacle Renderer applies threat-level symbology and outputs overlay to Map Renderer."
+    },
+    {
+      "requirementId": "req-2.5-12",
+      "description": "The system shall support import and export of geospatial data in standard interchange formats including KML, GeoJSON, and GeoPackage.",
+      "coveredByNodes": [
+        "node-cop03-data-io"
+      ],
+      "coveredByEdges": [
+        "edge-cop03-core-to-dio",
+        "edge-cop03-dio-to-sq",
+        "edge-cop03-dio-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Data Import/Export Service handles format parsing, CRS transformation, spatial indexing, and overlay rendering."
+    },
+    {
+      "requirementId": "req-2.6-08",
+      "description": "The system shall provide configurable proximity warnings when vehicles approach geofence boundaries.",
+      "coveredByNodes": [
+        "node-cop03-geofence-eval"
+      ],
+      "coveredByEdges": [
+        "edge-cop03-vehicle-to-ge",
+        "edge-cop03-ge-to-sq",
+        "edge-cop03-ge-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Geofence Evaluator computes proximity distances and generates warning events before actual boundary breach; threshold is configurable."
+    },
+    {
+      "requirementId": "req-2.6-09",
+      "description": "The system shall provide obstacle avoidance awareness by displaying danger zones and exclusion areas around dynamic obstacles.",
+      "coveredByNodes": [
+        "node-cop03-obstacle-renderer",
+        "node-cop03-obstacle-tracker"
+      ],
+      "coveredByEdges": [
+        "edge-cop03-ot-to-or",
+        "edge-cop03-or-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Obstacle Renderer generates danger zone radii and exclusion area shading based on obstacle type and threat level from the Tracker."
+    },
+    {
+      "requirementId": "req-2.7-01",
+      "description": "The system shall import geospatial data files and make their features available for display and spatial query.",
+      "coveredByNodes": [
+        "node-cop03-data-io",
+        "node-cop03-spatial-query"
+      ],
+      "coveredByEdges": [
+        "edge-cop03-core-to-dio",
+        "edge-cop03-dio-to-sq",
+        "edge-cop03-dio-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Imported data is parsed, CRS-transformed, indexed by Spatial Query Service, and rendered as overlay layers."
+    },
+    {
+      "requirementId": "req-2.7-02",
+      "description": "The system shall provide spatial query capabilities including point-in-polygon, nearest-neighbor, and intersection tests.",
+      "coveredByNodes": [
+        "node-cop03-spatial-query"
+      ],
+      "coveredByEdges": [
+        "edge-cop03-ge-to-sq",
+        "edge-cop03-sq-to-ge",
+        "edge-cop03-dio-to-sq",
+        "edge-cop03-gm-to-sq-index",
+        "edge-cop03-ot-to-sq-index"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Spatial Query Service provides all spatial query types; primary consumer is Geofence Evaluator for containment tests."
+    },
+    {
+      "requirementId": "req-2.7-03",
+      "description": "The system shall perform coordinate reference system transformations on imported geospatial data to match the active map projection.",
+      "coveredByNodes": [
+        "node-cop03-data-io",
+        "node-cop03-spatial-query"
+      ],
+      "coveredByEdges": [
+        "edge-cop03-dio-to-sq"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Data Import/Export Service transforms coordinates during import; Spatial Query Service maintains CRS metadata for indexed datasets."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-030",
+      "description": "Geofence evaluation runs at a rate commensurate with vehicle position update frequency (typically 1–10 Hz) and is optimized for the number of active geofences and vehicles.",
+      "rationale": "Evaluation latency must be low enough to provide timely alerts before boundary breach; performance depends on geofence complexity."
+    },
+    {
+      "id": "AS-031",
+      "description": "Dynamic obstacle reports arriving via the event bus include position, type, confidence, and timestamp fields; the specific report schema is defined by the sensor subsystem.",
+      "rationale": "Obstacle Tracker is a consumer of obstacle events; the report format is an upstream contract."
+    },
+    {
+      "id": "AS-032",
+      "description": "The Spatial Query Service uses an in-memory spatial index (e.g., R-tree) for fast query performance, with the index rebuilt from persistent sources on GCS restart.",
+      "rationale": "Spatial queries must be fast for real-time geofence evaluation; the index is a derived structure that can be reconstructed."
+    },
+    {
+      "id": "AS-033",
+      "description": "Geospatial data import supports files up to a configurable size limit, with large datasets processed incrementally to avoid blocking the UI.",
+      "rationale": "Large geospatial files (e.g., high-resolution terrain contours) could stall the application if loaded synchronously."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-034",
+      "description": "Specific geofence geometry complexity limits (maximum vertex count per polygon, maximum corridor segment count) and their impact on evaluation performance.",
+      "impact": "Affects Geofence Evaluator's real-time performance guarantees and Spatial Query Service's index sizing.",
+      "owner": "Geospatial Architecture"
+    },
+    {
+      "id": "UD-035",
+      "description": "Dynamic obstacle TTL default values and confidence decay function parameters per obstacle source type.",
+      "impact": "Affects Obstacle Tracker's active obstacle list size and the freshness of displayed obstacle information.",
+      "owner": "Operations Architecture"
+    },
+    {
+      "id": "UD-036",
+      "description": "Supported geospatial import format versions and any format-specific limitations (e.g., KML network link support, GeoJSON CRS extension handling).",
+      "impact": "Affects Data Import/Export Service's parser complexity and interoperability with external tools.",
+      "owner": "Geospatial Architecture"
+    },
+    {
+      "id": "UD-037",
+      "description": "Geofence alert severity classification scheme and the mapping between geofence category and alert priority.",
+      "impact": "Affects Geofence Evaluator's alert generation logic and downstream safety policy enforcement.",
+      "owner": "Safety Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-15",
+    "lastModified": "2026-10-31"
+  }
+}

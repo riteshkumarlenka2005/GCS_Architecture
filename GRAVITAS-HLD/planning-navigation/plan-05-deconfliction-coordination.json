@@ -1,0 +1,1400 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-plan-05",
+  "title": "Energy-Aware Planning, Navigation Constraints & Plugin Algorithms Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of the remaining three Planning subsystem engines: Energy-Aware Planning (eng-plan-energy-aware) for vehicle energy consumption modeling, range prediction, and energy-feasible trajectory evaluation; Navigation Constraints (eng-plan-nav-constraints) for airspace, altitude, speed, and regulatory boundary enforcement; and Plugin Algorithm (eng-plan-plugin-algorithm) for third-party planning algorithm registration, sandboxed execution, lifecycle management, and fallback selection. Details the integration of energy and constraint evaluation into the feasibility pipeline, and the plugin framework's connection to the Core Plugin Extension infrastructure and the Global Route Planner.",
+  "category": "plan",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1500,
+    "height": 950,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-plan05-energy-nav",
+      "label": "Energy & Navigation Constraint Evaluation",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-plan05-energy-modeler",
+        "node-plan05-nav-constraints"
+      ],
+      "style": {
+        "backgroundColor": "rgba(245, 158, 11, 0.05)",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-plan05-plugin",
+      "label": "Plugin Algorithm Framework",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-plan05-algorithm-selector",
+        "node-plan05-plugin-registry",
+        "node-plan05-plugin-sandbox"
+      ],
+      "style": {
+        "backgroundColor": "rgba(139, 92, 246, 0.05)",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-plan05-energy-modeler",
+      "label": "Energy-Aware Planning Engine",
+      "type": "component",
+      "engineId": "eng-plan-energy-aware",
+      "description": "Models vehicle energy consumption (battery or fuel) across planned trajectories to ensure energy-feasible mission execution. Ingests trajectory profiles from the Trajectory Analyzer and vehicle-specific energy parameters from the Motion Model Engine (motor efficiency curves, battery discharge characteristics, fuel burn rates, payload weight effects). Computes per-segment energy cost estimates accounting for altitude changes, wind or current effects, hover/loiter time, and acceleration profiles. Produces total mission energy predictions, remaining-range estimates, and energy-feasibility flags. Supplies energy cost dimensions to the Cost Function Engine for multi-objective optimization and energy-feasibility assessments to the Feasibility Checker. Publishes low-energy warnings to the Core Event Bus when predicted reserves fall below configurable thresholds.",
+      "position": {
+        "x": 100,
+        "y": 120
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "battery-half"
+      },
+      "ports": [
+        {
+          "id": "port-plan05-em-in-trajectory",
+          "label": "Trajectory Profile",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan05-em-in-energy-params",
+          "label": "Vehicle Energy Parameters",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan05-em-out-energy-cost",
+          "label": "Energy Cost Estimate",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan05-em-out-range",
+          "label": "Range & Feasibility",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan05-em-out-alerts",
+          "label": "Energy Alerts",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-plan05-nav-constraints",
+      "label": "Navigation Constraints Engine",
+      "type": "component",
+      "engineId": "eng-plan-nav-constraints",
+      "description": "Enforces navigation constraints including airspace restrictions, altitude ceilings and floors, speed limits, no-fly zones, and regulatory boundaries. Ingests geofence and restricted-airspace data from the COP Geofence Manager and regulatory constraint configurations from the Hybrid Planning Coordinator. Validates candidate routes and trajectories against all active navigation constraints, producing compliance reports with specific violation locations and severity levels. Supplies constraint boundaries to the Global Route Planner for constraint-aware route generation and compliance verdicts to the Feasibility Checker as part of the final validation gate. Publishes constraint violation events to the Core Event Bus for operator awareness.",
+      "position": {
+        "x": 100,
+        "y": 480
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "shield-halved"
+      },
+      "ports": [
+        {
+          "id": "port-plan05-nc-in-geofence",
+          "label": "Geofence & Airspace Data",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan05-nc-in-config",
+          "label": "Nav Constraint Config",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-plan05-nc-in-candidate",
+          "label": "Candidate Route/Trajectory",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan05-nc-out-boundaries",
+          "label": "Constraint Boundaries",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan05-nc-out-compliance",
+          "label": "Compliance Verdict",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan05-nc-out-violations",
+          "label": "Violation Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-plan05-algorithm-selector",
+      "label": "Algorithm Selector & Orchestrator",
+      "type": "component",
+      "engineId": "eng-plan-plugin-algorithm",
+      "description": "Selects and orchestrates the appropriate planning algorithm for each planning request based on mission requirements, vehicle type, environmental conditions, and operator preferences. Queries the Plugin Registry for available algorithms matching the request criteria, evaluates algorithm suitability scores, and dispatches execution to the Plugin Sandbox. Handles algorithm fallback: if the primary algorithm fails, times out, or produces infeasible results, the selector automatically falls back to the next-ranked alternative. Reports algorithm selection decisions and execution outcomes to the Hybrid Planning Coordinator and the Global Route Planner.",
+      "position": {
+        "x": 520,
+        "y": 120
+      },
+      "size": {
+        "width": 260,
+        "height": 200
+      },
+      "style": {
+        "backgroundColor": "#1e1a2e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "shuffle"
+      },
+      "ports": [
+        {
+          "id": "port-plan05-as-in-requirements",
+          "label": "Mission Requirements",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-plan05-as-out-query",
+          "label": "Algorithm Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan05-as-in-algorithms",
+          "label": "Available Algorithms",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan05-as-out-execute",
+          "label": "Execute Algorithm",
+          "direction": "out",
+          "dataType": "command",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan05-as-in-result",
+          "label": "Algorithm Result",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan05-as-out-selection",
+          "label": "Selected Algorithm & Plan",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan05-as-out-report",
+          "label": "Selection Report",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-plan05-plugin-registry",
+      "label": "Plugin Algorithm Registry",
+      "type": "component",
+      "engineId": "eng-plan-plugin-algorithm",
+      "description": "Maintains a catalog of all registered planning algorithms including built-in algorithms and third-party plugins. Stores algorithm metadata: name, version, author, supported vehicle types, applicable mission profiles, computational complexity class, required inputs, produced outputs, and certification status. Supports algorithm registration, deregistration, version management, and capability-based discovery. The Algorithm Selector queries the registry to find algorithms matching specific planning request criteria. The registry validates plugin manifests and digital signatures before accepting registrations.",
+      "position": {
+        "x": 520,
+        "y": 440
+      },
+      "size": {
+        "width": 240,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#1e1a2e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "list-check"
+      },
+      "ports": [
+        {
+          "id": "port-plan05-pr-in-query",
+          "label": "Algorithm Query",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan05-pr-out-algorithms",
+          "label": "Matching Algorithms",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan05-pr-in-register",
+          "label": "Registration Request",
+          "direction": "in",
+          "dataType": "command",
+          "position": "left"
+        },
+        {
+          "id": "port-plan05-pr-out-manifest",
+          "label": "Algorithm Manifest",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan05-pr-out-core-registration",
+          "label": "Plugin Registration & Lifecycle Request",
+          "direction": "out",
+          "dataType": "control",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-plan05-plugin-sandbox",
+      "label": "Plugin Execution Sandbox",
+      "type": "component",
+      "engineId": "eng-plan-plugin-algorithm",
+      "description": "Provides an isolated execution environment for third-party planning algorithms. Enforces resource limits (CPU time, memory, I/O), prevents unauthorized access to system resources, and monitors algorithm execution for anomalous behavior. Receives algorithm execution requests from the Algorithm Selector, loads the algorithm binary or script from the Plugin Registry, executes it within the sandbox boundary, and returns results or error reports. Integrates with the Core Plugin Extension sandbox infrastructure for platform-level isolation. Implements execution timeouts and automatic termination of runaway algorithms.",
+      "position": {
+        "x": 880,
+        "y": 280
+      },
+      "size": {
+        "width": 250,
+        "height": 180
+      },
+      "style": {
+        "backgroundColor": "#1e1a2e",
+        "borderColor": "#8b5cf6",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "lock"
+      },
+      "ports": [
+        {
+          "id": "port-plan05-ps-in-execute",
+          "label": "Execute Request",
+          "direction": "in",
+          "dataType": "command",
+          "position": "left"
+        },
+        {
+          "id": "port-plan05-ps-in-manifest",
+          "label": "Algorithm Manifest",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan05-ps-out-result",
+          "label": "Execution Result",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan05-ps-out-core-sandbox",
+          "label": "Sandbox Infra Request",
+          "direction": "out",
+          "dataType": "control",
+          "position": "right"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-plan05-ta-to-em",
+      "source": "node-plan04-trajectory-analyzer",
+      "target": "node-plan05-energy-modeler",
+      "sourcePort": null,
+      "targetPort": "port-plan05-em-in-trajectory",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Trajectory Profile",
+        "description": "Trajectory Analyzer provides planned trajectory profiles (waypoints, velocities, altitudes, durations) to the Energy-Aware Planning Engine for energy consumption estimation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-09"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-motion-to-em",
+      "source": "node-plan01-motion",
+      "target": "node-plan05-energy-modeler",
+      "sourcePort": null,
+      "targetPort": "port-plan05-em-in-energy-params",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle Energy Parameters",
+        "description": "Motion Model Engine provides vehicle-specific energy parameters (motor efficiency, battery capacity, fuel burn rate, payload weight coefficients) to the Energy-Aware Planning Engine.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-09"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-em-to-cost",
+      "source": "node-plan05-energy-modeler",
+      "target": "node-plan04-cost-engine",
+      "sourcePort": "port-plan05-em-out-energy-cost",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Energy Cost Dimension",
+        "description": "Energy-Aware Planning Engine supplies per-segment and total energy cost estimates to the Cost Function Engine for integration into multi-objective route optimization.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-09"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-em-to-fc",
+      "source": "node-plan05-energy-modeler",
+      "target": "node-plan04-feasibility-checker",
+      "sourcePort": "port-plan05-em-out-range",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Energy Feasibility Assessment",
+        "description": "Energy-Aware Planning Engine provides energy feasibility assessment (sufficient reserves, range margin) to the Feasibility Checker for final plan validation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-10"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-em-to-bus",
+      "source": "node-plan05-energy-modeler",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-plan05-em-out-alerts",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Low-Energy Alerts",
+        "description": "Energy-Aware Planning Engine publishes low-energy warnings and range-limit events to the Core Event Bus when predicted energy reserves fall below configurable thresholds.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.13-10"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-geofence-to-nc",
+      "source": "node-cop03-geofence-mgr",
+      "target": "node-plan05-nav-constraints",
+      "sourcePort": null,
+      "targetPort": "port-plan05-nc-in-geofence",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Geofence & Airspace Data",
+        "description": "COP Geofence Manager provides active geofence boundaries, restricted airspace definitions, and no-fly zone geometries to the Navigation Constraints Engine for compliance checking.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.14-08"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-hybrid-to-nc",
+      "source": "node-plan01-hybrid",
+      "target": "node-plan05-nav-constraints",
+      "sourcePort": null,
+      "targetPort": "port-plan05-nc-in-config",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Nav Constraint Configuration",
+        "description": "Hybrid Planning Coordinator sends mission-specific navigation constraint configuration (altitude limits, speed limits, regulatory boundaries) to the Navigation Constraints Engine.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.14-08"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-router-to-nc",
+      "source": "node-plan02-global-router",
+      "target": "node-plan05-nav-constraints",
+      "sourcePort": null,
+      "targetPort": "port-plan05-nc-in-candidate",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Candidate Route for Validation",
+        "description": "Global Route Planner submits candidate routes to the Navigation Constraints Engine for compliance validation against airspace and regulatory boundaries.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.14-08"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-nc-to-router",
+      "source": "node-plan05-nav-constraints",
+      "target": "node-plan02-global-router",
+      "sourcePort": "port-plan05-nc-out-boundaries",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Constraint Boundaries",
+        "description": "Navigation Constraints Engine supplies active constraint boundaries to the Global Route Planner for constraint-aware route generation, enabling the planner to avoid restricted areas during initial pathfinding.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.14-08"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-nc-to-fc",
+      "source": "node-plan05-nav-constraints",
+      "target": "node-plan04-feasibility-checker",
+      "sourcePort": "port-plan05-nc-out-compliance",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Nav Constraint Compliance",
+        "description": "Navigation Constraints Engine provides navigation constraint compliance verdict to the Feasibility Checker as part of the final plan validation gate.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.14-08"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-nc-to-bus",
+      "source": "node-plan05-nav-constraints",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-plan05-nc-out-violations",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Constraint Violation Events",
+        "description": "Navigation Constraints Engine publishes constraint violation events to the Core Event Bus for operator awareness and audit logging.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.14-09"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-hybrid-to-as",
+      "source": "node-plan01-hybrid",
+      "target": "node-plan05-algorithm-selector",
+      "sourcePort": null,
+      "targetPort": "port-plan05-as-in-requirements",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Mission Requirements",
+        "description": "Hybrid Planning Coordinator sends mission-specific planning requirements (vehicle type, mission profile, time constraints, optimization priorities) to the Algorithm Selector for algorithm matching.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-05"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-as-to-pr",
+      "source": "node-plan05-algorithm-selector",
+      "target": "node-plan05-plugin-registry",
+      "sourcePort": "port-plan05-as-out-query",
+      "targetPort": "port-plan05-pr-in-query",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Algorithm Discovery Query",
+        "description": "Algorithm Selector queries the Plugin Registry for algorithms matching the current planning request criteria (vehicle type, mission profile, computational budget).",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.15-08",
+          "req-2.12-05"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-pr-to-as",
+      "source": "node-plan05-plugin-registry",
+      "target": "node-plan05-algorithm-selector",
+      "sourcePort": "port-plan05-pr-out-algorithms",
+      "targetPort": "port-plan05-as-in-algorithms",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Matching Algorithm List",
+        "description": "Plugin Registry returns the list of registered algorithms matching the query criteria, ranked by suitability score, to the Algorithm Selector.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.15-08"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-as-to-ps",
+      "source": "node-plan05-algorithm-selector",
+      "target": "node-plan05-plugin-sandbox",
+      "sourcePort": "port-plan05-as-out-execute",
+      "targetPort": "port-plan05-ps-in-execute",
+      "semantic": {
+        "type": "command",
+        "label": "Execute Algorithm",
+        "description": "Algorithm Selector dispatches the selected planning algorithm to the Plugin Sandbox for isolated execution with the planning problem instance.",
+        "protocol": null,
+        "dataType": "command",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.15-09",
+          "req-2.15-10"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#ef4444",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-ps-to-as",
+      "source": "node-plan05-plugin-sandbox",
+      "target": "node-plan05-algorithm-selector",
+      "sourcePort": "port-plan05-ps-out-result",
+      "targetPort": "port-plan05-as-in-result",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Algorithm Execution Result",
+        "description": "Plugin Sandbox returns the algorithm execution result (planned route/trajectory or error report) to the Algorithm Selector for evaluation and potential fallback.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.15-09",
+          "req-2.15-10"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-pr-to-ps",
+      "source": "node-plan05-plugin-registry",
+      "target": "node-plan05-plugin-sandbox",
+      "sourcePort": "port-plan05-pr-out-manifest",
+      "targetPort": "port-plan05-ps-in-manifest",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Algorithm Manifest & Binary",
+        "description": "Plugin Registry provides the algorithm manifest (resource limits, permissions, entry point) and binary reference to the Plugin Sandbox for execution setup.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.15-09"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-ps-to-core-sandbox",
+      "source": "node-plan05-plugin-sandbox",
+      "target": "node-core05-plugin-sandbox",
+      "sourcePort": "port-plan05-ps-out-core-sandbox",
+      "targetPort": null,
+      "semantic": {
+        "type": "dependency",
+        "label": "Sandbox Infrastructure",
+        "description": "Plugin Execution Sandbox depends on the Core Plugin Extension sandbox infrastructure for platform-level process isolation, resource enforcement, and security boundary management.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.15-09"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 1,
+        "dash": "dashed",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 3,
+        "stroke": "#475569",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-as-to-router",
+      "source": "node-plan05-algorithm-selector",
+      "target": "node-plan02-global-router",
+      "sourcePort": "port-plan05-as-out-selection",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Selected Algorithm & Plan",
+        "description": "Algorithm Selector delivers the selected algorithm's output (planned route or trajectory) to the Global Route Planner for integration into the active plan.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-05"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-as-to-hybrid",
+      "source": "node-plan05-algorithm-selector",
+      "target": "node-plan01-hybrid",
+      "sourcePort": "port-plan05-as-out-report",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Algorithm Selection Report",
+        "description": "Algorithm Selector reports algorithm selection decisions, execution outcomes, and fallback events to the Hybrid Planning Coordinator for planning pipeline awareness.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [
+          "req-2.12-05",
+          "req-2.15-10"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan05-pr-to-core-plugin",
+      "source": "node-plan05-plugin-registry",
+      "target": "node-core05-plugin-sandbox",
+      "sourcePort": "port-plan05-pr-out-core-registration",
+      "targetPort": null,
+      "semantic": {
+        "type": "dependency",
+        "direction": "unidirectional",
+        "label": "Plugin Registration & Lifecycle",
+        "protocol": null,
+        "dataType": "control",
+        "trigger": "plugin registration, deregistration, or version lifecycle operation",
+        "synchronous": null,
+        "description": "Plugin Registry delegates platform-level plugin lifecycle and registration validation support to the declared Core Plugin Extension infrastructure boundary. The precise registry service endpoint remains an integration decision.",
+        "requirementIds": [
+          "req-2.15-08"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#475569",
+        "strokeWidth": 1,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 3
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-plan01-hybrid",
+      "sourceDocumentId": "doc-plan-01",
+      "engineId": "eng-plan-hybrid",
+      "label": "Hybrid Planning Coordinator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan01-motion",
+      "sourceDocumentId": "doc-plan-01",
+      "engineId": "eng-plan-motion-model",
+      "label": "Motion Model Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan02-global-router",
+      "sourceDocumentId": "doc-plan-02",
+      "engineId": "eng-plan-global-route",
+      "label": "Global Route Planner",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan04-cost-engine",
+      "sourceDocumentId": "doc-plan-04",
+      "engineId": "eng-plan-cost-function",
+      "label": "Cost Function Engine",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan04-trajectory-analyzer",
+      "sourceDocumentId": "doc-plan-04",
+      "engineId": "eng-plan-trajectory-analysis",
+      "label": "Trajectory Analyzer",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan04-feasibility-checker",
+      "sourceDocumentId": "doc-plan-04",
+      "engineId": "eng-plan-feasibility",
+      "label": "Feasibility Checker",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#ef4444",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop03-geofence-mgr",
+      "sourceDocumentId": "doc-cop-03",
+      "engineId": "eng-cop-geofence",
+      "label": "Geofence Manager",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core05-plugin-sandbox",
+      "sourceDocumentId": "doc-core-05",
+      "engineId": "eng-core-plugin-extension",
+      "label": "Core Plugin Sandbox",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core04-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-plan-energy-aware",
+      "localNodeId": "node-plan05-energy-modeler",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-nav-constraints",
+      "localNodeId": "node-plan05-nav-constraints",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-plugin-algorithm",
+      "localNodeId": "node-plan05-algorithm-selector",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.13-09",
+      "description": "The system shall model vehicle energy consumption including battery discharge, fuel burn, and payload weight effects for trajectory planning.",
+      "coveredByNodes": [
+        "node-plan05-energy-modeler"
+      ],
+      "coveredByEdges": [
+        "edge-plan05-motion-to-em",
+        "edge-plan05-ta-to-em",
+        "edge-plan05-em-to-cost"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Energy-Aware Planning Engine ingests vehicle energy parameters from Motion Model Engine and trajectory profiles from Trajectory Analyzer to compute per-segment energy costs."
+    },
+    {
+      "requirementId": "req-2.13-10",
+      "description": "The system shall predict remaining vehicle range and validate energy feasibility before mission commitment.",
+      "coveredByNodes": [
+        "node-plan05-energy-modeler"
+      ],
+      "coveredByEdges": [
+        "edge-plan05-em-to-fc",
+        "edge-plan05-em-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Energy modeler produces range predictions and energy-feasibility assessments delivered to the Feasibility Checker; low-energy alerts published to Event Bus."
+    },
+    {
+      "requirementId": "req-2.14-08",
+      "description": "The system shall enforce navigation constraints including airspace restrictions, altitude limits, speed limits, and no-fly zones during planning.",
+      "coveredByNodes": [
+        "node-plan05-nav-constraints"
+      ],
+      "coveredByEdges": [
+        "edge-plan05-geofence-to-nc",
+        "edge-plan05-hybrid-to-nc",
+        "edge-plan05-router-to-nc",
+        "edge-plan05-nc-to-fc",
+        "edge-plan05-nc-to-router"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Navigation Constraints Engine validates routes against geofence/airspace data and regulatory limits, supplying compliance verdicts to the Feasibility Checker and constraint boundaries to the Global Route Planner."
+    },
+    {
+      "requirementId": "req-2.14-09",
+      "description": "The system shall publish navigation constraint violation events for operator awareness and regulatory audit.",
+      "coveredByNodes": [
+        "node-plan05-nav-constraints"
+      ],
+      "coveredByEdges": [
+        "edge-plan05-nc-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Navigation Constraints Engine publishes violation events to the Core Event Bus for operator display and audit logging."
+    },
+    {
+      "requirementId": "req-2.15-08",
+      "description": "The system shall support registration, discovery, and lifecycle management of third-party planning algorithm plugins.",
+      "coveredByNodes": [
+        "node-plan05-plugin-registry",
+        "node-plan05-algorithm-selector"
+      ],
+      "coveredByEdges": [
+        "edge-plan05-as-to-pr",
+        "edge-plan05-pr-to-as",
+        "edge-plan05-pr-to-core-plugin"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Plugin Registry maintains the algorithm catalog with metadata, versioning, capability-based discovery, and delegates platform-level lifecycle support to the Core Plugin Extension boundary."
+    },
+    {
+      "requirementId": "req-2.15-09",
+      "description": "The system shall execute third-party planning algorithms in a sandboxed environment with resource limits and security isolation.",
+      "coveredByNodes": [
+        "node-plan05-plugin-sandbox"
+      ],
+      "coveredByEdges": [
+        "edge-plan05-as-to-ps",
+        "edge-plan05-ps-to-as",
+        "edge-plan05-ps-to-core-sandbox",
+        "edge-plan05-pr-to-ps"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Plugin Sandbox provides isolated execution with resource limits, integrates with Core Plugin Sandbox infrastructure for platform-level isolation, and enforces execution timeouts."
+    },
+    {
+      "requirementId": "req-2.12-05",
+      "description": "The system shall select the appropriate planning algorithm based on mission requirements, vehicle type, and environmental conditions.",
+      "coveredByNodes": [
+        "node-plan05-algorithm-selector"
+      ],
+      "coveredByEdges": [
+        "edge-plan05-hybrid-to-as",
+        "edge-plan05-as-to-pr",
+        "edge-plan05-as-to-router",
+        "edge-plan05-as-to-hybrid"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Algorithm Selector receives mission requirements from the Hybrid Coordinator, queries the registry for suitable algorithms, and delivers the selected algorithm's output to the Global Route Planner."
+    },
+    {
+      "requirementId": "req-2.15-10",
+      "description": "The system shall provide automatic algorithm fallback when the primary planning algorithm fails, times out, or produces infeasible results.",
+      "coveredByNodes": [
+        "node-plan05-algorithm-selector",
+        "node-plan05-plugin-sandbox"
+      ],
+      "coveredByEdges": [
+        "edge-plan05-ps-to-as",
+        "edge-plan05-as-to-ps",
+        "edge-plan05-as-to-hybrid"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Algorithm Selector evaluates sandbox execution results and automatically falls back to the next-ranked algorithm on failure, timeout, or infeasibility, reporting fallback events to the Hybrid Coordinator."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-055",
+      "description": "Energy consumption models are parametric and derived from vehicle specification data provided by the Motion Model Engine; they do not require real-time telemetry calibration during planning.",
+      "rationale": "Planning-time energy estimation uses pre-characterized models; real-time calibration would add complexity and latency to the planning cycle."
+    },
+    {
+      "id": "AS-056",
+      "description": "Navigation constraint data (airspace, regulatory boundaries) is updated periodically from the COP Geofence Manager and cached locally by the Navigation Constraints Engine for low-latency validation.",
+      "rationale": "Real-time geofence queries during planning would introduce unacceptable latency; cached data with periodic refresh balances freshness and performance."
+    },
+    {
+      "id": "AS-057",
+      "description": "Plugin algorithm execution time budgets are configurable per mission profile and enforced by the Plugin Sandbox with automatic termination on timeout.",
+      "rationale": "Different missions have different planning latency tolerances; a fixed timeout would be either too restrictive or too permissive."
+    },
+    {
+      "id": "AS-058",
+      "description": "The Plugin Registry validates algorithm manifests and digital signatures at registration time; runtime integrity checks are delegated to the Core Plugin Sandbox infrastructure.",
+      "rationale": "Separating registration-time validation from runtime enforcement follows the defense-in-depth principle and leverages existing Core infrastructure."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-058",
+      "description": "Energy model fidelity levels (simple linear, polynomial, physics-based) and the criteria for selecting model fidelity per vehicle type.",
+      "impact": "Affects Energy-Aware Planning Engine's accuracy and computational cost.",
+      "owner": "Vehicle Integration Architecture"
+    },
+    {
+      "id": "UD-059",
+      "description": "Navigation constraint update frequency and the mechanism for handling constraint changes during active mission execution (immediate replan vs. next planning cycle).",
+      "impact": "Affects Navigation Constraints Engine's responsiveness and the planning pipeline's reaction to dynamic airspace changes.",
+      "owner": "Operations Architecture"
+    },
+    {
+      "id": "UD-060",
+      "description": "Plugin algorithm certification requirements and the trust model for third-party algorithms (self-certified, operator-approved, or authority-certified).",
+      "impact": "Affects Plugin Registry's acceptance criteria and the operator's configuration burden for new algorithms.",
+      "owner": "Safety Architecture"
+    },
+    {
+      "id": "UD-061",
+      "description": "Maximum number of fallback iterations before the Algorithm Selector escalates to the operator for manual algorithm selection.",
+      "impact": "Affects planning pipeline resilience and operator intervention frequency in degraded scenarios.",
+      "owner": "Operations Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-15",
+    "lastModified": "2026-10-31"
+  }
+}

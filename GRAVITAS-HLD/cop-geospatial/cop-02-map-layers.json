@@ -1,0 +1,1173 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-cop-02",
+  "title": "Terrain & Vehicle Tracking Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of the Terrain Visualization Engine (eng-cop-terrain) and Vehicle Tracks Engine (eng-cop-vehicle-tracks). Details terrain data acquisition, processing, and caching for elevation and analysis overlays, alongside vehicle track recording, persistence, and rendering. Shows integration with the COP Core, Viewport Controller, Map Renderer, Vehicle State Store, and Data Persistence.",
+  "category": "cop",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1400,
+    "height": 900,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-cop02-terrain",
+      "label": "Terrain Visualization",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop02-terrain-source",
+        "node-cop02-terrain-processor",
+        "node-cop02-terrain-cache"
+      ],
+      "style": {
+        "backgroundColor": "rgba(16, 185, 129, 0.05)",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-cop02-tracks",
+      "label": "Vehicle Track Management",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-cop02-track-recorder",
+        "node-cop02-track-renderer",
+        "node-cop02-track-store"
+      ],
+      "style": {
+        "backgroundColor": "rgba(245, 158, 11, 0.05)",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-cop02-terrain-source",
+      "label": "Terrain Data Source",
+      "type": "component",
+      "engineId": "eng-cop-terrain",
+      "description": "Acquires terrain and elevation data from configured sources including remote tile servers, local DEM files, and the Terrain Cache. Responds to visible-extent queries from the Viewport Controller to determine which terrain tiles are needed, checks the cache for existing data, and fetches missing tiles from external providers. Supplies raw terrain data to the Terrain Processor for visualization.",
+      "position": {
+        "x": 120,
+        "y": 140
+      },
+      "size": {
+        "width": 220,
+        "height": 160
+      },
+      "style": {
+        "backgroundColor": "#0e3a2e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "mountain"
+      },
+      "ports": [
+        {
+          "id": "port-cop02-ts-in-extent",
+          "label": "Visible Extent",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop02-ts-in-config",
+          "label": "Terrain Config",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-cop02-ts-in-cache-hit",
+          "label": "Cache Hit",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop02-ts-out-cache-req",
+          "label": "Cache Lookup",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop02-ts-out-cache-write",
+          "label": "Store Tile",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop02-ts-out-raw",
+          "label": "Raw Terrain Data",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop02-terrain-processor",
+      "label": "Terrain Processor",
+      "type": "component",
+      "engineId": "eng-cop-terrain",
+      "description": "Transforms raw terrain and elevation data into visualization-ready products: hillshade rendering, elevation color ramps, contour line generation, and slope analysis overlays, and line-of-sight indicators derived from elevation data. Applies configurable visualization parameters (sun angle, vertical exaggeration, color palette) and outputs processed terrain layers to the Map Renderer for compositing into the operational picture.",
+      "position": {
+        "x": 480,
+        "y": 140
+      },
+      "size": {
+        "width": 220,
+        "height": 150
+      },
+      "style": {
+        "backgroundColor": "#0e3a2e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "sliders"
+      },
+      "ports": [
+        {
+          "id": "port-cop02-tp-in-raw",
+          "label": "Raw Terrain In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-cop02-tp-out-layer",
+          "label": "Terrain Layer Out",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop02-terrain-cache",
+      "label": "Terrain Tile Cache",
+      "type": "database",
+      "engineId": "eng-cop-terrain",
+      "description": "Local cache for terrain and elevation tiles, enabling offline terrain visualization and reducing redundant fetches from remote sources. Stores tiles indexed by geographic extent and zoom level, supports configurable cache size and eviction policies, and serves cached tiles to the Terrain Data Source on lookup requests.",
+      "position": {
+        "x": 120,
+        "y": 420
+      },
+      "size": {
+        "width": 220,
+        "height": 130
+      },
+      "style": {
+        "backgroundColor": "#0a2e2a",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "database"
+      },
+      "ports": [
+        {
+          "id": "port-cop02-tc-in-lookup",
+          "label": "Lookup In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop02-tc-out-hit",
+          "label": "Cache Hit Out",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop02-tc-in-write",
+          "label": "Write Tile",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop02-tc-out-backend-write",
+          "label": "Persist Terrain Tile",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop02-tc-in-backend-read",
+          "label": "Load Terrain Tile",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop02-track-recorder",
+      "label": "Track Recorder",
+      "type": "component",
+      "engineId": "eng-cop-vehicle-tracks",
+      "description": "Records vehicle position history into time-ordered track segments for each active vehicle. Ingests real-time position updates from the Vehicle State Store, applies configurable recording parameters (sampling interval, minimum distance threshold), manages track segment lifecycle (start, pause, resume, close), and persists completed segments to the Track Store. Supports track control commands from the COP Orchestrator.",
+      "position": {
+        "x": 120,
+        "y": 640
+      },
+      "size": {
+        "width": 230,
+        "height": 160
+      },
+      "style": {
+        "backgroundColor": "#1e2a1e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "route"
+      },
+      "ports": [
+        {
+          "id": "port-cop02-tr-in-positions",
+          "label": "Position Updates",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop02-tr-in-cmd",
+          "label": "Track Command",
+          "direction": "in",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-cop02-tr-out-persist",
+          "label": "Persist Segment",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop02-tr-out-live",
+          "label": "Live Track Update",
+          "direction": "out",
+          "dataType": "event",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop02-track-renderer",
+      "label": "Track Renderer",
+      "type": "component",
+      "engineId": "eng-cop-vehicle-tracks",
+      "description": "Renders vehicle track history as styled polyline overlays on the operational picture. Loads historical track segments from the Track Store and receives live track updates from the Track Recorder. Applies configurable track styling including color per vehicle, line width, opacity fade by age, and time-range filtering. Outputs the composed track layer to the Map Renderer for compositing.",
+      "position": {
+        "x": 480,
+        "y": 640
+      },
+      "size": {
+        "width": 220,
+        "height": 150
+      },
+      "style": {
+        "backgroundColor": "#1e2a1e",
+        "borderColor": "#10b981",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "draw-polygon"
+      },
+      "ports": [
+        {
+          "id": "port-cop02-tren-in-live",
+          "label": "Live Track In",
+          "direction": "in",
+          "dataType": "event",
+          "position": "left"
+        },
+        {
+          "id": "port-cop02-tren-in-history",
+          "label": "Historical Tracks",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-cop02-tren-out-layer",
+          "label": "Track Layer Out",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-cop02-track-store",
+      "label": "Track Data Store",
+      "type": "database",
+      "engineId": "eng-cop-vehicle-tracks",
+      "description": "Persistent storage for vehicle track segments indexed by vehicle identifier, time range, and geographic extent. Supports efficient spatial and temporal queries for track retrieval, handles track data retention and pruning based on configured policies, and provides bulk export capability for mission debrief and analysis.",
+      "position": {
+        "x": 480,
+        "y": 860
+      },
+      "size": {
+        "width": 220,
+        "height": 120
+      },
+      "style": {
+        "backgroundColor": "#0a2e2a",
+        "borderColor": "#0d9488",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "database"
+      },
+      "ports": [
+        {
+          "id": "port-cop02-tst-in-write",
+          "label": "Write Segment",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop02-tst-out-read",
+          "label": "Read Tracks",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-cop02-tst-out-backend-write",
+          "label": "Persist Track Data",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-cop02-tst-in-backend-read",
+          "label": "Load Track Data",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-cop02-ts-to-tp",
+      "source": "node-cop02-terrain-source",
+      "target": "node-cop02-terrain-processor",
+      "sourcePort": "port-cop02-ts-out-raw",
+      "targetPort": "port-cop02-tp-in-raw",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Raw Terrain / Elevation Data",
+        "description": "Terrain Data Source delivers raw elevation and terrain tiles to the Terrain Processor for visualization processing.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-ts-to-tc-lookup",
+      "source": "node-cop02-terrain-source",
+      "target": "node-cop02-terrain-cache",
+      "sourcePort": "port-cop02-ts-out-cache-req",
+      "targetPort": "port-cop02-tc-in-lookup",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Cache Lookup Request",
+        "description": "Terrain Data Source queries the Terrain Tile Cache for locally stored tiles matching the visible extent before fetching from remote sources.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-tc-to-ts-hit",
+      "source": "node-cop02-terrain-cache",
+      "target": "node-cop02-terrain-source",
+      "sourcePort": "port-cop02-tc-out-hit",
+      "targetPort": "port-cop02-ts-in-cache-hit",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Cached Tile Response",
+        "description": "Terrain Tile Cache returns cached terrain data to the Terrain Data Source when a matching tile is found locally.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-ts-to-tc-write",
+      "source": "node-cop02-terrain-source",
+      "target": "node-cop02-terrain-cache",
+      "sourcePort": "port-cop02-ts-out-cache-write",
+      "targetPort": "port-cop02-tc-in-write",
+      "semantic": {
+        "type": "persistence",
+        "label": "Cache New Tile",
+        "description": "Terrain Data Source stores newly fetched terrain tiles in the local cache for future offline access and reduced latency.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dashed",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#0d9488",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-tr-to-tst",
+      "source": "node-cop02-track-recorder",
+      "target": "node-cop02-track-store",
+      "sourcePort": "port-cop02-tr-out-persist",
+      "targetPort": "port-cop02-tst-in-write",
+      "semantic": {
+        "type": "persistence",
+        "label": "Persist Track Segment",
+        "description": "Track Recorder writes completed or periodically flushed track segments to the Track Data Store for historical retrieval.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dashed",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#0d9488",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-tst-to-tren",
+      "source": "node-cop02-track-store",
+      "target": "node-cop02-track-renderer",
+      "sourcePort": "port-cop02-tst-out-read",
+      "targetPort": "port-cop02-tren-in-history",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Historical Track Data",
+        "description": "Track Data Store returns historical track segments matching the requested vehicle, time range, and geographic extent to the Track Renderer.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-tr-to-tren-live",
+      "source": "node-cop02-track-recorder",
+      "target": "node-cop02-track-renderer",
+      "sourcePort": "port-cop02-tr-out-live",
+      "targetPort": "port-cop02-tren-in-live",
+      "semantic": {
+        "type": "event",
+        "label": "Live Track Extension",
+        "description": "Track Recorder pushes real-time track extension events to the Track Renderer for immediate display without waiting for persistence.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-viewport-to-ts",
+      "source": "node-cop01-viewport",
+      "target": "node-cop02-terrain-source",
+      "sourcePort": null,
+      "targetPort": "port-cop02-ts-in-extent",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Visible Geographic Extent",
+        "description": "Viewport Controller provides the current visible geographic bounding box to the Terrain Data Source for tile culling and level-of-detail selection.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-core-to-ts",
+      "source": "node-cop01-core",
+      "target": "node-cop02-terrain-source",
+      "sourcePort": null,
+      "targetPort": "port-cop02-ts-in-config",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Terrain Source Configuration",
+        "description": "COP Orchestrator sends terrain configuration commands (source selection, resolution preference, analysis mode) to the Terrain Data Source.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-tp-to-renderer",
+      "source": "node-cop02-terrain-processor",
+      "target": "node-cop01-renderer",
+      "sourcePort": "port-cop02-tp-out-layer",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Processed Terrain Layer",
+        "description": "Terrain Processor delivers the processed terrain visualization layer (hillshade, contours, slope overlay) to the Map Renderer for compositing.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-vehicle-to-tr",
+      "source": "node-core03-state-store",
+      "target": "node-cop02-track-recorder",
+      "sourcePort": null,
+      "targetPort": "port-cop02-tr-in-positions",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle Position Stream",
+        "description": "Vehicle State Store streams real-time position, heading, and altitude updates to the Track Recorder for track segment construction.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-core-to-tr",
+      "source": "node-cop01-core",
+      "target": "node-cop02-track-recorder",
+      "sourcePort": null,
+      "targetPort": "port-cop02-tr-in-cmd",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Track Control Command",
+        "description": "COP Orchestrator sends track management commands (start recording, pause, clear, filter by vehicle/time) to the Track Recorder.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-tren-to-renderer",
+      "source": "node-cop02-track-renderer",
+      "target": "node-cop01-renderer",
+      "sourcePort": "port-cop02-tren-out-layer",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Track Overlay Layer",
+        "description": "Track Renderer delivers the composed vehicle track overlay layer to the Map Renderer for compositing into the operational picture.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": false,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-cop02-tc-to-persistence",
+      "source": "node-cop02-terrain-cache",
+      "target": "node-data01-persistence",
+      "sourcePort": "port-cop02-tc-out-backend-write",
+      "targetPort": null,
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Persist Terrain Tiles",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": false,
+        "description": "Terrain Tile Cache writes terrain tile objects and cache metadata to the shared Data Persistence Engine.",
+        "requirementIds": [],
+        "assumptions": [
+          "AS-028"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop02-persistence-to-tc",
+      "source": "node-data01-persistence",
+      "target": "node-cop02-terrain-cache",
+      "sourcePort": null,
+      "targetPort": "port-cop02-tc-in-backend-read",
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Load Terrain Tiles",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": false,
+        "description": "Data Persistence Engine returns previously persisted terrain tiles and metadata to the Terrain Tile Cache.",
+        "requirementIds": [],
+        "assumptions": [
+          "AS-028"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop02-tst-to-persistence",
+      "source": "node-cop02-track-store",
+      "target": "node-data01-persistence",
+      "sourcePort": "port-cop02-tst-out-backend-write",
+      "targetPort": null,
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Persist Track Records",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": false,
+        "description": "Track Data Store writes track segments and their spatial-temporal indexes to the shared Data Persistence Engine.",
+        "requirementIds": [],
+        "assumptions": [
+          "AS-028"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-cop02-persistence-to-tst",
+      "source": "node-data01-persistence",
+      "target": "node-cop02-track-store",
+      "sourcePort": null,
+      "targetPort": "port-cop02-tst-in-backend-read",
+      "semantic": {
+        "type": "persistence",
+        "direction": "unidirectional",
+        "label": "Load Track Records",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": false,
+        "description": "Data Persistence Engine returns stored track segments and query results to the Track Data Store.",
+        "requirementIds": [],
+        "assumptions": [
+          "AS-028"
+        ]
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#0d9488",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dashed",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-cop01-viewport",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-geospatial-viz",
+      "label": "Viewport Controller",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop01-core",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-core",
+      "label": "COP Orchestrator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop01-renderer",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-geospatial-viz",
+      "label": "Map Renderer",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core03-state-store",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-vehicle-state",
+      "label": "Vehicle State Store",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-data01-persistence",
+      "sourceDocumentId": "doc-data-01",
+      "engineId": "eng-data-persistence",
+      "label": "Data Persistence Engine",
+      "type": "database",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#14b8a6",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-cop-terrain",
+      "localNodeId": "node-cop02-terrain-source",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-cop"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-cop-vehicle-tracks",
+      "localNodeId": "node-cop02-track-recorder",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-cop"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.5-06",
+      "description": "The system shall render terrain elevation data with configurable visualization modes including hillshade, contour lines, and elevation color ramps.",
+      "coveredByNodes": [
+        "node-cop02-terrain-source",
+        "node-cop02-terrain-processor"
+      ],
+      "coveredByEdges": [
+        "edge-cop02-ts-to-tp",
+        "edge-cop02-tp-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Terrain Data Source acquires elevation data; Terrain Processor generates hillshade, contours, and color ramps for rendering."
+    },
+    {
+      "requirementId": "req-2.5-07",
+      "description": "The system shall provide terrain analysis overlays including slope analysis and line-of-sight indicators.",
+      "coveredByNodes": [
+        "node-cop02-terrain-processor"
+      ],
+      "coveredByEdges": [
+        "edge-cop02-ts-to-tp",
+        "edge-cop02-tp-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Terrain Processor computes slope and line-of-sight products from elevation data; the specific algorithms and resolution remain implementation decisions."
+    },
+    {
+      "requirementId": "req-2.5-08",
+      "description": "The system shall cache terrain data locally for offline operation and reduced latency on repeated access.",
+      "coveredByNodes": [
+        "node-cop02-terrain-cache",
+        "node-cop02-terrain-source"
+      ],
+      "coveredByEdges": [
+        "edge-cop02-ts-to-tc-lookup",
+        "edge-cop02-tc-to-ts-hit",
+        "edge-cop02-ts-to-tc-write",
+        "edge-cop02-tc-to-persistence",
+        "edge-cop02-persistence-to-tc"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Terrain Tile Cache stores tiles locally; Terrain Data Source checks cache before fetching from remote sources. Shared persistence backend read/write integration is explicitly represented."
+    },
+    {
+      "requirementId": "req-2.6-04",
+      "description": "The system shall record and display vehicle track history as styled polylines on the operational picture.",
+      "coveredByNodes": [
+        "node-cop02-track-recorder",
+        "node-cop02-track-renderer",
+        "node-cop02-track-store"
+      ],
+      "coveredByEdges": [
+        "edge-cop02-vehicle-to-tr",
+        "edge-cop02-tr-to-tst",
+        "edge-cop02-tst-to-tren",
+        "edge-cop02-tren-to-renderer",
+        "edge-cop02-tst-to-persistence",
+        "edge-cop02-persistence-to-tst"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Full pipeline: position ingestion → recording → persistence → retrieval → rendering → map compositing. Shared persistence backend read/write integration is explicitly represented."
+    },
+    {
+      "requirementId": "req-2.6-05",
+      "description": "The system shall support configurable track styling including per-vehicle color, line width, and age-based opacity fade.",
+      "coveredByNodes": [
+        "node-cop02-track-renderer"
+      ],
+      "coveredByEdges": [
+        "edge-cop02-tst-to-tren",
+        "edge-cop02-tr-to-tren-live",
+        "edge-cop02-tren-to-renderer"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Track Renderer applies configurable styling parameters to both live and historical track data before output."
+    },
+    {
+      "requirementId": "req-2.6-06",
+      "description": "The system shall support track management operations including clear, export, and filter by vehicle identifier and time range.",
+      "coveredByNodes": [
+        "node-cop02-track-recorder",
+        "node-cop02-track-store"
+      ],
+      "coveredByEdges": [
+        "edge-cop02-core-to-tr",
+        "edge-cop02-tr-to-tst",
+        "edge-cop02-tst-to-tren"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "COP Orchestrator sends track control commands; Track Recorder manages recording lifecycle; Track Store supports filtered queries and export."
+    },
+    {
+      "requirementId": "req-2.6-07",
+      "description": "The system shall update vehicle tracks in real time as new position data arrives from connected vehicles.",
+      "coveredByNodes": [
+        "node-cop02-track-recorder",
+        "node-cop02-track-renderer"
+      ],
+      "coveredByEdges": [
+        "edge-cop02-vehicle-to-tr",
+        "edge-cop02-tr-to-tren-live"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Live track extension events bypass persistence for immediate display; persistence occurs asynchronously."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-026",
+      "description": "Terrain elevation data sources provide data in standard DEM formats (e.g., GeoTIFF, HGT) accessible via tile-based or file-based interfaces.",
+      "rationale": "DEM formats are well-standardized in the geospatial community; the Terrain Data Source abstracts format differences."
+    },
+    {
+      "id": "AS-027",
+      "description": "Track recording sampling rate is configurable per vehicle and defaults to a rate that balances track fidelity with storage efficiency.",
+      "rationale": "High-frequency position data (e.g., 50 Hz) would produce excessive track data; downsampling is necessary for display purposes."
+    },
+    {
+      "id": "AS-028",
+      "description": "The Terrain Tile Cache and Track Data Store use the Data Persistence Engine as their underlying storage backend but maintain separate namespaces and retention policies.",
+      "rationale": "Terrain tiles and track data have different access patterns, sizes, and lifecycle requirements."
+    },
+    {
+      "id": "AS-029",
+      "description": "Track data retention is governed by a configurable policy (e.g., maximum age, maximum storage size) enforced by the Track Data Store.",
+      "rationale": "Unbounded track accumulation would eventually exhaust storage; retention must be mission-configurable."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-030",
+      "description": "Default terrain data source and fallback chain (e.g., local DEM files → cached tiles → remote tile server).",
+      "impact": "Affects Terrain Data Source's fetch strategy and offline capability.",
+      "owner": "Deployment Architecture"
+    },
+    {
+      "id": "UD-031",
+      "description": "Terrain analysis resolution and computation method for slope and line-of-sight overlays.",
+      "impact": "Affects Terrain Processor's computational load and visual accuracy.",
+      "owner": "Geospatial Architecture"
+    },
+    {
+      "id": "UD-032",
+      "description": "Track data storage format and indexing strategy for efficient spatial-temporal queries.",
+      "impact": "Affects Track Data Store's query performance and storage footprint.",
+      "owner": "Data Architecture"
+    },
+    {
+      "id": "UD-033",
+      "description": "Maximum track history duration and per-vehicle track segment count retained in the Track Data Store.",
+      "impact": "Affects storage requirements and track rendering performance for long-duration missions.",
+      "owner": "Operations Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-15",
+    "lastModified": "2026-10-31"
+  }
+}

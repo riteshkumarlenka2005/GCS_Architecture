@@ -201,6 +201,18 @@
   border: 1px solid rgba(6, 182, 212, 0.3);
 }
 
+.canvas-item-badge.category-cop {
+  background: rgba(16, 185, 129, 0.18);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.canvas-item-badge.category-plan {
+  background: rgba(245, 158, 11, 0.18);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
 .canvas-item-rename {
   display: grid;
   place-items: center;

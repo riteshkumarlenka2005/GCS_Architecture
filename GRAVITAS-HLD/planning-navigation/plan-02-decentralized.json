@@ -1,0 +1,1284 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-plan-02",
+  "title": "Route Planning & Replanning Architecture",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of three route planning engines: Global Route Planner (eng-plan-global-route) for end-to-end route computation and waypoint optimization; Local Replanner (eng-plan-local-replan) for plan monitoring, deviation detection, and local route repair; and Reactive Avoidance (eng-plan-reactive-avoidance) for real-time collision prevention. Details the layered planning hierarchy from global route through local replan to reactive maneuver, with integration to the Hybrid Coordinator, Motion Model Engine, COP terrain and obstacle data, Vehicle State Store, and Core Event Bus.",
+  "category": "plan",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1400,
+    "height": 950,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-plan02-global",
+      "label": "Global Route Planning",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-plan02-global-router",
+        "node-plan02-waypoint-opt"
+      ],
+      "style": {
+        "backgroundColor": "rgba(245, 158, 11, 0.05)",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-plan02-local",
+      "label": "Local Replanning & Reactive Avoidance",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-plan02-local-replanner",
+        "node-plan02-reactive"
+      ],
+      "style": {
+        "backgroundColor": "rgba(239, 68, 68, 0.04)",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-plan02-global-router",
+      "label": "Global Route Planner",
+      "type": "component",
+      "engineId": "eng-plan-global-route",
+      "description": "Computes end-to-end routes from origin to destination across the operational area. Ingests mission objectives from the Hybrid Planning Coordinator, queries terrain traversability data from the COP Terrain Processor, incorporates geofence and no-fly-zone constraints from the COP Orchestrator, and evaluates candidate routes against vehicle motion constraints from the Motion Model Engine. Produces a globally optimal route as an ordered sequence of waypoints with associated altitude, speed, and heading constraints. Supports multi-objective route optimization balancing distance, energy, time, and risk.",
+      "position": {
+        "x": 120,
+        "y": 120
+      },
+      "size": {
+        "width": 250,
+        "height": 190
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "route"
+      },
+      "ports": [
+        {
+          "id": "port-plan02-gr-in-objectives",
+          "label": "Route Objectives",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-plan02-gr-in-terrain",
+          "label": "Terrain Traversability",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan02-gr-in-constraints",
+          "label": "Spatial Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan02-gr-out-motion-q",
+          "label": "Motion Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan02-gr-in-motion",
+          "label": "Motion Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan02-gr-out-route",
+          "label": "Global Route",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-plan02-waypoint-opt",
+      "label": "Waypoint Optimizer",
+      "type": "component",
+      "engineId": "eng-plan-global-route",
+      "description": "Refines the global route produced by the Global Route Planner through waypoint placement optimization, ordering, and smoothing. Eliminates redundant waypoints, adjusts waypoint spacing based on vehicle turn radius and terrain complexity, applies altitude and speed profile optimization along the route, and ensures all waypoints satisfy vehicle kinematic constraints. Outputs the final optimized waypoint sequence to the Local Replanner for execution monitoring and to the Hybrid Coordinator for plan integration.",
+      "position": {
+        "x": 500,
+        "y": 120
+      },
+      "size": {
+        "width": 230,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "bezier-curve"
+      },
+      "ports": [
+        {
+          "id": "port-plan02-wo-in-route",
+          "label": "Raw Global Route",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan02-wo-out-optimized",
+          "label": "Optimized Waypoints",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan02-wo-out-to-replan",
+          "label": "Route to Replanner",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        }
+      ]
+    },
+    {
+      "id": "node-plan02-local-replanner",
+      "label": "Local Replanner",
+      "type": "component",
+      "engineId": "eng-plan-local-replan",
+      "description": "Monitors active plan execution against the optimized global route and triggers local replanning when deviations exceed configurable thresholds or when new obstacles and constraints are detected. Compares actual vehicle position from the Vehicle State Store against the planned route, evaluates deviation magnitude and trend, queries the Motion Model Engine for feasible local detours, and produces a repaired local route segment that reconnects to the global route at the nearest feasible rejoin point. Publishes replan events to the Core Event Bus for operator awareness.",
+      "position": {
+        "x": 500,
+        "y": 420
+      },
+      "size": {
+        "width": 250,
+        "height": 190
+      },
+      "style": {
+        "backgroundColor": "#2a1a1e",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "arrows-spin"
+      },
+      "ports": [
+        {
+          "id": "port-plan02-lr-in-route",
+          "label": "Optimized Route In",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan02-lr-in-vehicle",
+          "label": "Vehicle Position",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan02-lr-in-obstacles",
+          "label": "New Obstacles",
+          "direction": "in",
+          "dataType": "event",
+          "position": "left"
+        },
+        {
+          "id": "port-plan02-lr-out-motion-q",
+          "label": "Detour Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan02-lr-in-motion",
+          "label": "Detour Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan02-lr-out-repair",
+          "label": "Repaired Route Segment",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan02-lr-out-events",
+          "label": "Replan Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "right"
+        },
+        {
+          "id": "port-plan02-lr-in-recovery",
+          "label": "Post-Avoidance Reconciliation",
+          "direction": "in",
+          "dataType": "event",
+          "position": "left"
+        }
+      ]
+    },
+    {
+      "id": "node-plan02-reactive",
+      "label": "Reactive Avoidance Controller",
+      "type": "component",
+      "engineId": "eng-plan-reactive-avoidance",
+      "description": "Provides the lowest-latency layer of the planning hierarchy for real-time collision avoidance. Continuously monitors the vehicle's immediate surroundings for imminent collision threats using sensor-derived obstacle data from the Core Event Bus. When a threat is detected within the reactive safety envelope, the Reactive Avoidance Controller computes an immediate evasive maneuver constrained by the Motion Model Engine's maximum dynamic capabilities, overrides the current plan segment with the avoidance maneuver, and signals the Local Replanner to compute a new local route once the threat is cleared. Operates at the highest update rate in the planning stack.",
+      "position": {
+        "x": 120,
+        "y": 520
+      },
+      "size": {
+        "width": 250,
+        "height": 180
+      },
+      "style": {
+        "backgroundColor": "#2a1a1e",
+        "borderColor": "#ef4444",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "shield-halved"
+      },
+      "ports": [
+        {
+          "id": "port-plan02-ra-in-threats",
+          "label": "Imminent Threats",
+          "direction": "in",
+          "dataType": "event",
+          "position": "top"
+        },
+        {
+          "id": "port-plan02-ra-in-vehicle",
+          "label": "Vehicle State",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan02-ra-out-motion-q",
+          "label": "Evasive Maneuver Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan02-ra-in-motion",
+          "label": "Maneuver Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan02-ra-out-maneuver",
+          "label": "Evasive Maneuver",
+          "direction": "out",
+          "dataType": "command",
+          "position": "right"
+        },
+        {
+          "id": "port-plan02-ra-out-alert",
+          "label": "Avoidance Alert",
+          "direction": "out",
+          "dataType": "event",
+          "position": "right"
+        },
+        {
+          "id": "port-plan02-ra-out-execution",
+          "label": "Emergency Maneuver Command",
+          "direction": "out",
+          "dataType": "command",
+          "position": "right"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-plan02-gr-to-wo",
+      "source": "node-plan02-global-router",
+      "target": "node-plan02-waypoint-opt",
+      "sourcePort": "port-plan02-gr-out-route",
+      "targetPort": "port-plan02-wo-in-route",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Raw Global Route",
+        "description": "Global Route Planner delivers the computed end-to-end route as a sequence of candidate waypoints to the Waypoint Optimizer for refinement.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-wo-to-lr",
+      "source": "node-plan02-waypoint-opt",
+      "target": "node-plan02-local-replanner",
+      "sourcePort": "port-plan02-wo-out-to-replan",
+      "targetPort": "port-plan02-lr-in-route",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Optimized Route for Execution",
+        "description": "Waypoint Optimizer delivers the final optimized waypoint sequence to the Local Replanner for execution monitoring and deviation tracking.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-gr-to-motion",
+      "source": "node-plan02-global-router",
+      "target": "node-plan01-motion",
+      "sourcePort": "port-plan02-gr-out-motion-q",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Route Feasibility Query",
+        "description": "Global Route Planner queries the Motion Model Engine to validate that candidate route segments are kinematically and dynamically achievable for the target vehicle.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 8,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-motion-to-gr",
+      "source": "node-plan01-motion",
+      "target": "node-plan02-global-router",
+      "sourcePort": null,
+      "targetPort": "port-plan02-gr-in-motion",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Motion Constraints for Route",
+        "description": "Motion Model Engine returns vehicle-specific kinematic and dynamic constraints that bound the global route search space.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 8,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-lr-to-motion",
+      "source": "node-plan02-local-replanner",
+      "target": "node-plan01-motion",
+      "sourcePort": "port-plan02-lr-out-motion-q",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Detour Feasibility Query",
+        "description": "Local Replanner queries the Motion Model Engine for feasible local detour trajectories that satisfy vehicle kinematic constraints.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 8,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-motion-to-lr",
+      "source": "node-plan01-motion",
+      "target": "node-plan02-local-replanner",
+      "sourcePort": null,
+      "targetPort": "port-plan02-lr-in-motion",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Detour Constraints",
+        "description": "Motion Model Engine returns achievable trajectory bounds for the local replanning search space.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 8,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-ra-to-motion",
+      "source": "node-plan02-reactive",
+      "target": "node-plan01-motion",
+      "sourcePort": "port-plan02-ra-out-motion-q",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Evasive Maneuver Query",
+        "description": "Reactive Avoidance Controller queries the Motion Model Engine for the maximum dynamic capabilities (emergency turn rate, climb rate, deceleration) available for evasive maneuvers.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 8,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-motion-to-ra",
+      "source": "node-plan01-motion",
+      "target": "node-plan02-reactive",
+      "sourcePort": null,
+      "targetPort": "port-plan02-ra-in-motion",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Emergency Maneuver Bounds",
+        "description": "Motion Model Engine returns the maximum dynamic envelope for emergency maneuvers constrained by current vehicle state and configuration.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 8,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-hybrid-to-gr",
+      "source": "node-plan01-hybrid",
+      "target": "node-plan02-global-router",
+      "sourcePort": null,
+      "targetPort": "port-plan02-gr-in-objectives",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Route Planning Objectives",
+        "description": "Hybrid Planning Coordinator dispatches route planning requests with mission objectives, origin, destination, and optimization priorities to the Global Route Planner.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-wo-to-hybrid",
+      "source": "node-plan02-waypoint-opt",
+      "target": "node-plan01-hybrid",
+      "sourcePort": "port-plan02-wo-out-optimized",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Optimized Global Route",
+        "description": "Waypoint Optimizer returns the final optimized route to the Hybrid Planning Coordinator for integration into the unified plan.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-terrain-to-gr",
+      "source": "node-cop02-terrain-processor",
+      "target": "node-plan02-global-router",
+      "sourcePort": null,
+      "targetPort": "port-plan02-gr-in-terrain",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Terrain Traversability Data",
+        "description": "COP Terrain Processor provides terrain elevation and traversability analysis to the Global Route Planner for terrain-aware route computation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-cop-to-gr",
+      "source": "node-cop01-core",
+      "target": "node-plan02-global-router",
+      "sourcePort": null,
+      "targetPort": "port-plan02-gr-in-constraints",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Geofence & Obstacle Constraints",
+        "description": "COP Orchestrator provides active geofence boundaries and known obstacle positions as exclusion zones for the global route search.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-vehicle-to-lr",
+      "source": "node-core03-state-store",
+      "target": "node-plan02-local-replanner",
+      "sourcePort": null,
+      "targetPort": "port-plan02-lr-in-vehicle",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Current Vehicle Position",
+        "description": "Vehicle State Store provides real-time vehicle position and velocity to the Local Replanner for deviation monitoring against the planned route.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-vehicle-to-ra",
+      "source": "node-core03-state-store",
+      "target": "node-plan02-reactive",
+      "sourcePort": null,
+      "targetPort": "port-plan02-ra-in-vehicle",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Vehicle State for Avoidance",
+        "description": "Vehicle State Store provides current vehicle position, velocity, and attitude to the Reactive Avoidance Controller for immediate threat assessment.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-bus-to-lr-obstacles",
+      "source": "node-core04-event-bus",
+      "target": "node-plan02-local-replanner",
+      "sourcePort": null,
+      "targetPort": "port-plan02-lr-in-obstacles",
+      "semantic": {
+        "type": "event",
+        "label": "New Obstacle Detections",
+        "description": "Core Event Bus delivers dynamic obstacle detection events to the Local Replanner, triggering route repair when new obstacles intersect the planned route.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-bus-to-ra-threats",
+      "source": "node-core04-event-bus",
+      "target": "node-plan02-reactive",
+      "sourcePort": null,
+      "targetPort": "port-plan02-ra-in-threats",
+      "semantic": {
+        "type": "event",
+        "label": "Imminent Collision Threats",
+        "description": "Core Event Bus delivers high-priority imminent collision threat events from sensor processing to the Reactive Avoidance Controller for immediate evasive action.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-lr-to-bus",
+      "source": "node-plan02-local-replanner",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-plan02-lr-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Replan Events",
+        "description": "Local Replanner publishes replan trigger and completion events to the Core Event Bus for operator awareness and downstream plan synchronization.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-lr-to-hybrid",
+      "source": "node-plan02-local-replanner",
+      "target": "node-plan01-hybrid",
+      "sourcePort": "port-plan02-lr-out-repair",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Repaired Route Segment",
+        "description": "Local Replanner delivers the repaired local route segment to the Hybrid Planning Coordinator for integration into the active plan.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-ra-to-bus",
+      "source": "node-plan02-reactive",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-plan02-ra-out-alert",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Avoidance Maneuver Alert",
+        "description": "Reactive Avoidance Controller publishes high-priority avoidance maneuver alerts to the Core Event Bus for operator notification and safety logging.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan02-ra-to-lr-recovery",
+      "source": "node-plan02-reactive",
+      "target": "node-plan02-local-replanner",
+      "sourcePort": "port-plan02-ra-out-alert",
+      "targetPort": "port-plan02-lr-in-recovery",
+      "semantic": {
+        "type": "event",
+        "direction": "unidirectional",
+        "label": "Avoidance Complete / Replan Required",
+        "protocol": null,
+        "dataType": "event",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Reactive Avoidance signals the Local Replanner after an evasive maneuver so the active route can be reconciled and a safe rejoin segment computed.",
+        "requirementIds": [
+          "req-2.13-04",
+          "req-2.13-05"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#fbbf24",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "dotted",
+        "labelPosition": "center",
+        "zIndex": 8
+      }
+    },
+    {
+      "id": "edge-plan02-ra-to-command-dispatch",
+      "source": "node-plan02-reactive",
+      "target": "node-core02-command-dispatch",
+      "sourcePort": "port-plan02-ra-out-execution",
+      "targetPort": null,
+      "semantic": {
+        "type": "command-flow",
+        "direction": "unidirectional",
+        "label": "Emergency Maneuver Command",
+        "protocol": null,
+        "dataType": "command",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Reactive Avoidance sends the time-critical evasive maneuver command to the command-dispatch boundary for vehicle execution.",
+        "requirementIds": [
+          "req-2.13-05"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#ef4444",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 8
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-plan01-hybrid",
+      "sourceDocumentId": "doc-plan-01",
+      "engineId": "eng-plan-hybrid",
+      "label": "Hybrid Planning Coordinator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-plan01-motion",
+      "sourceDocumentId": "doc-plan-01",
+      "engineId": "eng-plan-motion-model",
+      "label": "Motion Model Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#f59e0b",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop02-terrain-processor",
+      "sourceDocumentId": "doc-cop-02",
+      "engineId": "eng-cop-terrain",
+      "label": "Terrain Processor",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop01-core",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-core",
+      "label": "COP Orchestrator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core03-state-store",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-vehicle-state",
+      "label": "Vehicle State Store",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core04-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core02-command-dispatch",
+      "sourceDocumentId": "doc-core-02",
+      "engineId": "eng-core-command-dispatch",
+      "label": "Command Dispatch Engine",
+      "type": "component",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#ef4444",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-plan-global-route",
+      "localNodeId": "node-plan02-global-router",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-local-replan",
+      "localNodeId": "node-plan02-local-replanner",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-reactive-avoidance",
+      "localNodeId": "node-plan02-reactive",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.13-01",
+      "description": "The system shall compute globally optimal routes from origin to destination considering terrain, airspace constraints, and vehicle capabilities.",
+      "coveredByNodes": [
+        "node-plan02-global-router",
+        "node-plan02-waypoint-opt"
+      ],
+      "coveredByEdges": [
+        "edge-plan02-gr-to-wo",
+        "edge-plan02-gr-to-motion",
+        "edge-plan02-terrain-to-gr",
+        "edge-plan02-cop-to-gr"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Global Route Planner integrates terrain, geofence, and motion constraints; Waypoint Optimizer refines the route for kinematic feasibility."
+    },
+    {
+      "requirementId": "req-2.13-02",
+      "description": "The system shall optimize waypoint placement, ordering, and spacing based on vehicle turn radius and terrain complexity.",
+      "coveredByNodes": [
+        "node-plan02-waypoint-opt"
+      ],
+      "coveredByEdges": [
+        "edge-plan02-gr-to-wo",
+        "edge-plan02-wo-to-lr",
+        "edge-plan02-wo-to-hybrid"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Waypoint Optimizer adjusts spacing and ordering using motion model constraints and terrain data inherited from the global route."
+    },
+    {
+      "requirementId": "req-2.13-03",
+      "description": "The system shall monitor plan execution and detect deviations from the planned route exceeding configurable thresholds.",
+      "coveredByNodes": [
+        "node-plan02-local-replanner"
+      ],
+      "coveredByEdges": [
+        "edge-plan02-wo-to-lr",
+        "edge-plan02-vehicle-to-lr",
+        "edge-plan02-lr-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Local Replanner continuously compares actual vehicle position against the optimized route and publishes deviation events."
+    },
+    {
+      "requirementId": "req-2.13-04",
+      "description": "The system shall perform local replanning to repair routes when deviations or new obstacles are detected, reconnecting to the global route at the nearest feasible point.",
+      "coveredByNodes": [
+        "node-plan02-local-replanner"
+      ],
+      "coveredByEdges": [
+        "edge-plan02-lr-to-motion",
+        "edge-plan02-motion-to-lr",
+        "edge-plan02-bus-to-lr-obstacles",
+        "edge-plan02-lr-to-hybrid",
+        "edge-plan02-ra-to-lr-recovery"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Local Replanner repairs deviations and obstacle conflicts; post-avoidance reconciliation explicitly returns control to local replanning to compute a safe route rejoin."
+    },
+    {
+      "requirementId": "req-2.13-05",
+      "description": "The system shall provide real-time reactive obstacle avoidance with the lowest latency in the planning hierarchy for imminent collision threats.",
+      "coveredByNodes": [
+        "node-plan02-reactive"
+      ],
+      "coveredByEdges": [
+        "edge-plan02-bus-to-ra-threats",
+        "edge-plan02-ra-to-motion",
+        "edge-plan02-motion-to-ra",
+        "edge-plan02-vehicle-to-ra",
+        "edge-plan02-ra-to-command-dispatch",
+        "edge-plan02-ra-to-lr-recovery"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Reactive Avoidance consumes threat and vehicle-state inputs, queries the motion envelope, issues the immediate maneuver command through Command Dispatch, and signals post-maneuver reconciliation."
+    },
+    {
+      "requirementId": "req-2.13-06",
+      "description": "The system shall support multi-objective route optimization balancing distance, energy consumption, time, and risk.",
+      "coveredByNodes": [
+        "node-plan02-global-router"
+      ],
+      "coveredByEdges": [
+        "edge-plan02-hybrid-to-gr",
+        "edge-plan02-gr-to-wo"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Global Route Planner evaluates candidate routes against multiple optimization objectives; specific cost functions are detailed in doc-plan-04."
+    },
+    {
+      "requirementId": "req-2.14-01",
+      "description": "The system shall integrate terrain traversability analysis into the route planning process for ground and low-altitude operations.",
+      "coveredByNodes": [
+        "node-plan02-global-router"
+      ],
+      "coveredByEdges": [
+        "edge-plan02-terrain-to-gr",
+        "edge-plan02-gr-to-wo"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Terrain Processor provides traversability data; Global Route Planner incorporates it into the route cost function."
+    },
+    {
+      "requirementId": "req-2.14-02",
+      "description": "The system shall publish route replan events and avoidance maneuver alerts for operator awareness and safety audit.",
+      "coveredByNodes": [
+        "node-plan02-local-replanner",
+        "node-plan02-reactive"
+      ],
+      "coveredByEdges": [
+        "edge-plan02-lr-to-bus",
+        "edge-plan02-ra-to-bus"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Local Replanner and Reactive Avoidance publish replan/avoidance events to the Core Event Bus for operator awareness and safety audit."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-043",
+      "description": "The planning hierarchy operates at three distinct time scales: global route (seconds to minutes), local replan (hundreds of milliseconds to seconds), and reactive avoidance (tens of milliseconds).",
+      "rationale": "Layered planning ensures that slow global optimization does not block fast reactive responses; each layer has bounded computation time."
+    },
+    {
+      "id": "AS-044",
+      "description": "The Reactive Avoidance Controller can override the active plan segment without waiting for Local Replanner or Hybrid Coordinator approval, with post-maneuver reconciliation handled asynchronously.",
+      "rationale": "Collision avoidance is safety-critical and cannot tolerate the latency of higher-level planning approval."
+    },
+    {
+      "id": "AS-045",
+      "description": "Terrain traversability data is available at a resolution sufficient for route planning (e.g., 10–30 m grid) and is updated when new terrain data is ingested by the COP.",
+      "rationale": "Route planning requires terrain data at a scale commensurate with vehicle maneuverability; the specific resolution is a deployment decision."
+    },
+    {
+      "id": "AS-046",
+      "description": "The Local Replanner's deviation threshold is configurable per mission and vehicle type, with tighter thresholds for precision operations and looser thresholds for transit flights.",
+      "rationale": "Different mission phases have different tolerance for route deviation; a single fixed threshold would be inappropriate."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-046",
+      "description": "Global route planning algorithm and search space discretization (e.g., grid-based A*, visibility graph, sampling-based RRT*).",
+      "impact": "Affects route optimality, computation time, and scalability to large operational areas.",
+      "owner": "Planning Architecture"
+    },
+    {
+      "id": "UD-047",
+      "description": "Local replanning trigger thresholds: cross-track deviation distance, along-track timing error, and obstacle proximity distance.",
+      "impact": "Affects Local Replanner's sensitivity and the frequency of route repairs.",
+      "owner": "Operations Architecture"
+    },
+    {
+      "id": "UD-048",
+      "description": "Reactive avoidance safety envelope size and the time-to-collision threshold for evasive maneuver activation.",
+      "impact": "Affects Reactive Avoidance Controller's activation timing and the trade-off between false positives and collision risk.",
+      "owner": "Safety Architecture"
+    },
+    {
+      "id": "UD-049",
+      "description": "Route rejoin strategy after local replanning or reactive avoidance: nearest-point rejoin, next-waypoint rejoin, or full re-route.",
+      "impact": "Affects plan continuity and the computational cost of post-deviation recovery.",
+      "owner": "Planning Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-15",
+    "lastModified": "2026-10-31"
+  }
+}

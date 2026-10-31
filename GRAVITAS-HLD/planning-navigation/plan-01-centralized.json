@@ -1,0 +1,1193 @@
+{
+  "schemaVersion": "1.0.0",
+  "documentId": "doc-plan-01",
+  "title": "Planning Architecture Modes & Motion Modeling",
+  "diagramType": "subsystem-architecture",
+  "description": "Internal architecture of the foundational Planning engines: Centralized Planner (eng-plan-centralized), Decentralized Planner (eng-plan-decentralized), Hybrid Planning Coordinator (eng-plan-hybrid), and Motion Model Engine (eng-plan-motion-model). Details the planning mode selection logic, delegation patterns between centralized and decentralized modes, automatic fallback on connectivity loss, and the vehicle kinematic/dynamic motion models that constrain all planning outputs. Shows integration with the Vehicle State Store, Core Event Bus, COP Orchestrator, and Network Routing Engine.",
+  "category": "plan",
+  "coordinateSystem": {
+    "type": "cartesian",
+    "unit": "px",
+    "origin": "top-left"
+  },
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "width": 1200,
+    "height": 900,
+    "zoom": 1.0
+  },
+  "groups": [
+    {
+      "id": "grp-plan01-modes",
+      "label": "Planning Mode Engines",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-plan01-hybrid",
+        "node-plan01-centralized",
+        "node-plan01-decentralized"
+      ],
+      "style": {
+        "backgroundColor": "rgba(245, 158, 11, 0.05)",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 12,
+        "padding": 30
+      }
+    },
+    {
+      "id": "grp-plan01-motion",
+      "label": "Motion Modeling",
+      "type": "functional-group",
+      "nodeIds": [
+        "node-plan01-motion"
+      ],
+      "style": {
+        "backgroundColor": "rgba(245, 158, 11, 0.04)",
+        "borderColor": "#f59e0b",
+        "borderWidth": 1,
+        "borderStyle": "dotted",
+        "cornerRadius": 8,
+        "padding": 20
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "id": "node-plan01-hybrid",
+      "label": "Hybrid Planning Coordinator",
+      "type": "component",
+      "engineId": "eng-plan-hybrid",
+      "description": "Orchestrates the planning mode lifecycle and coordinates between centralized and decentralized planning. Evaluates operational context (vehicle count, network connectivity, mission criticality, latency requirements) to select the optimal planning mode. Delegates planning tasks to the Centralized Planner when full network connectivity is available, falls back to the Decentralized Planner when connectivity is degraded, and merges partial plans from both modes during hybrid operation. Publishes mode-transition events and the unified plan output to the Core Event Bus for downstream execution and visualization.",
+      "position": {
+        "x": 380,
+        "y": 80
+      },
+      "size": {
+        "width": 260,
+        "height": 190
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "sitemap"
+      },
+      "ports": [
+        {
+          "id": "port-plan01-hy-in-mission",
+          "label": "Mission Objectives",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-plan01-hy-in-connectivity",
+          "label": "Connectivity Status",
+          "direction": "in",
+          "dataType": "event",
+          "position": "left"
+        },
+        {
+          "id": "port-plan01-hy-in-constraints",
+          "label": "Spatial Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan01-hy-in-centralized",
+          "label": "Centralized Plan",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan01-hy-in-decentralized",
+          "label": "Decentralized Plan",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan01-hy-out-to-central",
+          "label": "Delegate Centralized",
+          "direction": "out",
+          "dataType": "control",
+          "position": "left"
+        },
+        {
+          "id": "port-plan01-hy-out-to-decentral",
+          "label": "Delegate Decentralized",
+          "direction": "out",
+          "dataType": "control",
+          "position": "right"
+        },
+        {
+          "id": "port-plan01-hy-out-plan",
+          "label": "Unified Plan",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan01-hy-out-events",
+          "label": "Mode Events",
+          "direction": "out",
+          "dataType": "event",
+          "position": "left"
+        },
+        {
+          "id": "port-plan01-hy-out-constraints-central",
+          "label": "Constraints to Centralized",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan01-hy-out-constraints-decentral",
+          "label": "Constraints to Decentralized",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-plan01-centralized",
+      "label": "Centralized Planner",
+      "type": "component",
+      "engineId": "eng-plan-centralized",
+      "description": "Computes optimal plans for all vehicles from a single planning authority with full global state visibility. Receives planning delegations from the Hybrid Coordinator, ingests current vehicle states from the Vehicle State Store, queries the Motion Model Engine for kinematic and dynamic constraints, and produces globally optimized plans that account for all vehicles simultaneously. Best suited for scenarios with reliable high-bandwidth connectivity and moderate vehicle fleet sizes where global optimality is preferred over planning latency.",
+      "position": {
+        "x": 80,
+        "y": 380
+      },
+      "size": {
+        "width": 240,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "server"
+      },
+      "ports": [
+        {
+          "id": "port-plan01-cp-in-delegate",
+          "label": "Planning Delegation",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-plan01-cp-in-vehicles",
+          "label": "Vehicle States",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan01-cp-in-motion",
+          "label": "Motion Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan01-cp-out-plan",
+          "label": "Centralized Plan",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan01-cp-out-motion-q",
+          "label": "Motion Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan01-cp-in-constraints",
+          "label": "Spatial Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        }
+      ]
+    },
+    {
+      "id": "node-plan01-decentralized",
+      "label": "Decentralized Planner",
+      "type": "component",
+      "engineId": "eng-plan-decentralized",
+      "description": "Computes plans locally on each vehicle or in peer-to-peer planning groups without requiring a central authority. Receives planning delegations from the Hybrid Coordinator, uses locally available vehicle state and sensor data, queries the Motion Model Engine for vehicle-specific constraints, and produces locally optimal plans that are shared with peer planners for coordination. Designed for degraded-connectivity scenarios, single-vehicle operations, and latency-critical reactive planning where waiting for centralized computation is unacceptable.",
+      "position": {
+        "x": 700,
+        "y": 380
+      },
+      "size": {
+        "width": 240,
+        "height": 170
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "network-wired"
+      },
+      "ports": [
+        {
+          "id": "port-plan01-dp-in-delegate",
+          "label": "Planning Delegation",
+          "direction": "in",
+          "dataType": "control",
+          "position": "top"
+        },
+        {
+          "id": "port-plan01-dp-in-vehicles",
+          "label": "Local Vehicle States",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan01-dp-in-motion",
+          "label": "Motion Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan01-dp-out-plan",
+          "label": "Decentralized Plan",
+          "direction": "out",
+          "dataType": "data",
+          "position": "top"
+        },
+        {
+          "id": "port-plan01-dp-out-motion-q",
+          "label": "Motion Query",
+          "direction": "out",
+          "dataType": "data",
+          "position": "bottom"
+        },
+        {
+          "id": "port-plan01-dp-in-constraints",
+          "label": "Spatial Constraints",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        }
+      ]
+    },
+    {
+      "id": "node-plan01-motion",
+      "label": "Motion Model Engine",
+      "type": "component",
+      "engineId": "eng-plan-motion-model",
+      "description": "Provides vehicle kinematic and dynamic motion models that constrain all planning computations. Maintains a library of parameterized motion models for each supported vehicle type (fixed-wing, multirotor, ground vehicle, etc.) including turn radius, climb/descent rate, acceleration limits, and velocity envelopes. Responds to motion feasibility queries from the Centralized and Decentralized Planners, returning the set of kinematically and dynamically achievable trajectories for a given vehicle state and control input range. Motion model parameters are configurable per vehicle instance to account for payload, battery state, and environmental conditions.",
+      "position": {
+        "x": 380,
+        "y": 660
+      },
+      "size": {
+        "width": 260,
+        "height": 160
+      },
+      "style": {
+        "backgroundColor": "#2a2210",
+        "borderColor": "#f59e0b",
+        "borderWidth": 2,
+        "borderStyle": "solid",
+        "cornerRadius": 8,
+        "textColor": "#e2e8f0",
+        "fontSize": 13,
+        "icon": "gears"
+      },
+      "ports": [
+        {
+          "id": "port-plan01-mm-in-query-c",
+          "label": "Query from Centralized",
+          "direction": "in",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan01-mm-in-query-d",
+          "label": "Query from Decentralized",
+          "direction": "in",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan01-mm-out-c",
+          "label": "Constraints to Centralized",
+          "direction": "out",
+          "dataType": "data",
+          "position": "left"
+        },
+        {
+          "id": "port-plan01-mm-out-d",
+          "label": "Constraints to Decentralized",
+          "direction": "out",
+          "dataType": "data",
+          "position": "right"
+        },
+        {
+          "id": "port-plan01-mm-in-vehicle-config",
+          "label": "Vehicle Configuration & State Parameters",
+          "direction": "in",
+          "dataType": "data",
+          "position": "top"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-plan01-hy-to-cp",
+      "source": "node-plan01-hybrid",
+      "target": "node-plan01-centralized",
+      "sourcePort": "port-plan01-hy-out-to-central",
+      "targetPort": "port-plan01-cp-in-delegate",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Delegate Centralized Planning",
+        "description": "Hybrid Coordinator delegates the planning task to the Centralized Planner when network connectivity and fleet size favor global optimization.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-hy-to-dp",
+      "source": "node-plan01-hybrid",
+      "target": "node-plan01-decentralized",
+      "sourcePort": "port-plan01-hy-out-to-decentral",
+      "targetPort": "port-plan01-dp-in-delegate",
+      "semantic": {
+        "type": "control-flow",
+        "label": "Delegate Decentralized Planning",
+        "description": "Hybrid Coordinator delegates the planning task to the Decentralized Planner when connectivity is degraded or latency-critical local planning is required.",
+        "protocol": null,
+        "dataType": "control",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#8b5cf6",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-cp-to-hy",
+      "source": "node-plan01-centralized",
+      "target": "node-plan01-hybrid",
+      "sourcePort": "port-plan01-cp-out-plan",
+      "targetPort": "port-plan01-hy-in-centralized",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Centralized Plan Result",
+        "description": "Centralized Planner returns the globally optimized plan for all vehicles to the Hybrid Coordinator for integration into the unified plan.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-dp-to-hy",
+      "source": "node-plan01-decentralized",
+      "target": "node-plan01-hybrid",
+      "sourcePort": "port-plan01-dp-out-plan",
+      "targetPort": "port-plan01-hy-in-decentralized",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Decentralized Plan Result",
+        "description": "Decentralized Planner returns locally optimized plans from each vehicle or peer group to the Hybrid Coordinator for merging.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-cp-to-mm",
+      "source": "node-plan01-centralized",
+      "target": "node-plan01-motion",
+      "sourcePort": "port-plan01-cp-out-motion-q",
+      "targetPort": "port-plan01-mm-in-query-c",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Motion Feasibility Query",
+        "description": "Centralized Planner queries the Motion Model Engine for kinematic and dynamic feasibility of candidate trajectories during global plan optimization.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-mm-to-cp",
+      "source": "node-plan01-motion",
+      "target": "node-plan01-centralized",
+      "sourcePort": "port-plan01-mm-out-c",
+      "targetPort": "port-plan01-cp-in-motion",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Motion Constraints",
+        "description": "Motion Model Engine returns vehicle-specific kinematic and dynamic constraints (turn radius, climb rate, velocity envelope) to the Centralized Planner.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-dp-to-mm",
+      "source": "node-plan01-decentralized",
+      "target": "node-plan01-motion",
+      "sourcePort": "port-plan01-dp-out-motion-q",
+      "targetPort": "port-plan01-mm-in-query-d",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Motion Feasibility Query",
+        "description": "Decentralized Planner queries the Motion Model Engine for vehicle-specific motion constraints during local plan computation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-mm-to-dp",
+      "source": "node-plan01-motion",
+      "target": "node-plan01-decentralized",
+      "sourcePort": "port-plan01-mm-out-d",
+      "targetPort": "port-plan01-dp-in-motion",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Motion Constraints",
+        "description": "Motion Model Engine returns vehicle-specific kinematic and dynamic constraints to the Decentralized Planner for local trajectory feasibility.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 10,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-vehicles-to-cp",
+      "source": "node-core03-state-store",
+      "target": "node-plan01-centralized",
+      "sourcePort": null,
+      "targetPort": "port-plan01-cp-in-vehicles",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Global Vehicle States",
+        "description": "Vehicle State Store provides current positions, velocities, headings, and status for all fleet vehicles to the Centralized Planner for global optimization.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-vehicles-to-dp",
+      "source": "node-core03-state-store",
+      "target": "node-plan01-decentralized",
+      "sourcePort": null,
+      "targetPort": "port-plan01-dp-in-vehicles",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Local Vehicle States",
+        "description": "Vehicle State Store provides locally available vehicle state data to the Decentralized Planner for local plan computation.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-bus-to-hy-mission",
+      "source": "node-core04-event-bus",
+      "target": "node-plan01-hybrid",
+      "sourcePort": null,
+      "targetPort": "port-plan01-hy-in-mission",
+      "semantic": {
+        "type": "event",
+        "label": "Mission Planning Objectives",
+        "description": "Core Event Bus delivers mission planning objectives and task assignments from the Operations subsystem to the Hybrid Coordinator for plan generation.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-hy-to-bus-plan",
+      "source": "node-plan01-hybrid",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-plan01-hy-out-plan",
+      "targetPort": null,
+      "semantic": {
+        "type": "data-flow",
+        "label": "Unified Plan Output",
+        "description": "Hybrid Coordinator publishes the merged unified plan to the Core Event Bus for downstream consumption by the Mission Execution engine and COP visualization.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-hy-to-bus-events",
+      "source": "node-plan01-hybrid",
+      "target": "node-core04-event-bus",
+      "sourcePort": "port-plan01-hy-out-events",
+      "targetPort": null,
+      "semantic": {
+        "type": "event",
+        "label": "Planning Mode Events",
+        "description": "Hybrid Coordinator publishes planning mode transition events (mode selected, fallback triggered, plan merged) to the Core Event Bus for operator awareness and audit.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-routing-to-hy",
+      "source": "node-comm03-routing-engine",
+      "target": "node-plan01-hybrid",
+      "sourcePort": null,
+      "targetPort": "port-plan01-hy-in-connectivity",
+      "semantic": {
+        "type": "event",
+        "label": "Network Connectivity Status",
+        "description": "Network Routing Engine provides connectivity status updates to the Hybrid Coordinator, enabling automatic planning mode transitions when network quality changes.",
+        "protocol": null,
+        "dataType": "event",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "dotted",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#fbbf24",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-cop-to-hy",
+      "source": "node-cop01-core",
+      "target": "node-plan01-hybrid",
+      "sourcePort": null,
+      "targetPort": "port-plan01-hy-in-constraints",
+      "semantic": {
+        "type": "data-flow",
+        "label": "Geofence & Obstacle Constraints",
+        "description": "COP Orchestrator provides active geofence boundaries and dynamic obstacle positions as spatial planning constraints to the Hybrid Coordinator.",
+        "protocol": null,
+        "dataType": "data",
+        "direction": "unidirectional",
+        "trigger": null,
+        "synchronous": null,
+        "requirementIds": [],
+        "assumptions": []
+      },
+      "visual": {
+        "strokeWidth": 2,
+        "dash": "solid",
+        "labelPosition": "center",
+        "routing": "orthogonal",
+        "zIndex": 5,
+        "stroke": "#64748b",
+        "arrow": "end",
+        "waypoints": [],
+        "cornerRadius": 8
+      }
+    },
+    {
+      "id": "edge-plan01-hy-to-cp-constraints",
+      "source": "node-plan01-hybrid",
+      "target": "node-plan01-centralized",
+      "sourcePort": "port-plan01-hy-out-constraints-central",
+      "targetPort": "port-plan01-cp-in-constraints",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Spatial Constraints to Centralized Planner",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Hybrid Coordinator forwards active geofence and dynamic-obstacle constraints to the Centralized Planner.",
+        "requirementIds": [
+          "req-2.15-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-plan01-hy-to-dp-constraints",
+      "source": "node-plan01-hybrid",
+      "target": "node-plan01-decentralized",
+      "sourcePort": "port-plan01-hy-out-constraints-decentral",
+      "targetPort": "port-plan01-dp-in-constraints",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Spatial Constraints to Decentralized Planner",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Hybrid Coordinator forwards applicable geofence and dynamic-obstacle constraints to the Decentralized Planner.",
+        "requirementIds": [
+          "req-2.15-01"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    },
+    {
+      "id": "edge-plan01-vehicles-to-motion-config",
+      "source": "node-core03-state-store",
+      "target": "node-plan01-motion",
+      "sourcePort": null,
+      "targetPort": "port-plan01-mm-in-vehicle-config",
+      "semantic": {
+        "type": "data-flow",
+        "direction": "unidirectional",
+        "label": "Vehicle Configuration & State Parameters",
+        "protocol": null,
+        "dataType": "data",
+        "trigger": null,
+        "synchronous": null,
+        "description": "Vehicle State Store supplies per-vehicle configuration and state parameters used to select or update motion-model parameters.",
+        "requirementIds": [
+          "req-2.12-02"
+        ],
+        "assumptions": []
+      },
+      "visual": {
+        "routing": "orthogonal",
+        "waypoints": [],
+        "cornerRadius": 8,
+        "stroke": "#64748b",
+        "strokeWidth": 2,
+        "arrow": "end",
+        "dash": "solid",
+        "labelPosition": "center",
+        "zIndex": 10
+      }
+    }
+  ],
+  "externalReferences": [
+    {
+      "nodeId": "node-core03-state-store",
+      "sourceDocumentId": "doc-core-03",
+      "engineId": "eng-core-vehicle-state",
+      "label": "Vehicle State Store",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#3b82f6",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-core04-event-bus",
+      "sourceDocumentId": "doc-core-04",
+      "engineId": "eng-core-event-processing",
+      "label": "Core Event Bus",
+      "type": "event-bus",
+      "role": "target",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#fbbf24",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-cop01-core",
+      "sourceDocumentId": "doc-cop-01",
+      "engineId": "eng-cop-core",
+      "label": "COP Orchestrator",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#10b981",
+        "borderStyle": "dashed"
+      }
+    },
+    {
+      "nodeId": "node-comm03-routing-engine",
+      "sourceDocumentId": "doc-comm-03",
+      "engineId": "eng-comm-routing",
+      "label": "Network Routing Engine",
+      "type": "component",
+      "role": "source",
+      "style": {
+        "shape": "rounded-rectangle",
+        "category": "external",
+        "color": "#06b6d4",
+        "borderStyle": "dashed"
+      }
+    }
+  ],
+  "crossReferences": [
+    {
+      "canonicalEngineId": "eng-plan-hybrid",
+      "localNodeId": "node-plan01-hybrid",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-centralized",
+      "localNodeId": "node-plan01-centralized",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-decentralized",
+      "localNodeId": "node-plan01-decentralized",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    },
+    {
+      "canonicalEngineId": "eng-plan-motion-model",
+      "localNodeId": "node-plan01-motion",
+      "otherOccurrences": [
+        {
+          "documentId": "doc-master-02",
+          "nodeId": "node-master-plan"
+        }
+      ]
+    }
+  ],
+  "requirementsCoverage": [
+    {
+      "requirementId": "req-2.11-01",
+      "description": "The system shall support centralized planning mode where a single planning authority computes plans for all vehicles using global state information.",
+      "coveredByNodes": [
+        "node-plan01-centralized",
+        "node-plan01-hybrid"
+      ],
+      "coveredByEdges": [
+        "edge-plan01-hy-to-cp",
+        "edge-plan01-cp-to-hy",
+        "edge-plan01-vehicles-to-cp"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Centralized Planner computes globally optimal plans; Hybrid Coordinator delegates when connectivity permits."
+    },
+    {
+      "requirementId": "req-2.11-02",
+      "description": "The system shall support decentralized planning mode where vehicles compute plans locally without requiring a central planning authority.",
+      "coveredByNodes": [
+        "node-plan01-decentralized",
+        "node-plan01-hybrid"
+      ],
+      "coveredByEdges": [
+        "edge-plan01-hy-to-dp",
+        "edge-plan01-dp-to-hy",
+        "edge-plan01-vehicles-to-dp"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Decentralized Planner operates on local state; Hybrid Coordinator delegates when connectivity is degraded."
+    },
+    {
+      "requirementId": "req-2.11-03",
+      "description": "The system shall support hybrid planning mode with automatic fallback from centralized to decentralized planning when network connectivity is lost or degraded.",
+      "coveredByNodes": [
+        "node-plan01-hybrid"
+      ],
+      "coveredByEdges": [
+        "edge-plan01-routing-to-hy",
+        "edge-plan01-hy-to-cp",
+        "edge-plan01-hy-to-dp",
+        "edge-plan01-hy-to-bus-events"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Hybrid Coordinator monitors connectivity via Routing Engine events and triggers mode transitions automatically."
+    },
+    {
+      "requirementId": "req-2.11-04",
+      "description": "The system shall select the optimal planning mode based on operational context including vehicle count, network quality, mission criticality, and latency requirements.",
+      "coveredByNodes": [
+        "node-plan01-hybrid"
+      ],
+      "coveredByEdges": [
+        "edge-plan01-routing-to-hy",
+        "edge-plan01-bus-to-hy-mission",
+        "edge-plan01-hy-to-bus-events"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Hybrid Coordinator evaluates operational context from connectivity status and mission objectives to select the planning mode."
+    },
+    {
+      "requirementId": "req-2.12-01",
+      "description": "The system shall provide vehicle motion models including kinematic and dynamic constraints for all supported vehicle types.",
+      "coveredByNodes": [
+        "node-plan01-motion"
+      ],
+      "coveredByEdges": [
+        "edge-plan01-cp-to-mm",
+        "edge-plan01-mm-to-cp",
+        "edge-plan01-dp-to-mm",
+        "edge-plan01-mm-to-dp"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Motion Model Engine maintains parameterized models for each vehicle type; serves both centralized and decentralized planners."
+    },
+    {
+      "requirementId": "req-2.12-02",
+      "description": "The system shall parameterize motion models per vehicle instance to account for payload configuration, battery state, and environmental conditions.",
+      "coveredByNodes": [
+        "node-plan01-motion"
+      ],
+      "coveredByEdges": [
+        "edge-plan01-cp-to-mm",
+        "edge-plan01-mm-to-cp",
+        "edge-plan01-vehicles-to-motion-config"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Motion Model Engine receives per-vehicle configuration and state parameters from the Vehicle State Store so model parameters can reflect payload, battery, and environmental context."
+    },
+    {
+      "requirementId": "req-2.15-01",
+      "description": "The system shall integrate spatial constraints including geofences and dynamic obstacles into the planning process.",
+      "coveredByNodes": [
+        "node-plan01-hybrid",
+        "node-plan01-centralized",
+        "node-plan01-decentralized"
+      ],
+      "coveredByEdges": [
+        "edge-plan01-cop-to-hy",
+        "edge-plan01-hy-to-cp",
+        "edge-plan01-hy-to-dp",
+        "edge-plan01-hy-to-cp-constraints",
+        "edge-plan01-hy-to-dp-constraints"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "COP supplies spatial constraints to the Hybrid Coordinator, which explicitly forwards them to both planning modes. Terrain and navigation constraints are addressed in the related planning diagrams."
+    },
+    {
+      "requirementId": "req-2.15-02",
+      "description": "The system shall publish planning mode transitions and plan outputs for operator awareness and downstream execution.",
+      "coveredByNodes": [
+        "node-plan01-hybrid"
+      ],
+      "coveredByEdges": [
+        "edge-plan01-hy-to-bus-plan",
+        "edge-plan01-hy-to-bus-events"
+      ],
+      "coverageStatus": "fully-mapped",
+      "verificationMethod": "analysis",
+      "notes": "Hybrid Coordinator publishes both the unified plan and mode transition events to the Core Event Bus."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "AS-039",
+      "description": "Planning mode selection is evaluated periodically and on connectivity-change events, with a configurable hysteresis to prevent rapid mode oscillation.",
+      "rationale": "Frequent mode switching would destabilize planning and confuse operators; hysteresis ensures stable mode selection."
+    },
+    {
+      "id": "AS-040",
+      "description": "The Centralized Planner and Decentralized Planner share a common plan representation format so that the Hybrid Coordinator can merge partial plans from both modes.",
+      "rationale": "Plan merging requires a common schema; the specific format is an implementation detail."
+    },
+    {
+      "id": "AS-041",
+      "description": "Motion model parameters are updated when vehicle configuration changes (e.g., payload drop, battery swap) and the Motion Model Engine is notified via vehicle state events.",
+      "rationale": "Motion constraints change with vehicle configuration; stale parameters would produce infeasible plans."
+    },
+    {
+      "id": "AS-042",
+      "description": "The planning computation cycle time is bounded and configurable, with the Hybrid Coordinator selecting the planning mode that can meet the required cycle time for the current operational tempo.",
+      "rationale": "Real-time planning requires bounded computation; centralized planning is slower but more optimal, decentralized is faster but locally optimal."
+    }
+  ],
+  "unresolvedDecisions": [
+    {
+      "id": "UD-042",
+      "description": "Specific planning algorithms used by the Centralized and Decentralized Planners (e.g., A*, RRT*, D* Lite, MILP) and whether they are fixed or plugin-configurable.",
+      "impact": "Affects plan optimality, computation time, and extensibility. Plugin algorithms are covered by eng-plan-plugin-algorithm in doc-plan-05.",
+      "owner": "Planning Architecture"
+    },
+    {
+      "id": "UD-043",
+      "description": "Connectivity quality thresholds for automatic planning mode transitions (e.g., minimum link quality score, maximum latency, minimum bandwidth).",
+      "impact": "Affects Hybrid Coordinator's mode selection sensitivity and the timing of fallback to decentralized planning.",
+      "owner": "Communications Architecture"
+    },
+    {
+      "id": "UD-044",
+      "description": "Motion model fidelity levels (point-mass, 3-DOF, 6-DOF) supported per vehicle type and the computational cost trade-offs.",
+      "impact": "Affects Motion Model Engine's query response time and the accuracy of trajectory feasibility assessments.",
+      "owner": "Planning Architecture"
+    },
+    {
+      "id": "UD-045",
+      "description": "Plan merge strategy in hybrid mode when centralized and decentralized plans conflict for the same vehicle.",
+      "impact": "Affects Hybrid Coordinator's conflict resolution logic and the safety guarantees of the unified plan.",
+      "owner": "Safety Architecture"
+    }
+  ],
+  "metadata": {
+    "status": "draft",
+    "revision": 2,
+    "createdDate": "2025-01-15",
+    "lastModified": "2026-10-31"
+  }
+}
