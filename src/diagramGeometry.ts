@@ -47,9 +47,13 @@ const EMPTY_METADATA: DiagramNodeMetadata = {
 }
 
 export function getNodeCenter(node: DiagramNode): Point {
+  const x = node.position?.x ?? 0
+  const y = node.position?.y ?? 0
+  const width = node.size?.width ?? 0
+  const height = node.size?.height ?? 0
   return {
-    x: node.position.x + node.size.width / 2,
-    y: node.position.y + node.size.height / 2,
+    x: x + width / 2,
+    y: y + height / 2,
   }
 }
 
@@ -72,8 +76,18 @@ export function getGroupBounds(
   const nodeIds = new Set<string>(
     Array.isArray(group.nodeIds) ? group.nodeIds : [],
   )
-  const memberNodes = nodes.filter(
-    (n) => nodeIds.has(n.id) || n.groupId === group.id,
+  const memberNodes = (nodes || []).filter(
+    (n) =>
+      Boolean(n) &&
+      (nodeIds.has(n.id) || n.groupId === group.id) &&
+      n.position &&
+      typeof n.position.x === 'number' &&
+      !isNaN(n.position.x) &&
+      typeof n.position.y === 'number' &&
+      !isNaN(n.position.y) &&
+      n.size &&
+      typeof n.size.width === 'number' &&
+      typeof n.size.height === 'number',
   )
 
   if (memberNodes.length > 0) {
@@ -209,7 +223,7 @@ function createGhostNode(
   index: number,
 ): DiagramNode {
   const bounds = getDiagramBounds(document)
-  const relatedEdge = document.edges.find(
+  const relatedEdge = (document.edges || []).find(
     (edge) => edge.source === reference.nodeId || edge.target === reference.nodeId,
   )
   const otherId = relatedEdge
@@ -217,7 +231,7 @@ function createGhostNode(
       ? relatedEdge.target
       : relatedEdge.source
     : null
-  const otherNode = document.nodes.find((node) => node.id === otherId)
+  const otherNode = (document.nodes || []).find((node) => node.id === otherId)
   const otherCenter = otherNode ? getNodeCenter(otherNode) : null
   const stack = Math.floor(index / 2)
   const x =
@@ -242,16 +256,16 @@ function createGhostNode(
     position: { x, y },
     size: reference.size ?? { width: 220, height: 90 },
     style: {
-      shape: reference.style.shape,
-      category: reference.style.category,
-      color: reference.style.color,
-      borderColor: reference.style.borderColor ?? '#64748b',
-      borderWidth: reference.style.borderWidth ?? 2,
-      opacity: reference.style.opacity ?? 0.72,
-      icon: reference.style.icon ?? null,
-      fontSize: reference.style.fontSize ?? 13,
-      textColor: reference.style.textColor ?? '#cbd5e1',
-      borderStyle: reference.style.borderStyle ?? 'dashed',
+      shape: reference.style?.shape ?? 'rounded-rectangle',
+      category: reference.style?.category ?? 'external',
+      color: reference.style?.color ?? '#64748b',
+      borderColor: reference.style?.borderColor ?? '#64748b',
+      borderWidth: reference.style?.borderWidth ?? 2,
+      opacity: reference.style?.opacity ?? 0.72,
+      icon: reference.style?.icon ?? null,
+      fontSize: reference.style?.fontSize ?? 13,
+      textColor: reference.style?.textColor ?? '#cbd5e1',
+      borderStyle: reference.style?.borderStyle ?? 'dashed',
     },
     ports: reference.ports ?? [],
     metadata: reference.metadata ?? {

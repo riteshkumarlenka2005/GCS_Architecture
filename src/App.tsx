@@ -1302,7 +1302,16 @@ function App() {
         )}
 
         {/* Canvas Switcher Menu */}
-        <div className="canvas-switcher" ref={switcherRef}>
+        <div
+          className={`canvas-switcher${
+            toolbarMode === 'vertical' &&
+            typeof window !== 'undefined' &&
+            toolbarPos.x > window.innerWidth - 380
+              ? ' opens-left'
+              : ''
+          }`}
+          ref={switcherRef}
+        >
           <button
             type="button"
             className={`tool${menuOpen ? ' is-active' : ''}`}
