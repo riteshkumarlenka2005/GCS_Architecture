@@ -54,6 +54,7 @@ import type { ArchitectureManifest, DiagramDocument } from './diagramModel'
 import { validateArchitectureJson } from './diagramValidation'
 import type { ValidationReport } from './diagramValidation'
 import { InspectorPanel } from './components/InspectorPanel'
+import { getDiagramBounds } from './diagramGeometry'
 import { buildStandaloneHtml } from './exportHtml'
 import type { ExportNode } from './exportHtml'
 import { applyShapeDrag, createShape, isPathShape } from './shapeModel'
@@ -86,9 +87,7 @@ const DEFAULT_NODES: ExportNode[] = [
 ]
 
 const IDENTITY: Transform = { x: 0, y: 0, scale: 1 }
-const FALLBACK_CANVASES: CanvasMeta[] = [
-  { id: 'scratchpad', name: 'Free Scratchpad', shapes: [], diagram: null },
-]
+const FALLBACK_CANVASES: CanvasMeta[] = []
 const EMPTY_SHAPES: Shape[] = []
 
 const COLOR_PALETTE = [
@@ -110,14 +109,106 @@ function clampScale(scale: number) {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale))
 }
 
-function getDocumentTransform(document?: DiagramDocument | null): Transform {
-  return document
-    ? {
-        x: document.viewport.x,
-        y: document.viewport.y,
-        scale: clampScale(document.viewport.zoom),
+function calculateFitTransform(
+  document?: DiagramDocument | null,
+  shapes?: Shape[] | null,
+  viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200,
+  viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800,
+  inspectorOpen = false,
+): Transform {
+  // 1. Center architecture diagram
+  if (document && document.nodes && document.nodes.length > 0) {
+    const bounds = getDiagramBounds(document)
+    if (bounds.width > 0 && bounds.height > 0) {
+      const leftMargin = 96
+      const rightMargin = inspectorOpen ? 430 : 48
+      const topMargin = 72
+      const bottomMargin = 48
+
+      const availableW = Math.max(300, viewportWidth - leftMargin - rightMargin)
+      const availableH = Math.max(300, viewportHeight - topMargin - bottomMargin)
+
+      const scaleX = availableW / (bounds.width + 60)
+      const scaleY = availableH / (bounds.height + 60)
+      let scale = Math.min(scaleX, scaleY)
+
+      const docZoom =
+        typeof document.viewport?.zoom === 'number' && document.viewport.zoom > 0
+          ? document.viewport.zoom
+          : 0.85
+
+      scale = clampScale(Math.min(docZoom, scale))
+
+      const centerScreenX = leftMargin + availableW / 2
+      const centerScreenY = topMargin + availableH / 2
+
+      const diagCenterX = bounds.x + bounds.width / 2
+      const diagCenterY = bounds.y + bounds.height / 2
+
+      return {
+        scale,
+        x: Math.round(centerScreenX - diagCenterX * scale),
+        y: Math.round(centerScreenY - diagCenterY * scale),
       }
-    : IDENTITY
+    }
+  }
+
+  // 2. Center custom canvas with shapes
+  if (shapes && shapes.length > 0) {
+    let minX = Infinity,
+      minY = Infinity,
+      maxX = -Infinity,
+      maxY = -Infinity
+    for (const s of shapes) {
+      if (s.type === 'circle') {
+        minX = Math.min(minX, s.cx - s.r)
+        minY = Math.min(minY, s.cy - s.r)
+        maxX = Math.max(maxX, s.cx + s.r)
+        maxY = Math.max(maxY, s.cy + s.r)
+      } else if (isPathShape(s)) {
+        minX = Math.min(minX, s.x1, s.x2, s.bend?.x ?? s.x1)
+        minY = Math.min(minY, s.y1, s.y2, s.bend?.y ?? s.y1)
+        maxX = Math.max(maxX, s.x1, s.x2, s.bend?.x ?? s.x1)
+        maxY = Math.max(maxY, s.y1, s.y2, s.bend?.y ?? s.y1)
+      } else {
+        minX = Math.min(minX, s.x)
+        minY = Math.min(minY, s.y)
+        maxX = Math.max(maxX, s.x + s.w)
+        maxY = Math.max(maxY, s.y + s.h)
+      }
+    }
+    if (minX !== Infinity && maxX > minX) {
+      const w = maxX - minX
+      const h = maxY - minY
+      const leftMargin = 96
+      const rightMargin = inspectorOpen ? 430 : 48
+      const topMargin = 72
+      const bottomMargin = 48
+      const availableW = Math.max(300, viewportWidth - leftMargin - rightMargin)
+      const availableH = Math.max(300, viewportHeight - topMargin - bottomMargin)
+      const scale = clampScale(Math.min(1, availableW / (w + 60), availableH / (h + 60)))
+      const centerScreenX = leftMargin + availableW / 2
+      const centerScreenY = topMargin + availableH / 2
+      const shapeCenterX = minX + w / 2
+      const shapeCenterY = minY + h / 2
+      return {
+        scale,
+        x: Math.round(centerScreenX - shapeCenterX * scale),
+        y: Math.round(centerScreenY - shapeCenterY * scale),
+      }
+    }
+  }
+
+  // 3. Default empty canvas centering
+  const leftMargin = 96
+  const rightMargin = inspectorOpen ? 430 : 48
+  const availableW = Math.max(300, viewportWidth - leftMargin - rightMargin)
+  const availableH = Math.max(300, viewportHeight - 120)
+  return {
+    scale: 1,
+    x: Math.round(leftMargin + availableW / 2 - 200),
+    y: Math.round(72 + availableH / 2 - 150),
+  }
 }
 
 function App() {
@@ -131,6 +222,7 @@ function App() {
   const [manifest, setManifest] = useState<ArchitectureManifest | null>(null)
   const [validationReport, setValidationReport] = useState<ValidationReport | null>(null)
   const [importing, setImporting] = useState(false)
+  const [isReloading, setIsReloading] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -201,16 +293,24 @@ function App() {
         setCanvases(state.canvases)
         setActiveId(state.activeId)
         setManifest(state.manifest ?? null)
-        const activeDocument = state.canvases.find(
+        const activeCanvas = state.canvases.find(
           (canvas) => canvas.id === state.activeId,
-        )?.diagram
-        setTransform(getDocumentTransform(activeDocument))
+        )
+        const nextTransform = calculateFitTransform(
+          activeCanvas?.diagram,
+          activeCanvas?.shapes,
+          window.innerWidth,
+          window.innerHeight,
+          inspectorOpen,
+        )
+        setTransform(nextTransform)
+        viewsRef.current[state.activeId] = nextTransform
       })
       .catch(() => {})
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [inspectorOpen])
 
   // Close menus on outside click or escape
   useEffect(() => {
@@ -275,7 +375,7 @@ function App() {
       if (
         toolbarRef.current?.contains(target as Node) ||
         target.closest?.(
-          '.inspector-panel, .validation-panel, .toolbar, .canvas-menu, .pos-menu, .ctx-menu, aside, [role="menu"]',
+          '.inspector-panel, .validation-panel, .toolbar, .canvas-menu, .pos-menu, .ctx-menu, .canvas-header-bar, aside, [role="menu"]',
         )
       ) {
         return
@@ -342,9 +442,17 @@ function App() {
   }, [])
 
   const resetView = useCallback(() => {
-    const activeDocument = canvases.find((canvas) => canvas.id === activeId)?.diagram
-    setTransform(getDocumentTransform(activeDocument))
-  }, [activeId, canvases])
+    const activeCanvas = canvases.find((canvas) => canvas.id === activeId)
+    const nextTransform = calculateFitTransform(
+      activeCanvas?.diagram,
+      activeCanvas?.shapes,
+      window.innerWidth,
+      window.innerHeight,
+      inspectorOpen,
+    )
+    viewsRef.current[activeId] = nextTransform
+    setTransform(nextTransform)
+  }, [activeId, canvases, inspectorOpen])
 
   const switchCanvas = useCallback(
     (id: string) => {
@@ -359,11 +467,19 @@ function App() {
       if (id === activeId) return
       viewsRef.current[activeId] = transform
       setActiveId(id)
-      const targetDocument = canvases.find((canvas) => canvas.id === id)?.diagram
-      setTransform(viewsRef.current[id] ?? getDocumentTransform(targetDocument))
+      const targetCanvas = canvases.find((canvas) => canvas.id === id)
+      const nextTransform = calculateFitTransform(
+        targetCanvas?.diagram,
+        targetCanvas?.shapes,
+        window.innerWidth,
+        window.innerHeight,
+        inspectorOpen,
+      )
+      viewsRef.current[id] = nextTransform
+      setTransform(nextTransform)
       void setActiveCanvas(id).catch(() => {})
     },
-    [activeId, transform, canvases],
+    [activeId, transform, canvases, inspectorOpen],
   )
 
   // Cross-diagram navigation: jump to another document and focus on a node
@@ -408,6 +524,15 @@ function App() {
       const state = await createCanvas()
       setCanvases(state.canvases)
       setActiveId(state.activeId)
+      const nextTransform = calculateFitTransform(
+        null,
+        [],
+        window.innerWidth,
+        window.innerHeight,
+        inspectorOpen,
+      )
+      viewsRef.current[state.activeId] = nextTransform
+      setTransform(nextTransform)
     } catch {
       const local: CanvasMeta = {
         id: `local-${Date.now()}`,
@@ -417,9 +542,17 @@ function App() {
       }
       setCanvases((list) => [...list, local])
       setActiveId(local.id)
+      const nextTransform = calculateFitTransform(
+        null,
+        [],
+        window.innerWidth,
+        window.innerHeight,
+        inspectorOpen,
+      )
+      viewsRef.current[local.id] = nextTransform
+      setTransform(nextTransform)
     }
-    setTransform(IDENTITY)
-  }, [activeId, transform, canvases.length])
+  }, [activeId, transform, canvases.length, inspectorOpen])
 
   const startRename = useCallback((id: string) => {
     renameCommittedRef.current = false
@@ -857,7 +990,14 @@ function App() {
             setCanvases(currentCanvases)
             setActiveId(local.id)
           }
-          setTransform(getDocumentTransform(value))
+          const nextTransform = calculateFitTransform(
+            value,
+            [],
+            window.innerWidth,
+            window.innerHeight,
+            inspectorOpen,
+          )
+          setTransform(nextTransform)
         }
 
         setValidationReport(lastReport)
@@ -865,7 +1005,7 @@ function App() {
         setImporting(false)
       }
     },
-    [canvases, manifest],
+    [canvases, manifest, inspectorOpen],
   )
 
   // Validate active diagram on demand
@@ -880,20 +1020,32 @@ function App() {
     setValidationReport(report)
   }, [activeDiagram, canvases, manifest])
 
-  // Reload Batch 1 files from disk
+  // Reload architecture files from disk
   const handleReloadBatch1 = useCallback(async () => {
+    setIsReloading(true)
     try {
       const state = await reloadBatch1()
       setCanvases(state.canvases)
       setActiveId(state.activeId)
       setManifest(state.manifest)
-      const doc = state.canvases.find((c) => c.id === state.activeId)?.diagram
-      setTransform(getDocumentTransform(doc))
+      const activeCanvas = state.canvases.find((c) => c.id === state.activeId)
+      const doc = activeCanvas?.diagram
+      const nextTransform = calculateFitTransform(
+        doc,
+        activeCanvas?.shapes,
+        window.innerWidth,
+        window.innerHeight,
+        inspectorOpen,
+      )
+      setTransform(nextTransform)
+      viewsRef.current[state.activeId] = nextTransform
       setMenuOpen(false)
     } catch {
       // API fallback
+    } finally {
+      setTimeout(() => setIsReloading(false), 600)
     }
-  }, [])
+  }, [inspectorOpen])
 
   const toggleLock = useCallback(() => {
     if (!locked) setSelectedId(null)
@@ -1404,10 +1556,44 @@ function App() {
         >
           {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
         </button>
+      </div>
 
-        <div className="canvas-label" title={activeCanvasName}>
-          {activeCanvasName}
+      {/* Top-Left Canvas Title & Quick Reload Bar */}
+      <div className="canvas-header-bar">
+        {activeDiagram?.category ? (
+          <span className={`canvas-header-badge category-${activeDiagram.category}`}>
+            {activeDiagram.diagramType === 'system-context'
+              ? 'L0'
+              : activeDiagram.diagramType === 'master-architecture'
+                ? 'L1'
+                : activeDiagram.diagramType === 'deployment-architecture'
+                  ? 'DEPLOY'
+                  : activeDiagram.category.toUpperCase()}
+          </span>
+        ) : (
+          <span className="canvas-header-badge">CANVAS</span>
+        )}
+        <div className="canvas-header-info">
+          <div className="canvas-header-title" title={activeCanvasName}>
+            {activeCanvasName}
+          </div>
+          {activeDiagram && (
+            <div className="canvas-header-sub">
+              {activeDiagram.documentId} · {activeDiagram.nodes.length} nodes · {activeDiagram.edges.length} connections
+            </div>
+          )}
         </div>
+        <div className="canvas-header-divider" />
+        <button
+          type="button"
+          className="canvas-header-reload-btn"
+          title="Reload architecture files from disk"
+          aria-label="Reload architecture files from disk"
+          onClick={() => void handleReloadBatch1()}
+        >
+          <RotateCcw size={14} className={isReloading ? 'spin-icon' : ''} />
+          <span>Reload</span>
+        </button>
       </div>
 
       {/* Inspector Panel Sidebar */}

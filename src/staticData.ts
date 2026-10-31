@@ -81,14 +81,7 @@ export function getStaticArchitectureStore(): CanvasStoreState {
     return a.id.localeCompare(b.id)
   })
 
-  canvases.push({
-    id: 'scratchpad',
-    name: 'Free Scratchpad',
-    shapes: [],
-    diagram: null,
-  })
-
-  const activeId = canvases.length > 0 ? canvases[0].id : 'scratchpad'
+  const activeId = canvases.length > 0 ? canvases[0].id : 'canvas-1'
 
   return {
     canvases,

@@ -46,16 +46,21 @@ function getLocalState(): CanvasStoreState {
           }
         })
 
-        // Retain any user-created custom canvases (such as Canvas 13 or custom scratchpads)
+        // Retain any user-created custom canvases (excluding deprecated empty scratchpads)
         const customCanvases = parsed.canvases.filter(
-          (c) => !fresh.canvases.some((f) => f.id === c.id),
+          (c) =>
+            !fresh.canvases.some((f) => f.id === c.id) &&
+            !(c.id === 'scratchpad' && (!c.shapes || c.shapes.length === 0)),
         )
 
         memoryState = {
           canvases: [...mergedArchitecture, ...customCanvases],
-          activeId: existingMap.has(parsed.activeId)
-            ? parsed.activeId
-            : fresh.activeId,
+          activeId:
+            parsed.activeId === 'scratchpad'
+              ? fresh.activeId
+              : existingMap.has(parsed.activeId)
+                ? parsed.activeId
+                : fresh.activeId,
           manifest: fresh.manifest || parsed.manifest,
         }
         persistLocalState(memoryState)
@@ -109,13 +114,15 @@ export async function reloadArchitectureFiles(): Promise<CanvasStoreState> {
     memoryState = null
     const fresh = getStaticArchitectureStore()
     const current = getLocalState()
-    // Retain user's custom canvases (such as scratchpad or custom canvases)
+    // Retain user's custom canvases (excluding deprecated empty scratchpads)
     const customCanvases = current.canvases.filter(
-      (c) => !fresh.canvases.some((f) => f.id === c.id),
+      (c) =>
+        !fresh.canvases.some((f) => f.id === c.id) &&
+        !(c.id === 'scratchpad' && (!c.shapes || c.shapes.length === 0)),
     )
     const merged: CanvasStoreState = {
       canvases: [...fresh.canvases, ...customCanvases],
-      activeId: fresh.activeId || current.activeId,
+      activeId: current.activeId === 'scratchpad' ? fresh.activeId : (fresh.activeId || current.activeId),
       manifest: fresh.manifest || current.manifest,
     }
     persistLocalState(merged)

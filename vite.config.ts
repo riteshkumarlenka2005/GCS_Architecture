@@ -102,9 +102,8 @@ function loadArchitectureData() {
 const initial = loadArchitectureData()
 const canvases: CanvasRecord[] = [
   ...initial.loadedCanvases,
-  { id: 'scratchpad', name: 'Free Scratchpad', shapes: [], diagram: null },
 ]
-let activeId = initial.loadedCanvases.length > 0 ? initial.loadedCanvases[0].id : 'scratchpad'
+let activeId = initial.loadedCanvases.length > 0 ? initial.loadedCanvases[0].id : 'canvas-1'
 let manifest: unknown | null = initial.loadedManifest
 let counter = 1
 
