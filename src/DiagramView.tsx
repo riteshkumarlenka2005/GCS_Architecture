@@ -8,6 +8,7 @@ import {
   getPortPoint,
   getRenderNodes,
   markerId,
+  normalizeDiagramDocument,
   wrapText,
   type ResizeHandle,
 } from './diagramGeometry'
@@ -357,32 +358,34 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
     }
   }, [])
 
-  const renderNodes = useMemo(() => getRenderNodes(document), [document])
+  const normalizedDoc = useMemo(() => normalizeDiagramDocument(document), [document])
+
+  const renderNodes = useMemo(() => getRenderNodes(normalizedDoc), [normalizedDoc])
   const nodesById = useMemo(
     () => new Map(renderNodes.map(({ node }) => [node.id, node])),
     [renderNodes],
   )
   const groupsById = useMemo(
-    () => new Map(document.groups.map((group) => [group.id, group])),
-    [document.groups],
+    () => new Map(normalizedDoc.groups.map((group) => [group.id, group])),
+    [normalizedDoc.groups],
   )
   const sortedGroups = useMemo(
     () =>
-      document.groups
+      normalizedDoc.groups
         .map((group) => ({
           ...group,
-          bounds: getGroupBounds(group, document.nodes),
+          bounds: getGroupBounds(group, normalizedDoc.nodes),
         }))
         .sort((a, b) => groupDepth(a, groupsById) - groupDepth(b, groupsById)),
-    [document.groups, document.nodes, groupsById],
+    [normalizedDoc.groups, normalizedDoc.nodes, groupsById],
   )
   const routes = useMemo(
-    () => new Map(document.edges.map((edge) => [edge.id, buildEdgeRoute(edge, nodesById)])),
-    [document.edges, nodesById],
+    () => new Map(normalizedDoc.edges.map((edge) => [edge.id, buildEdgeRoute(edge, nodesById, normalizedDoc.edges)])),
+    [normalizedDoc.edges, nodesById],
   )
   const sortedEdges = useMemo(
-    () => [...document.edges].sort((a, b) => (a.visual?.zIndex ?? 0) - (b.visual?.zIndex ?? 0)),
-    [document.edges],
+    () => [...normalizedDoc.edges].sort((a, b) => (a.visual?.zIndex ?? 0) - (b.visual?.zIndex ?? 0)),
+    [normalizedDoc.edges],
   )
 
   // --------------------------------------------------------------------------
@@ -557,14 +560,24 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
       className="diagram-layer"
       width="1"
       height="1"
-      aria-label={document.title}
-      data-document-id={document.documentId}
+      aria-label={normalizedDoc.title}
+      data-document-id={normalizedDoc.documentId}
     >
       <defs>
-        {document.edges.map((edge) => (
+        {normalizedDoc.nodes.map((node) => (
+          <clipPath key={`clip-${node.id}`} id={`clip-node-${node.id}`}>
+            <rect
+              x={node.position.x + 4}
+              y={node.position.y + 4}
+              width={Math.max(0, node.size.width - 8)}
+              height={Math.max(0, node.size.height - 8)}
+            />
+          </clipPath>
+        ))}
+        {normalizedDoc.edges.map((edge) => (
           <marker
             key={edge.id}
-            id={markerId(document.documentId, edge.id)}
+            id={markerId(normalizedDoc.documentId, edge.id)}
             viewBox="0 0 10 10"
             refX="9"
             refY="5"
@@ -609,7 +622,7 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
               />
               <text
                 x={centered ? bounds.x + bounds.width / 2 : bounds.x + 16}
-                y={bounds.y + 25}
+                y={bounds.y + 28}
                 fill={style?.textColor ?? '#94a3b8'}
                 fontSize={style?.fontSize ?? 15}
                 textAnchor={centered ? 'middle' : 'start'}
@@ -665,7 +678,7 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
         {sortedEdges.map((edge) => {
           const route = routes.get(edge.id)
           if (!route) return null
-          const id = markerId(document.documentId, edge.id)
+          const id = markerId(normalizedDoc.documentId, edge.id)
           const arrow = edge.visual?.arrow ?? 'end'
           const isSelected = selectedEdgeId === edge.id
           const labels = wrapText(edge.semantic?.label || '', 38, 2)
@@ -868,6 +881,7 @@ const DiagramView = forwardRef<SVGSVGElement, DiagramViewProps>(function Diagram
                 fontSize={style.fontSize}
                 textAnchor="middle"
                 pointerEvents="none"
+                clipPath={ghost ? undefined : `url(#clip-node-${node.id})`}
               >
                 {lines.map((line, index) => (
                   <tspan

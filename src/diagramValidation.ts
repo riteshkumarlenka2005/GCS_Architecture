@@ -424,17 +424,21 @@ function validateDocument(
       : `All ${field} entries use structured IDs.`, invalid)
   }
 
-  // V-031: Port direction compatibility: out→in or inout→inout (Per file)
+  // V-031: Port direction compatibility: (out|inout) → (in|inout) (Per file)
+  // Rule: source must be 'out' or 'inout'; target must be 'in' or 'inout'.
+  // Valid combinations: out→in, out→inout, inout→in, inout→inout.
+  // Invalid: in→*, *→out (source acts as sink; target acts as source).
   const incompatible = document.edges.filter((edge) => {
     if (!edge.sourcePort || !edge.targetPort) return false
     const source = nodesById.get(edge.source)?.ports.find((port) => port.id === edge.sourcePort)
     const target = nodesById.get(edge.target)?.ports.find((port) => port.id === edge.targetPort)
     if (!source || !target) return false
-    return !((source.direction === 'out' && target.direction === 'in') ||
-      (source.direction === 'inout' && target.direction === 'inout'))
+    const sourceOk = source.direction === 'out' || source.direction === 'inout'
+    const targetOk = target.direction === 'in' || target.direction === 'inout'
+    return !(sourceOk && targetOk)
   }).map((edge) => edge.id)
-  check('V-031', incompatible, 'Port directions are compatible (out→in or inout→inout).',
-    'Port directions are incompatible with V-031 rule (out→in or inout→inout).')
+  check('V-031', incompatible, 'Port directions are compatible ((out|inout) → (in|inout)).',
+    'Port directions are incompatible with V-031 rule: source must be out or inout; target must be in or inout.')
 
   // V-032: No self-referencing edges (source === target) (Per file)
   check('V-032', document.edges.filter((edge) => edge.source === edge.target).map((edge) => edge.id),

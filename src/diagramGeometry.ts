@@ -46,6 +46,178 @@ const EMPTY_METADATA: DiagramNodeMetadata = {
   notes: '',
 }
 
+export function normalizeDiagramDocument(raw: DiagramDocument): DiagramDocument {
+  if (!raw || typeof raw !== 'object') return raw
+
+  const nodes: DiagramNode[] = (raw.nodes || []).map((rawNode) => {
+    const node = rawNode as Record<string, unknown>
+    const id = (node.id as string) || (node.nodeId as string) || ''
+    const nodeId = (node.nodeId as string) || (node.id as string) || ''
+    const engines = Array.isArray(node.engines)
+      ? ([...node.engines] as string[])
+      : (typeof node.engineId === 'string' ? [node.engineId] : [])
+    const engineId = (node.engineId as string) || (engines.length > 0 ? engines[0] : undefined)
+
+    const rawStyle = (node.style as Record<string, unknown>) || {}
+    const style: DiagramNode['style'] = {
+      shape: (rawStyle.shape as DiagramNode['style']['shape']) || 'rounded-rectangle',
+      category: (rawStyle.category as string) || 'other',
+      color: (rawStyle.color as string) || (rawStyle.fill as string) || '#1e293b',
+      borderColor: (rawStyle.borderColor as string) || (rawStyle.stroke as string) || '#64748b',
+      borderWidth: typeof rawStyle.borderWidth === 'number'
+        ? rawStyle.borderWidth
+        : (typeof rawStyle.strokeWidth === 'number' ? rawStyle.strokeWidth : 2),
+      opacity: typeof rawStyle.opacity === 'number' ? rawStyle.opacity : 1,
+      borderStyle: (rawStyle.borderStyle as 'solid' | 'dashed' | 'dotted') || (rawStyle.dash === 'dashed' ? 'dashed' : rawStyle.dash === 'dotted' ? 'dotted' : 'solid'),
+      fontSize: (rawStyle.fontSize as number) || 13,
+      textColor: (rawStyle.textColor as string) || '#cbd5e1',
+      icon: (rawStyle.icon as string) ?? null,
+      ...rawStyle,
+    }
+
+    const ports: DiagramPort[] = ((node.ports as Array<Record<string, unknown>>) || []).map((rawPort) => {
+      const portId = (rawPort.portId as string) || (rawPort.id as string) || ''
+      const pid = (rawPort.id as string) || (rawPort.portId as string) || ''
+      const rawPos = rawPort.position
+      let side: DiagramPort['side'] = rawPort.side as DiagramPort['side']
+      if (!side) {
+        if (typeof rawPos === 'string' && (rawPos === 'left' || rawPos === 'right' || rawPos === 'top' || rawPos === 'bottom')) {
+          side = rawPos
+        } else if (rawPos && typeof rawPos === 'object' && 'side' in rawPos && typeof (rawPos as Record<string, unknown>).side === 'string') {
+          side = (rawPos as Record<string, unknown>).side as DiagramPort['side']
+        } else {
+          side = 'right'
+        }
+      }
+      return {
+        ...rawPort,
+        id: pid,
+        portId,
+        direction: (rawPort.direction as DiagramPort['direction']) || 'inout',
+        side,
+        position: rawPort.position ?? { offset: typeof rawPort.offset === 'number' ? rawPort.offset : 0.5 },
+      } as DiagramPort
+    })
+
+    const rawMeta = (node.metadata as Record<string, unknown>) || {}
+    const metadata: DiagramNodeMetadata = {
+      ...EMPTY_METADATA,
+      ...rawMeta,
+      engineId: engineId ?? null,
+      engineIds: engines,
+    }
+
+    return {
+      ...node,
+      id,
+      nodeId,
+      groupId: (node.groupId as string) ?? null,
+      engines,
+      engineId,
+      style,
+      ports,
+      metadata,
+    } as DiagramNode
+  })
+
+  const groups: DiagramGroup[] = ((raw.groups as Array<Record<string, unknown>>) || []).map((rawGroup) => {
+    const id = (rawGroup.id as string) || (rawGroup.groupId as string) || ''
+    const groupId = (rawGroup.groupId as string) || (rawGroup.id as string) || ''
+    const rawStyle = (rawGroup.style as Record<string, unknown>) || {}
+    const style = {
+      backgroundColor: (rawStyle.backgroundColor as string) || (rawStyle.fill as string) || '#1e293b',
+      borderColor: (rawStyle.borderColor as string) || (rawStyle.stroke as string) || '#475569',
+      borderWidth: typeof rawStyle.borderWidth === 'number'
+        ? rawStyle.borderWidth
+        : (typeof rawStyle.strokeWidth === 'number' ? rawStyle.strokeWidth : 1),
+      borderStyle: (rawStyle.borderStyle as 'solid' | 'dashed' | 'dotted') || (rawStyle.dash === 'dashed' ? 'dashed' : rawStyle.dash === 'dotted' ? 'dotted' : 'solid'),
+      opacity: typeof rawStyle.opacity === 'number' ? rawStyle.opacity : 0.12,
+      padding: typeof rawStyle.padding === 'number' ? rawStyle.padding : 30,
+      ...rawStyle,
+    }
+
+    return {
+      ...rawGroup,
+      id,
+      groupId,
+      nodeIds: Array.isArray(rawGroup.nodeIds) ? ([...rawGroup.nodeIds] as string[]) : [],
+      style,
+    } as DiagramGroup
+  })
+
+  const edges: DiagramEdge[] = ((raw.edges as Array<Record<string, unknown>>) || []).map((rawEdge) => {
+    const id = (rawEdge.id as string) || (rawEdge.edgeId as string) || ''
+    const edgeId = (rawEdge.edgeId as string) || (rawEdge.id as string) || ''
+    const rawSem = (rawEdge.semantic as Record<string, unknown>) || {}
+    const semType = rawSem.type === 'control' ? 'control-flow' : ((rawSem.type as any) || 'data-flow')
+
+    const semantic = {
+      type: semType,
+      label: (rawSem.label as string) || '',
+      direction: (rawSem.direction as 'unidirectional' | 'bidirectional') || 'unidirectional',
+      description: (rawSem.description as string) || '',
+      ...rawSem,
+    }
+
+    const rawVis = (rawEdge.visual as Record<string, unknown>) || {}
+    const visual = {
+      routing: (rawVis.routing as 'orthogonal' | 'straight' | 'curved') || 'orthogonal',
+      stroke: (rawVis.stroke as string) || '#64748b',
+      strokeWidth: typeof rawVis.strokeWidth === 'number' ? rawVis.strokeWidth : 2,
+      dash: (rawVis.dash as 'solid' | 'dashed' | 'dotted') || 'solid',
+      arrow: (rawVis.arrow as 'none' | 'end' | 'start' | 'both') || (semantic.direction === 'bidirectional' ? 'both' : 'end'),
+      waypoints: Array.isArray(rawVis.waypoints) ? ([...rawVis.waypoints] as Point[]) : [],
+      ...rawVis,
+    }
+
+    return {
+      ...rawEdge,
+      id,
+      edgeId,
+      source: (rawEdge.source as string) || '',
+      target: (rawEdge.target as string) || '',
+      sourcePort: (rawEdge.sourcePort as string) || null,
+      targetPort: (rawEdge.targetPort as string) || null,
+      semantic,
+      visual,
+    } as DiagramEdge
+  })
+
+  const externalReferences: ExternalReference[] = ((raw.externalReferences as Array<Record<string, unknown>>) || []).map((rawRef) => {
+    const nodeId = (rawRef.nodeId as string) || (rawRef.id as string) || ''
+    const rawStyle = (rawRef.style as Record<string, unknown>) || {}
+    const style = {
+      shape: (rawStyle.shape as DiagramNode['style']['shape']) || 'rounded-rectangle',
+      category: (rawStyle.category as string) || 'external',
+      color: (rawStyle.color as string) || (rawStyle.fill as string) || '#1e293b',
+      borderColor: (rawStyle.borderColor as string) || (rawStyle.stroke as string) || '#64748b',
+      borderWidth: typeof rawStyle.borderWidth === 'number'
+        ? rawStyle.borderWidth
+        : (typeof rawStyle.strokeWidth === 'number' ? rawStyle.strokeWidth : 2),
+      borderStyle: (rawStyle.borderStyle as 'solid' | 'dashed' | 'dotted') || (rawStyle.dash === 'dashed' ? 'dashed' : 'dashed'),
+      opacity: typeof rawStyle.opacity === 'number' ? rawStyle.opacity : 0.72,
+      fontSize: (rawStyle.fontSize as number) || 13,
+      textColor: (rawStyle.textColor as string) || '#cbd5e1',
+      icon: (rawStyle.icon as string) ?? null,
+      ...rawStyle,
+    }
+
+    return {
+      ...rawRef,
+      nodeId,
+      style,
+    } as ExternalReference
+  })
+
+  return {
+    ...raw,
+    nodes,
+    groups,
+    edges,
+    externalReferences,
+  }
+}
+
 export function getNodeCenter(node: DiagramNode): Point {
   const x = node.position?.x ?? 0
   const y = node.position?.y ?? 0
@@ -101,7 +273,7 @@ export function getGroupBounds(
     const maxY = Math.max(...bottoms)
     const padding =
       typeof group.style?.padding === 'number' ? group.style.padding : 30
-    const headerHeight = 28
+    const headerHeight = 36
     return {
       x: minX - padding,
       y: minY - padding - headerHeight,
@@ -215,35 +387,152 @@ export function calculateResizedBounds(
   }
 }
 
-// External references intentionally have no required layout in the schema.
-// Their render-only position is derived without adding anything to the JSON.
+// ─────────────────────────────────────────────────────────────────────────────
+// External Reference Ghost Node Layout (collision-aware, multi-column)
+// ─────────────────────────────────────────────────────────────────────────────
+const GHOST_CARD_WIDTH = 220
+const GHOST_CARD_HEIGHT = 90
+const GHOST_COL_GAP = 48
+const GHOST_ROW_GAP = 24
+const GHOST_EDGE_MARGIN = 60
+const GHOST_MAX_PER_COL = 6
+
+interface GhostPlacement {
+  nodeId: string
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+function ghostOverlaps(a: GhostPlacement, b: GhostPlacement): boolean {
+  return (
+    a.x < b.x + b.width + 8 &&
+    a.x + a.width + 8 > b.x &&
+    a.y < b.y + b.height + 8 &&
+    a.y + a.height + 8 > b.y
+  )
+}
+
+export function calculateExternalReferenceLayout(
+  document: DiagramDocument,
+): Map<string, { x: number; y: number }> {
+  const bounds = getDiagramBounds(document)
+  const refs = document.externalReferences || []
+  const result = new Map<string, { x: number; y: number }>()
+  const placed: GhostPlacement[] = []
+
+  // Separate manually positioned from auto-layout
+  const manual: ExternalReference[] = []
+  const auto: ExternalReference[] = []
+  for (const ref of refs) {
+    if (ref.position && typeof ref.position.x === 'number' && typeof ref.position.y === 'number') {
+      manual.push(ref)
+    } else {
+      auto.push(ref)
+    }
+  }
+
+  // Place manual references first (preserve their positions, detect conflicts)
+  for (const ref of manual) {
+    const pos = ref.position as { x: number; y: number }
+    const card: GhostPlacement = { nodeId: ref.nodeId, x: pos.x, y: pos.y, width: GHOST_CARD_WIDTH, height: GHOST_CARD_HEIGHT }
+    placed.push(card)
+    result.set(ref.nodeId, { x: pos.x, y: pos.y })
+  }
+
+  // Divide auto refs into "source" side (left column) and "target" side (right column)
+  const leftRefs: ExternalReference[] = []
+  const rightRefs: ExternalReference[] = []
+  for (const ref of auto) {
+    if (ref.role === 'source') {
+      leftRefs.push(ref)
+    } else {
+      rightRefs.push(ref)
+    }
+  }
+
+  // Layout one side at a time
+  function layoutSide(sideRefs: ExternalReference[], side: 'left' | 'right') {
+    const anchorX =
+      side === 'left'
+        ? bounds.x - GHOST_EDGE_MARGIN - GHOST_CARD_WIDTH
+        : bounds.x + bounds.width + GHOST_EDGE_MARGIN
+
+    // Try to vertically center each ghost near the node it connects to
+    const anchored = sideRefs.map((ref) => {
+      const relatedEdges = (document.edges || []).filter(
+        (e) => e.source === ref.nodeId || e.target === ref.nodeId,
+      )
+      let preferredY = bounds.y
+      if (relatedEdges.length > 0) {
+        const otherId = relatedEdges[0].source === ref.nodeId
+          ? relatedEdges[0].target
+          : relatedEdges[0].source
+        const otherNode = (document.nodes || []).find((n) => n.id === otherId)
+        if (otherNode) {
+          preferredY = otherNode.position.y + otherNode.size.height / 2 - GHOST_CARD_HEIGHT / 2
+        }
+      }
+      return { ref, preferredY }
+    })
+
+    // Sort by preferred Y so column reads top-to-bottom
+    anchored.sort((a, b) => a.preferredY - b.preferredY)
+
+    let colIndex = 0
+    let rowInCol = 0
+    let colStartY = bounds.y
+
+    for (const { ref, preferredY } of anchored) {
+      if (rowInCol >= GHOST_MAX_PER_COL) {
+        colIndex += 1
+        rowInCol = 0
+        colStartY = bounds.y
+      }
+
+      const colOffset = side === 'left'
+        ? -(colIndex * (GHOST_CARD_WIDTH + GHOST_COL_GAP))
+        : colIndex * (GHOST_CARD_WIDTH + GHOST_COL_GAP)
+      const x = anchorX + colOffset
+      // Use preferred Y if not yet occupied, otherwise push down
+      let y = rowInCol === 0 ? preferredY : colStartY
+
+      // Check for collisions against all already placed cards
+      let attempts = 0
+      while (attempts < 100) {
+        const candidate: GhostPlacement = { nodeId: ref.nodeId, x, y, width: GHOST_CARD_WIDTH, height: GHOST_CARD_HEIGHT }
+        const collides = placed.some((p) => ghostOverlaps(candidate, p))
+        if (!collides) break
+        y += GHOST_CARD_HEIGHT + GHOST_ROW_GAP
+        attempts++
+      }
+
+      colStartY = y + GHOST_CARD_HEIGHT + GHOST_ROW_GAP
+      rowInCol++
+      placed.push({ nodeId: ref.nodeId, x, y, width: GHOST_CARD_WIDTH, height: GHOST_CARD_HEIGHT })
+      result.set(ref.nodeId, { x, y })
+    }
+  }
+
+  layoutSide(leftRefs, 'left')
+  layoutSide(rightRefs, 'right')
+
+  // Any remaining auto refs that have neither role: place on right
+  const assigned = new Set([...leftRefs, ...rightRefs].map((r) => r.nodeId))
+  const unassigned = auto.filter((r) => !assigned.has(r.nodeId))
+  layoutSide(unassigned, 'right')
+
+  return result
+}
+
 function createGhostNode(
   reference: ExternalReference,
-  document: DiagramDocument,
-  index: number,
+  layout: Map<string, { x: number; y: number }>,
 ): DiagramNode {
-  const bounds = getDiagramBounds(document)
-  const relatedEdge = (document.edges || []).find(
-    (edge) => edge.source === reference.nodeId || edge.target === reference.nodeId,
-  )
-  const otherId = relatedEdge
-    ? relatedEdge.source === reference.nodeId
-      ? relatedEdge.target
-      : relatedEdge.source
-    : null
-  const otherNode = (document.nodes || []).find((node) => node.id === otherId)
-  const otherCenter = otherNode ? getNodeCenter(otherNode) : null
-  const stack = Math.floor(index / 2)
-  const x =
-    reference.position?.x ??
-    (reference.role === 'target'
-      ? bounds.x + bounds.width + 120
-      : Math.max(40, bounds.x - 260))
-  const y =
-    reference.position?.y ??
-    (otherCenter
-      ? Math.max(40, otherCenter.y - 44 + (index % 2) * 104)
-      : Math.max(40, bounds.y + stack * 104))
+  const pos = layout.get(reference.nodeId)
+  const x = pos?.x ?? 0
+  const y = pos?.y ?? 0
 
   return {
     id: reference.nodeId,
@@ -254,7 +543,7 @@ function createGhostNode(
       `External reference defined in ${reference.sourceDocumentId}`,
     groupId: null,
     position: { x, y },
-    size: reference.size ?? { width: 220, height: 90 },
+    size: reference.size ?? { width: GHOST_CARD_WIDTH, height: GHOST_CARD_HEIGHT },
     style: {
       shape: reference.style?.shape ?? 'rounded-rectangle',
       category: reference.style?.category ?? 'external',
@@ -276,10 +565,11 @@ function createGhostNode(
 }
 
 export function getRenderNodes(document: DiagramDocument): RenderNode[] {
+  const layout = calculateExternalReferenceLayout(document)
   return [
     ...document.nodes.map((node) => ({ node, ghost: false })),
-    ...document.externalReferences.map((reference, index) => ({
-      node: createGhostNode(reference, document, index),
+    ...document.externalReferences.map((reference) => ({
+      node: createGhostNode(reference, layout),
       ghost: true,
       external: reference,
     })),
@@ -481,9 +771,27 @@ export function pointAlongPolyline(points: Point[], fraction: number): Point {
   return points[points.length - 1]
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Bidirectional / parallel edge lane offset helpers
+// ─────────────────────────────────────────────────────────────────────────────
+const BIDIR_LANE_OFFSET = 12
+
+function perpOffset(source: EdgeAnchor, target: EdgeAnchor, dist: number): { dx: number; dy: number } {
+  const sx = source.point.x; const sy = source.point.y
+  const tx = target.point.x; const ty = target.point.y
+  const len = Math.hypot(tx - sx, ty - sy)
+  if (len < 1) return { dx: 0, dy: dist }
+  return { dx: (-(ty - sy) / len) * dist, dy: ((tx - sx) / len) * dist }
+}
+
+function offsetPoints(points: Point[], dx: number, dy: number): Point[] {
+  return points.map((p) => ({ x: p.x + dx, y: p.y + dy }))
+}
+
 export function buildEdgeRoute(
   edge: DiagramEdge,
   nodesById: Map<string, DiagramNode>,
+  allEdges?: DiagramEdge[],
 ): EdgeRoute | null {
   const sourceNode = nodesById.get(edge.source)
   const targetNode = nodesById.get(edge.target)
@@ -507,12 +815,33 @@ export function buildEdgeRoute(
     path = roundedPolylinePath(points, edge.visual?.cornerRadius ?? 8)
   }
 
+  // Apply bidirectional lane offset: if a reverse edge exists between same nodes,
+  // shift this edge perpendicularly by ±12px so the two don't overlap.
+  if (allEdges && allEdges.length > 0) {
+    const isBidirectional = edge.semantic?.direction === 'bidirectional'
+    const hasReverseEdge = !isBidirectional && allEdges.some(
+      (e) => e.id !== edge.id && e.source === edge.target && e.target === edge.source,
+    )
+    if (isBidirectional || hasReverseEdge) {
+      const { dx, dy } = perpOffset(source, target, BIDIR_LANE_OFFSET)
+      points = offsetPoints(points, dx, dy)
+      path = roundedPolylinePath(points, edge.visual?.cornerRadius ?? 8)
+    }
+  }
+
+  // Calculate optimal label position:
+  // For bidirectional: bias to 0.35 (source-side) to separate from reverse label.
+  // Otherwise use explicit labelPosition or midpoint.
+  const isBidirLabel = edge.semantic?.direction === 'bidirectional'
   const fraction =
     edge.visual?.labelPosition === 'source'
       ? 0.25
       : edge.visual?.labelPosition === 'target'
         ? 0.75
-        : 0.5
+        : isBidirLabel
+          ? 0.35
+          : 0.5
+
   return { points, path, labelPoint: pointAlongPolyline(points, fraction) }
 }
 
